@@ -1,0 +1,2 @@
+**Scanner Scripts**:
+These scripts are intended to be executed on the scanner itself. If you are using a 3-computer environment (scanner, real-time machine, presentation machine), first transfer these scripts to the scanner and run them locally. They include utilities for finding the current scan directory and series directory names, as well as sending the slice data in real-time once the scan begins. 
