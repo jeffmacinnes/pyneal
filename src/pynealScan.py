@@ -29,6 +29,10 @@ GUI_dir = os.path.join(pyneal_dir, 'src/GUIs')
 DATA_dir = os.path.join(pyneal_dir, 'data')
 LOG_dir = os.path.join(pyneal_dir, 'data/logs')
 
+# make the LOG dir if necessary
+if not os.path.isdir(LOG_dir):
+	os.makedirs(LOG_dir)		
+
 # add relevant paths to the search path
 for d in [SRC_dir, GUI_dir]:
 	sys.path.append(d)
@@ -245,7 +249,7 @@ print 'analysis-time/volume: ', str(np.mean(time_per_volume)), ' (avg); ', str(n
 # write the output values to file if requested
 if save_choice == 1:
 	date = str(datetime.datetime.now()).replace(' ', '_').replace(':', '-')[:-10]
-	output_fname = os.path.join(log_dir, (date + '_OUTPUT.txt'))
+	output_fname = os.path.join(LOG_dir, (date + '_OUTPUT.txt'))
 	for value in output_values:
 		write_output(str(value), output_fname)
 
