@@ -148,7 +148,7 @@ def constructFiles(examDir, seriesName, outputDir, outputName, scannerInfo):
 
 	# send command
 	child.sendline(cmd_str)
-	child.expect(COMMAND_PROMPT, timeout=240)
+	child.expect(COMMAND_PROMPT, timeout=180)
 
 	# close the connection
 	child.close()
