@@ -1,5 +1,6 @@
-.DS_Store
+.DS_*
 socketSettings.json
 scannerLogin.json
 nonCommit/
 *.pyc
+*~
