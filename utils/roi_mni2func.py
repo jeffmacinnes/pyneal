@@ -342,7 +342,7 @@ os.system(cmd_str)
 
 # change group membership of .hdr/.img mask functional mask outputs of fslchfiletype (SH: March 2017)
 for maskout in glob.glob((subj_dir + '/' + outname + '._FUNC_*')):			
-    os.chown(maskout, uid, gid)												# match group membership to XX
+    os.chown(maskout, uid, gid)												# match group membership to average_func.nii.gz
 
 
 # cleanup workspace
