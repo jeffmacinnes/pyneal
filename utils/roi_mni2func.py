@@ -4,6 +4,14 @@
 roi_mni2func.py
 
 Tool to transform a given ROI from MNI space to subject functional space
+
+//  Created by Jeff MacInnes                                       //
+//  Last modified by Shabnam Hakimi (March 2017)                   //
+//  Changes made:                                                  //
+//  * modified  group ownership of files output by fslchfiletype   //
+//    (correcting for issue potentially unique to BIAC computers)  //
+//  * imported glob to manage wildcards for os.chown		       //
+
 """
 
 import sys
@@ -13,6 +21,7 @@ import shutil
 import numpy as np 
 from Tkinter import *
 from tkFileDialog import askopenfilename
+import glob
 
 ### Config Vars
 (pyneal_dir, util_dir) = os.path.split(os.path.abspath(os.path.dirname(__file__)))
@@ -261,6 +270,10 @@ os.system(cmd_str)
 
 avg_func = (subj_dir + '/average_func.nii.gz')	# average functional image
 
+# record uid and gid of average_func.nii.gz (SH: March 2017)
+gid = os.stat(subj_dir + '/average_func.nii.gz').st_gid
+uid = os.stat(subj_dir + '/average_func.nii.gz').st_uid
+
 # run brain extraction on hires
 status_msg = 'skull stripping hi-res anatomical....(2/8)'
 cmd_str = ('bet ' + hires + ' ' + (subj_dir + '/hires_full_brain') + ' -f 0.35')
@@ -326,6 +339,11 @@ os.system(cmd_str)
 cmd_str = ('fslchfiletype ANALYZE ' + subj_dir + '/' + outname + '_FUNC_weighted.nii.gz')				# change WEIGHTED filetype
 write_log(cmd_str, log_name)
 os.system(cmd_str)
+
+# change group membership of .hdr/.img mask functional mask outputs of fslchfiletype (SH: March 2017)
+for maskout in glob.glob((subj_dir + '/' + outname + '._FUNC_*')):			
+    os.chown(maskout, uid, gid)												# match group membership to XX
+
 
 # cleanup workspace
 print 'cleaning up unused files'
