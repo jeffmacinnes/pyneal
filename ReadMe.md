@@ -1,8 +1,17 @@
-![Pyneal Logo](docs/guideFigures/pyneal_logo.jpg)
+![Pyneal Logo](resources/images/pyneal_logo.jpg)
 
 # Pyneal -- real-time fMRI Analysis Software
 
-*NOTE:* The current software was built for the scanning environment at Duke University. The code is being adapted to suit more general usage at other institutions. Along those same lines, the documentation will be evolving to fit the current iteration of the software. 
+*NOTE:* **Development Branch** Currently undergoing major overhaul to the codebase to make it more generalizable across different scanning environments.
+
+## Structure
+There are two main components to this software:
+
+* **pyneal_scanner**: This contains all of the code and tools for accessing data from the scanner and *sending* individual slice data to the real-time analysis stage. All of the relevant code for this component is to be found in the `pyneal_scanner` directory.
+
+* **pyneal**: This is component that *receives* incoming slice data from **pyneal_scanner**, builds a 4D dataset overtime, runs whatever analysis you have specified, and makes the results available to a presentation machine. This component can be launched from the root directory by calling `pyneal.py`. The relevant code for this component in found in the `src` directory. 
+
+
 
 #### Made possible through funding support by:
 * NIMH R01 MH094743
