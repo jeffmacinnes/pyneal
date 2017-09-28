@@ -26,7 +26,7 @@ def startListening(scanSettings, scanDirectory=None):
         - scanner interface will:
             - monitor the source directory
             - read in dicom slices files as they arrive
-            - convert to standart format
+            - convert to standard format
             - compile msg pack about the data
             - send over the socket connection
 
