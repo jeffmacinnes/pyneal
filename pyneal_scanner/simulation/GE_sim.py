@@ -43,9 +43,6 @@ def GE_sim(dicomDir, outputDir, TR):
         print('Deleting existing {}'.format(outputDir))
         shutil.rmtree(outputDir)
 
-    # create the outputDir:
-    os.makedirs(outputDir)
-
     # make a list of slice files
     sliceFiles = []
     for f in os.listdir(dicomDir):
@@ -55,7 +52,6 @@ def GE_sim(dicomDir, outputDir, TR):
     # read one slice to get TR and # of slices/vol info
     ds = dicom.read_file(join(dicomDir, sliceFiles[0]))
     slicesPerVol = ds.ImagesInAcquisition
-
 
     # calculate delay between slices
     sliceDelay = TR/slicesPerVol/1000
@@ -67,6 +63,9 @@ def GE_sim(dicomDir, outputDir, TR):
 
     # wait for input to begin
     input('Press ENTER to begin the "scan" ')
+
+    # create the outputDir:
+    os.makedirs(outputDir)
 
     # loop over all slice files
     print('copied dicom #:', end=' ')
@@ -84,14 +83,13 @@ def GE_sim(dicomDir, outputDir, TR):
 
 
 if __name__ == "__main__":
-
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('dicomDir',
                 help='path to directory that contains slice DICOMS')
     parser.add_argument('-o', '--outputDir',
-                default='scanned',
-                help='name of output directory where new slices images will appear [default: scanned]')
+                default='s100',
+                help='name of output directory where new slices images will appear (i.e. series directory) [default: s100]')
     parser.add_argument('-t', '--TR',
                 type=int,
                 default=2000,

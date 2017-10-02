@@ -21,23 +21,13 @@ def startListening(scanSettings, scanDirectory=None):
     if scanDirectory:
         print(scanDirectory)
 
-    # initialize the appropriate scannerInterface
-    # start the scannerInterface running
-        - scanner interface will:
-            - monitor the source directory
-            - read in dicom slices files as they arrive
-            - convert to standard format
-            - compile msg pack about the data
-            - send over the socket connection
 
 
 
 if __name__ == "__main__":
-    """ When calling directly from the command line..."""
-
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--scanDirectory', help="Manually specify the path to the directory where slice dicoms will be appearing. If not specified, it defaults to a directory determined by the scanner model")
+    parser.add_argument('-d', '--scanDirectory', help="Specify the path to the directory where slice dicoms will be appearing. If not specified, it defaults to a directory determined by the scanner model")
     args = parser.parse_args()
 
     # look for scannerSettings.json config file, create if needed
@@ -61,9 +51,9 @@ if __name__ == "__main__":
     else:
         print('\nNo scannerSettings.json file found in {} \n'.format(thisDir))
         print('Enter settings manually:')
-        scannerModels = {'1':'GE', '2':'Siemens', '3':'Phillips'}
+        scannerModels = ['GE', 'Phillips', 'Siemens']
         for i in sorted(scannerModels):
-            print('{} - {}'.format(i, scannerModels[i]))
+            print('{}'.format(scannerModels[i]))
         scannerSelection = input('Scanner Model: ')
         socketHost = input('Enter Destination IP: ')
         socketPort = input('Enter Port #: ')
