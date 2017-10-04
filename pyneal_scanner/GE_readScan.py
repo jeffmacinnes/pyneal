@@ -12,7 +12,7 @@ from os.path import join
 import argparse
 import dicom
 from queue import Queue
-
+import logging
 import time
 from threading import Thread
 
@@ -26,7 +26,7 @@ class GE_scanRead(Thread):
     for new slice dicoms to appear. Each new dicom file will
     be added to the Queue for further processing
     """
-    def __init__(self, seriesDir, dicomQ, interval=.1):
+    def __init__(self, seriesDir, dicomQ, interval=.5):
         # start the thead upon creation
         Thread.__init__(self)
 
@@ -35,24 +35,31 @@ class GE_scanRead(Thread):
         self.seriesDir = seriesDir          # full path to series directory
         self.dicomQ = dicomQ                # queue to store dicom files
         self.alive = True                   # thread status
-        self.num_slicesAdded = 0            # counter to keep track of # of slices added overall
-        self.dicom_files = set()            # initialize empty set to store dicoms
+        self.numSlicesAdded = 0             # counter to keep track of # of slices added overall
+        self.dicom_files = set()            # empty set to store names of processed dicoms
 
     def run(self):
         # function that loops while the Thead is still alive
         while self.alive:
 
-            # grab all dicoms in the series directory
-            currentDicoms = os.listdir(self.seriesDir)
+            # create a set of all dicoms currently in the series directory
+            currentDicoms = set(os.listdir(self.seriesDir))
 
-            # figure out which haven't already been added to the queue
-            newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
+            # grab only the the dicoms which haven't already been added to the queue
+            newDicoms = currentDicoms.intersection_update(self.dicom_files)
+            #newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
 
-            # add all of the new dicoms to the
+            # add all of the new dicoms to the queue
             for f in newDicoms:
-                self.dicomQ.put(f)
-            print('Put {} new slices on the queue'.format(len(newDicoms)))
-            self.num_slicesAdded += len(newDicoms)
+                dicom_fname = join(self.seriesDir, f)
+                try:
+                    self.dicomQ.put(dicom_fname)
+                except:
+                    print('failed on: {}'.format(dicom_fname))
+                    print(sys.exc_info())
+                    sys.exit()
+            print('PUT Thread: Put {} new slices on the queue'.format(len(newDicoms)))
+            self.numSlicesAdded += len(newDicoms)
 
             # now update the set of dicoms added to the queue
             self.dicom_files.update(set(newDicoms))
@@ -60,8 +67,8 @@ class GE_scanRead(Thread):
             # pause
             time.sleep(self.interval)
 
-    def get_nSlicesAdded(self):
-        return self.num_slicesAdded
+    def get_numSlicesAdded(self):
+        return self.numSlicesAdded
 
     def stop(self):
         # function to stop the Thread
@@ -88,11 +95,17 @@ class GE_processSlice(Thread):
 
             # if there are any slices in the queue, process them
             if not self.dicomQ.empty():
-                self.num_slicesInQueue = self.dicomQ.qsize()
-                print('There are {} items in queue'.format(self.num_slicesInQueue))
-                for s in range(self.num_slicesInQueue):
-                    thisFile = self.dicomQ.get(True, 2)  # block for up to 2 seconds
-                    print('Removed {} from queue'.format(thisFile))
+                self.numSlicesInQueue = self.dicomQ.qsize()
+                print('GET Thread: There are {} items in queue'.format(self.numSlicesInQueue))
+
+                # loop through all slices currently in queue & process
+                for s in range(self.numSlicesInQueue):
+                    dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
+                    dcmFile = dicom.read_file(dcm_fname)
+                    sliceNum = dcmFile.InStackPositionNumber
+                    volNum = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
+                    print('GET Thread: processed vol {}, slice {}'.format(volNum, sliceNum))
+                    #print('Removed {} from queue'.format(thisFile))
                     self.dicomQ.task_done()  # complete the task on this item in the queue
 
             time.sleep(.5)
@@ -125,13 +138,13 @@ def startScanRead(sessionDir):
     processSlice = GE_processSlice(dicomQ)
     processSlice.start()
 
-
     # TMP -- for testing
     keepListening = True
     while keepListening:
-        nSlicesAdded = scanRead.get_nSlicesAdded()
-        if nSlicesAdded >= 100:
-            print('Got enough slices: {}'.format(nSlicesAdded))
+        numSlicesAdded = scanRead.get_numSlicesAdded()
+        print('MAIN Thread: {} total slices so far'.format(numSlicesAdded))
+        if numSlicesAdded >= 9900:
+            print('MAIN Thread: Got enough slices: {}'.format(numSlicesAdded))
             scanRead.stop()
             scanRead.join()     # wait til all tasks on this thread are complete
 
@@ -186,12 +199,19 @@ def waitForSeriesDir(sessionDir, interval=.1):
 
 
 if __name__ == "__main__":
+
+    # set up logging
+    logging.basicConfig(filename="./GE_scanRead.log",
+                        filemode='w',
+                        level=logging.DEBUG)
+
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('sessionDir',
                         help="Path to the session directory (i.e. where new series directories are written)")
     # retrieve the args
     args = parser.parse_args()
+    logging.info('Listening for new data in: {}'.format(args.sessionDir))
 
     # start listeing for scan data
     startScanRead(args.sessionDir)
