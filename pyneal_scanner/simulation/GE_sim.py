@@ -17,11 +17,11 @@ from builtins import input
 
 import os, sys
 from os.path import join
-import shutil
 import argparse
 import re
 import time
 import dicom
+import subprocess
 
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
@@ -41,7 +41,8 @@ def GE_sim(dicomDir, outputDir, TR):
     # if outputDir exists, delete
     if os.path.isdir(outputDir):
         print('Deleting existing {}'.format(outputDir))
-        shutil.rmtree(outputDir)
+        subprocess.call(['rm', '-r', outputDir])
+        #shutil.rmtree(outputDir)
 
     # make a list of slice files
     sliceFiles = []
@@ -75,7 +76,7 @@ def GE_sim(dicomDir, outputDir, TR):
         dst_file = join(outputDir, f)
 
         # copy the file
-        shutil.copyfile(src_file, dst_file)
+        subprocess.call(['cp', src_file, dst_file])
         print(dicomNumber, end=', ', flush=True)
 
         # introduce delay

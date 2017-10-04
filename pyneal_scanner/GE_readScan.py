@@ -15,9 +15,8 @@ from queue import Queue
 import logging
 import time
 from threading import Thread
+import zmq
 
-
-#### ADD A LOGGER TO ALL OF THIS
 
 class GE_scanRead(Thread):
     """
@@ -26,7 +25,7 @@ class GE_scanRead(Thread):
     for new slice dicoms to appear. Each new dicom file will
     be added to the Queue for further processing
     """
-    def __init__(self, seriesDir, dicomQ, interval=.5):
+    def __init__(self, seriesDir, dicomQ, interval=.2):
         # start the thead upon creation
         Thread.__init__(self)
 
@@ -58,7 +57,7 @@ class GE_scanRead(Thread):
                     logger.error('failed on: {}'.format(dicom_fname))
                     print(sys.exc_info())
                     sys.exit()
-            logger.info('Put {} new slices on the queue'.format(len(newDicoms)))
+            logger.debug('Put {} new slices on the queue'.format(len(newDicoms)))
             self.numSlicesAdded += len(newDicoms)
 
             # now update the set of dicoms added to the queue
@@ -72,7 +71,6 @@ class GE_scanRead(Thread):
 
     def stop(self):
         # function to stop the Thread
-        print('Stopped listening for new slices')
         self.alive = False
 
 
@@ -80,13 +78,14 @@ class GE_processSlice(Thread):
     """
     Class to process each dicom slice in the dicom queue
     """
-    def __init__(self, dicomQ):
+    def __init__(self, dicomQ, serverSocket):
         # start the thread upon creation
         Thread.__init__(self)
 
         # initialize class parameters
         self.dicomQ = dicomQ
         self.alive = True
+        self.serverSocket = serverSocket
 
     def run(self):
         # function to run on loop
@@ -95,28 +94,55 @@ class GE_processSlice(Thread):
             # if there are any slices in the queue, process them
             if not self.dicomQ.empty():
                 self.numSlicesInQueue = self.dicomQ.qsize()
-                logger.info('There are {} items in queue'.format(self.numSlicesInQueue))
+                logger.debug('There are {} items in queue'.format(self.numSlicesInQueue))
 
                 # loop through all slices currently in queue & process
                 for s in range(self.numSlicesInQueue):
                     dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
-                    dcmFile = dicom.read_file(dcm_fname)
-                    sliceNum = dcmFile.InStackPositionNumber
-                    volNum = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
-                    self.dicomQ.task_done()  # complete the task on this item in the queue
 
-                    logger.info('processed vol {}, slice {}'.format(volNum, sliceNum))
+                    status = self.sendSliceToServer(dcm_fname)
+
+                    # complete this task, thereby clearing it from the queue
+                    self.dicomQ.task_done()
 
 
-            time.sleep(.5)
+            time.sleep(.2)
+
+    def sendSliceToServer(self, dcm_fname):
+        """
+        Send the dicom slice to the server
+        """
+
+        # read in the dicom file
+        dcmFile = dicom.read_file(dcm_fname)
+        sliceNum = dcmFile.InStackPositionNumber
+        volNum = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
+        pixel_array = dcmFile.pixel_array
+
+
+        # send slice header info to server in json form
+        sliceInfo = {'sliceNum':sliceNum,
+                    'volNum':volNum,
+                    'dtype':'int16',
+                    'shape':(64,64)}
+        self.serverSocket.send_json(sliceInfo, zmq.SNDMORE)
+
+        # send the pixel data as np.array, listen for response
+        self.serverSocket.send(dcmFile.pixel_array, flags=0, copy=True, track=False)
+        serverResponse = self.serverSocket.recv_string()
+
+        # log the success
+        logger.debug('Server response: {}'.format(serverResponse))
+
+        return 1
+
 
     def stop(self):
         # function to stop the Thread
-        print('Stopped processing slices')
         self.alive = False
 
 
-def startScanRead(sessionDir):
+def launchScanRead(sessionDir):
     """
     create an instance of the appropriate scanRead class, initialize
     a queue to store incoming dicom files, and start listening!
@@ -124,6 +150,15 @@ def startScanRead(sessionDir):
 
     # initialize the dicom queue to keep track of dicom slice files
     dicomQ = Queue()
+
+    # initialize the socket parameters
+    host = '*'
+    port = 50001
+
+    context = zmq.Context.instance()
+    sock = context.socket(zmq.REQ)
+    sock.bind('tcp://{}:{}'.format(host,port))
+
 
     # wait for series directory to be created
     seriesDir = waitForSeriesDir(sessionDir)
@@ -135,7 +170,7 @@ def startScanRead(sessionDir):
     scanRead.start()
 
     # create an instance of the class to process each slice
-    processSlice = GE_processSlice(dicomQ)
+    processSlice = GE_processSlice(dicomQ, sock)
     processSlice.start()
 
     # TMP -- for testing
@@ -143,8 +178,8 @@ def startScanRead(sessionDir):
     while keepListening:
         numSlicesAdded = scanRead.get_numSlicesAdded()
         logger.info('{} total slices so far'.format(numSlicesAdded))
-        if numSlicesAdded >= 9900:
-            print(' Got enough slices: {}'.format(numSlicesAdded))
+        if numSlicesAdded >= 5000:
+            logger.info(' Got enough slices: {}'.format(numSlicesAdded))
             scanRead.stop()
             scanRead.join()     # wait til all tasks on this thread are complete
 
@@ -194,18 +229,27 @@ def waitForSeriesDir(sessionDir, interval=.1):
 
     # return the found series directory
     logger.info('New Series Directory: {}'.format(seriesDir))
-    print('Found directory: {}'.format(seriesDir))
     return seriesDir
 
 
 
 if __name__ == "__main__":
 
-    # set up logging
-    logging.basicConfig(filename="./GE_scanRead.log",
-                        filemode='w',
+    ### set up logging
+    # write log messages to file if they are DEBUG level or higher
+    logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
+                        datefmt='%m-%d %H:%M:%S',
+                        filename='./GE_scanRead.log',
+                        filemode='w')
+
+    # set up logging to console
+    consoleLogger = logging.StreamHandler()
+    consoleLogger.setLevel(logging.INFO)        # console will print logs if they are INFO or higher
+    consoleLogFormat = logging.Formatter('%(threadName)s - %(levelname)-8s %(message)s')
+    consoleLogger.setFormatter(consoleLogFormat)
+
+    logging.getLogger(__name__).addHandler(consoleLogger)
     logger = logging.getLogger(__name__)
 
     # parse arguments
@@ -217,4 +261,4 @@ if __name__ == "__main__":
     logger.debug('Listening for new data in: {}'.format(args.sessionDir))
 
     # start listeing for scan data
-    startScanRead(args.sessionDir)
+    launchScanRead(args.sessionDir)
