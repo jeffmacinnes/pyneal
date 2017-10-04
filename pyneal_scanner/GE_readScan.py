@@ -46,8 +46,8 @@ class GE_scanRead(Thread):
             currentDicoms = set(os.listdir(self.seriesDir))
 
             # grab only the the dicoms which haven't already been added to the queue
-            newDicoms = currentDicoms.intersection_update(self.dicom_files)
-            #newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
+            #newDicoms = currentDicoms.intersection_update(self.dicom_files)
+            newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
 
             # add all of the new dicoms to the queue
             for f in newDicoms:
@@ -55,10 +55,10 @@ class GE_scanRead(Thread):
                 try:
                     self.dicomQ.put(dicom_fname)
                 except:
-                    print('failed on: {}'.format(dicom_fname))
+                    logger.error('failed on: {}'.format(dicom_fname))
                     print(sys.exc_info())
                     sys.exit()
-            print('PUT Thread: Put {} new slices on the queue'.format(len(newDicoms)))
+            logger.info('Put {} new slices on the queue'.format(len(newDicoms)))
             self.numSlicesAdded += len(newDicoms)
 
             # now update the set of dicoms added to the queue
@@ -87,7 +87,6 @@ class GE_processSlice(Thread):
         # initialize class parameters
         self.dicomQ = dicomQ
         self.alive = True
-        print('processSlice Started....')
 
     def run(self):
         # function to run on loop
@@ -96,7 +95,7 @@ class GE_processSlice(Thread):
             # if there are any slices in the queue, process them
             if not self.dicomQ.empty():
                 self.numSlicesInQueue = self.dicomQ.qsize()
-                print('GET Thread: There are {} items in queue'.format(self.numSlicesInQueue))
+                logger.info('There are {} items in queue'.format(self.numSlicesInQueue))
 
                 # loop through all slices currently in queue & process
                 for s in range(self.numSlicesInQueue):
@@ -104,9 +103,10 @@ class GE_processSlice(Thread):
                     dcmFile = dicom.read_file(dcm_fname)
                     sliceNum = dcmFile.InStackPositionNumber
                     volNum = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
-                    print('GET Thread: processed vol {}, slice {}'.format(volNum, sliceNum))
-                    #print('Removed {} from queue'.format(thisFile))
                     self.dicomQ.task_done()  # complete the task on this item in the queue
+
+                    logger.info('processed vol {}, slice {}'.format(volNum, sliceNum))
+
 
             time.sleep(.5)
 
@@ -142,9 +142,9 @@ def startScanRead(sessionDir):
     keepListening = True
     while keepListening:
         numSlicesAdded = scanRead.get_numSlicesAdded()
-        print('MAIN Thread: {} total slices so far'.format(numSlicesAdded))
+        logger.info('{} total slices so far'.format(numSlicesAdded))
         if numSlicesAdded >= 9900:
-            print('MAIN Thread: Got enough slices: {}'.format(numSlicesAdded))
+            print(' Got enough slices: {}'.format(numSlicesAdded))
             scanRead.stop()
             scanRead.join()     # wait til all tasks on this thread are complete
 
@@ -193,7 +193,8 @@ def waitForSeriesDir(sessionDir, interval=.1):
         time.sleep(interval)
 
     # return the found series directory
-    print('New Series Directory: {}'.format(seriesDir))
+    logger.info('New Series Directory: {}'.format(seriesDir))
+    print('Found directory: {}'.format(seriesDir))
     return seriesDir
 
 
@@ -203,7 +204,9 @@ if __name__ == "__main__":
     # set up logging
     logging.basicConfig(filename="./GE_scanRead.log",
                         filemode='w',
-                        level=logging.DEBUG)
+                        format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
+    logger = logging.getLogger(__name__)
 
     # parse arguments
     parser = argparse.ArgumentParser()
@@ -211,7 +214,7 @@ if __name__ == "__main__":
                         help="Path to the session directory (i.e. where new series directories are written)")
     # retrieve the args
     args = parser.parse_args()
-    logging.info('Listening for new data in: {}'.format(args.sessionDir))
+    logger.debug('Listening for new data in: {}'.format(args.sessionDir))
 
     # start listeing for scan data
     startScanRead(args.sessionDir)
