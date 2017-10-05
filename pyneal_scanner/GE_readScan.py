@@ -45,7 +45,6 @@ class GE_scanRead(Thread):
             currentDicoms = set(os.listdir(self.seriesDir))
 
             # grab only the the dicoms which haven't already been added to the queue
-            #newDicoms = currentDicoms.intersection_update(self.dicom_files)
             newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
 
             # add all of the new dicoms to the queue
@@ -105,7 +104,6 @@ class GE_processSlice(Thread):
                     # complete this task, thereby clearing it from the queue
                     self.dicomQ.task_done()
 
-
             time.sleep(.2)
 
     def sendSliceToServer(self, dcm_fname):
@@ -115,16 +113,18 @@ class GE_processSlice(Thread):
 
         # read in the dicom file
         dcmFile = dicom.read_file(dcm_fname)
-        sliceNum = dcmFile.InStackPositionNumber
-        volNum = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
+        sliceIdx = dcmFile.InStackPositionNumber - 1
+        volIdx = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
+        imagePosition = dcmFile.ImagePositionPatient
+        imageOrientation = dcmFile.ImageOrientationPatient
+        shape = tuple([dcmFile.Rows, dcmFile.Columns])
         pixel_array = dcmFile.pixel_array
 
-
         # send slice header info to server in json form
-        sliceInfo = {'sliceNum':sliceNum,
-                    'volNum':volNum,
-                    'dtype':'int16',
-                    'shape':(64,64)}
+        sliceInfo = {'sliceIdx':sliceIdx,
+                    'volIdx':volIdx,
+                    'dtype':str(pixel_array.dtype),
+                    'shape':shape}
         self.serverSocket.send_json(sliceInfo, zmq.SNDMORE)
 
         # send the pixel data as np.array, listen for response
@@ -138,8 +138,10 @@ class GE_processSlice(Thread):
 
 
     def stop(self):
+
         # function to stop the Thread
         self.alive = False
+
 
 
 def launchScanRead(sessionDir):

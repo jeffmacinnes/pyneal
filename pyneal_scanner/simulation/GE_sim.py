@@ -82,7 +82,6 @@ def GE_sim(dicomDir, outputDir, TR):
         # introduce delay
         time.sleep(sliceDelay)
 
-
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser()
