@@ -7,14 +7,17 @@ a more general pyneal_scanner.py script
 
 from __future__ import print_function
 
-import os, sys
+import os
 from os.path import join
-import argparse
-import dicom
-from queue import Queue
+import sys
 import logging
 import time
 from threading import Thread
+from queue import Queue
+import argparse
+
+import dicom
+import numpy as np
 import zmq
 
 
@@ -113,22 +116,37 @@ class GE_processSlice(Thread):
 
         # read in the dicom file
         dcmFile = dicom.read_file(dcm_fname)
+
+
+        ### Prep the Pixel Data ###
+        pixel_array = dcmFile.pixel_array
+        #print('origin prior to rotation: {}'.format(pixel_array[0,0]))
+        pixel_array = np.ascontiguousarray(
+                        np.rot90(pixel_array, k=2, axes=(0,1))
+                        )
+        #print('origin after to rotation: {}'.format(pixel_array[0,0]))
+
+        ### Prep the Header ###
+        # extract relevant metadata tags from from this slice
         sliceIdx = dcmFile.InStackPositionNumber - 1
         volIdx = int(dcmFile.InstanceNumber/dcmFile.ImagesInAcquisition)
         imagePosition = dcmFile.ImagePositionPatient
         imageOrientation = dcmFile.ImageOrientationPatient
         shape = tuple([dcmFile.Rows, dcmFile.Columns])
-        pixel_array = dcmFile.pixel_array
 
-        # send slice header info to server in json form
-        sliceInfo = {'sliceIdx':sliceIdx,
-                    'volIdx':volIdx,
-                    'dtype':str(pixel_array.dtype),
-                    'shape':shape}
-        self.serverSocket.send_json(sliceInfo, zmq.SNDMORE)
+        # create a header with metadata info
+        sliceInfo = {
+            'sliceIdx':sliceIdx,
+            'volIdx':volIdx,
+            'dtype':str(pixel_array.dtype),
+            'shape':shape,
+            'imagePosition':imagePosition,
+            'imageOrientation':imageOrientation
+            }
 
-        # send the pixel data as np.array, listen for response
-        self.serverSocket.send(dcmFile.pixel_array, flags=0, copy=True, track=False)
+        ### Send data out the socket, listen for response
+        self.serverSocket.send_json(sliceInfo, zmq.SNDMORE) # header as json
+        self.serverSocket.send(pixel_array, flags=0, copy=False, track=False)
         serverResponse = self.serverSocket.recv_string()
 
         # log the success

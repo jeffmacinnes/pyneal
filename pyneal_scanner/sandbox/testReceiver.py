@@ -2,6 +2,7 @@
 Basic script to mimic the behavior of Pyneal during an actual scan.
 This is a server to receive incoming slice files
 """
+from __future__ import division
 
 import sys, os
 import time
@@ -16,11 +17,17 @@ host = 'localhost'
 port = 50001
 
 
-image_matrix = np.zeros(shape=(64, 64, 34, 10))	# build empty data matrix
+image_matrix = np.zeros(shape=(64, 64, 34, 10))	# build empty data matrix (xyzt)
 
 context = zmq.Context.instance()
 sock = context.socket(zmq.REP)
 sock.connect('tcp://{}:{}'.format(host,port))
+
+slice1_pos = None
+slice1_or = None
+sliceEnd_pos = None
+sliceEnd_or = None
+
 while True:
 
     # receive header info as json
@@ -31,21 +38,62 @@ while True:
     volIdx = sliceInfo['volIdx']
     sliceDtype = sliceInfo['dtype']
     sliceShape = sliceInfo['shape']
+    imagePosition = sliceInfo['imagePosition']
+    imageOrientation = sliceInfo['imageOrientation']
+    #print(type(imagePosition[0]))
+    #print(imagePosition)
+
+
+    if slice1_pos is None:
+        if sliceIdx == 0:
+            slice1_pos = np.asarray(imagePosition)
+    if slice1_or is None:
+        if sliceIdx == 0:
+            slice1_or = np.asarray(imageOrientation)
+    if sliceEnd_pos is None:
+        if sliceIdx == 33:
+            sliceEnd_pos = np.asarray(imagePosition)
+    if sliceEnd_or is None:
+        if sliceIdx == 33:
+            sliceEnd_or = np.asarray(imageOrientation)
 
     # receive raw data stream, reshape to slice dimensions
-    data = sock.recv(flags=0, copy=True, track=False)
-    pixel_array = np.fromstring(data, dtype=sliceDtype)
+    data = sock.recv(flags=0, copy=False, track=False)
+    pixel_array = np.frombuffer(data, dtype=sliceDtype)
     pixel_array = pixel_array.reshape(sliceShape)
+    print('origin received: {}'.format(pixel_array[0,0]))
 
-    if volNum >= image_matrix.shape[3]:
-        testImage = nib.Nifti1Image(image_matrix, affine=np.eye(4))
-        testImage.to_filename('testImage.nii.gz')
+    if volIdx >= image_matrix.shape[3]:
+
+        ### THIS WORKS - MAKE MORE ELEGANT
+        # create affine
+        imgOr = slice1_or*3.75
+        affine = np.zeros(shape=(4,4))
+        affine[0,0] = imgOr[3]
+        affine[1,0] = imgOr[4]
+        affine[2,0] = imgOr[5]
+        affine[0,1] = imgOr[0]
+        affine[1,1] = imgOr[1]
+        affine[2,1] = imgOr[2]
+
+        affine[0,2] = (slice1_pos[0] - sliceEnd_pos[0])/1-33
+        affine[1,2] = (slice1_pos[1] - sliceEnd_pos[1])/1-33
+        affine[2,2] = (slice1_pos[2] - sliceEnd_pos[2])/1-33
+
+        affine[0,3] = slice1_pos[0]
+        affine[1,3] = slice1_pos[1]
+        affine[2,3] = slice1_pos[2]
+
+        affine[3,3] = 1
+
+        testImage = nib.Nifti1Image(image_matrix, affine=affine)
+        testImage.to_filename('testImage1.nii.gz')
         break
 
     # add the pixel data to the appropriate slice location
-    image_matrix[:, :, sliceNum, volNum] = pixel_array
+    image_matrix[:, :, sliceIdx, volIdx] = pixel_array
 
     # send slice over socket
-    response = 'Received vol {}, slice {}'.format(volNum, sliceNum)
+    response = 'Received vol {}, slice {}'.format(volIdx, sliceIdx)
     sock.send_string(response)
     print(response)
