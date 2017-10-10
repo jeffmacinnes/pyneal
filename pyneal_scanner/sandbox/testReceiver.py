@@ -76,9 +76,9 @@ while True:
         affine[1,1] = imgOr[1]
         affine[2,1] = imgOr[2]
 
-        affine[0,2] = (slice1_pos[0] - sliceEnd_pos[0])/1-33
-        affine[1,2] = (slice1_pos[1] - sliceEnd_pos[1])/1-33
-        affine[2,2] = (slice1_pos[2] - sliceEnd_pos[2])/1-33
+        affine[0,2] = (slice1_pos[0] - sliceEnd_pos[0])/(1-33)
+        affine[1,2] = (slice1_pos[1] - sliceEnd_pos[1])/(1-33)
+        affine[2,2] = (slice1_pos[2] - sliceEnd_pos[2])/(1-33)
 
         affine[0,3] = slice1_pos[0]
         affine[1,3] = slice1_pos[1]
