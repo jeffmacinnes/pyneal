@@ -17,11 +17,12 @@ host = 'localhost'
 port = 50001
 
 
-image_matrix = np.zeros(shape=(64, 64, 34, 10))	# build empty data matrix (xyzt)
+image_matrix = np.zeros(shape=(64, 64, 18, 10))	# build empty data matrix (xyzt)
 
 context = zmq.Context.instance()
 sock = context.socket(zmq.REP)
 sock.connect('tcp://{}:{}'.format(host,port))
+print('here')
 
 slice1_pos = None
 slice1_or = None
@@ -40,7 +41,7 @@ while True:
     sliceShape = sliceInfo['shape']
     imagePosition = sliceInfo['imagePosition']
     imageOrientation = sliceInfo['imageOrientation']
-    #print(type(imagePosition[0]))
+    print(type(imagePosition[0]))
     #print(imagePosition)
 
 
@@ -51,10 +52,10 @@ while True:
         if sliceIdx == 0:
             slice1_or = np.asarray(imageOrientation)
     if sliceEnd_pos is None:
-        if sliceIdx == 33:
+        if sliceIdx == 17:
             sliceEnd_pos = np.asarray(imagePosition)
     if sliceEnd_or is None:
-        if sliceIdx == 33:
+        if sliceIdx == 17:
             sliceEnd_or = np.asarray(imageOrientation)
 
     # receive raw data stream, reshape to slice dimensions
@@ -76,9 +77,9 @@ while True:
         affine[1,1] = imgOr[1]
         affine[2,1] = imgOr[2]
 
-        affine[0,2] = (slice1_pos[0] - sliceEnd_pos[0])/(1-33)
-        affine[1,2] = (slice1_pos[1] - sliceEnd_pos[1])/(1-33)
-        affine[2,2] = (slice1_pos[2] - sliceEnd_pos[2])/(1-33)
+        affine[0,2] = (slice1_pos[0] - sliceEnd_pos[0])/(1-17)
+        affine[1,2] = (slice1_pos[1] - sliceEnd_pos[1])/(1-17)
+        affine[2,2] = (slice1_pos[2] - sliceEnd_pos[2])/(1-17)
 
         affine[0,3] = slice1_pos[0]
         affine[1,3] = slice1_pos[1]
