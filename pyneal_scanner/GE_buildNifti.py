@@ -7,6 +7,7 @@ from info in the dicom tags
 
 """
 from __future__ import print_function
+from __future__ import division
 
 import os
 from os.path import join
@@ -86,14 +87,84 @@ class NiftiBuilder():
         for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
             dcm = dicom.read_file(sliceDict[ISPN])
 
+            # grab the slices necessary for creating the affine transformation
+            if sliceIdx == 0:
+                firstSliceDcm = dcm
+            if sliceIdx == nSlices-1:
+                lastSliceDcm = dcm
+
             # put this pixel data in the image matrix
             imageMatrix[:, :, sliceIdx] = dcm.pixel_array
 
-
-        affine = np.eye(4)
+        # create the affine transformation to map from vox to mm space
+        affine = self.createAffine(firstSliceDcm, lastSliceDcm)
 
         return imageMatrix, affine
 
+
+    def createAffine(self, firstSlice, lastSlice):
+        """
+        build an affine transformation matrix that maps from voxel
+        space to mm space.
+
+        For helpful info on how to build this, see:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html
+        http://nipy.org/nibabel/coordinate_systems.html
+        """
+
+        # initialize an empty 4x4 matrix that will serve as our
+        # affine transformation. This will allow us to combine
+        # rotations and translations into the same transform
+        affine = np.zeros(shape=(4,4))
+
+        # but we need to make sure the bottom right position is set to 1
+        affine[3,3] = 1
+
+        # affine[:3, :2] reprsents the rotations needed to position our voxel
+        # array in reference space. We can safely assume these rotations will
+        # be the same for all slices in our 3D volume, so we can just grab the
+        # ImageOrientationPatient tag from the first slice only...
+        imageOrientation = getattr(firstSlice, 'ImageOrientationPatient')
+
+        # multiply the imageOrientation values by the voxel size
+        voxSize = getattr(firstSlice, 'PixelSpacing')
+        imageOrientation = np.array(imageOrientation)*voxSize[0]
+
+        # ...and populate the affine matrix
+        affine[:3,0] = imageOrientation[:3]
+        affine[:3,1] = imageOrientation[3:]
+
+        # affine[:3,3] represents the translations along the x,y,z axis,
+        # respectively, that would bring voxel location 0,0,0 to the origin
+        # of the reference space. Thus, we can grab these 3 values from the
+        # ImagePositionPatient tag of the first slice as well
+        # (first slice is z=0, so has voxel 0,0,0):
+        imagePosition = getattr(firstSlice, 'ImagePositionPatient')
+
+        # ...and populate the affine matrix
+        affine[:3,3] = imagePosition
+
+        # affine[:3,2] represents the translations needed to go from the first
+        # slice to the last slice. So we need to know the positon of the last slice
+        # before we can fill in these values. First, we figure out the spatial difference
+        # between the first and last slice.
+        firstSliceImagePos = getattr(firstSlice, 'ImagePositionPatient')
+        lastSliceImagePos = getattr(lastSlice, 'ImagePositionPatient')
+        positionDiff = np.array([
+                            firstSliceImagePos[0] - lastSliceImagePos[0],
+                            firstSliceImagePos[1] - lastSliceImagePos[1],
+                            firstSliceImagePos[2] - lastSliceImagePos[2]
+                        ])
+
+        # divide each element of the difference in position by 1-numSlices
+        numSlices = getattr(firstSlice, 'ImagesInAcquisition')
+        positionDiff = positionDiff/(1-numSlices)
+
+        # ...and populate the affine
+        affine[:3,2] = positionDiff
+
+        # all done, return the affine
+        return affine
 
 
     def getScanType(self, sliceDcm):
