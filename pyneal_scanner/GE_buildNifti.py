@@ -46,8 +46,15 @@ class NiftiBuilder():
         #### TMP
         fName = os.path.split(self.seriesDir)[-1]
         print('fNAME: {}'.format(fName))
-        testImage = nib.Nifti1Image(self.dataset, affine=self.affine)
-        testImage.to_filename(fName + '.nii.gz')
+        testImage = nib.Nifti2Image(self.dataset, affine=self.affine)
+        hdr = testImage.header
+        hdr.set_sform(np.diag([2,2,2,1]), code='mni')
+        print(testImage.header)
+
+        #testImage.update_header()
+
+        nib.save(testImage, (fName+'.nii.gz'))
+        #testImage.to_filename(fName + '.nii.gz')
 
 
     def buildAnat(self, dicomFiles):
@@ -94,10 +101,15 @@ class NiftiBuilder():
                 lastSliceDcm = dcm
 
             # put this pixel data in the image matrix
-            imageMatrix[:, :, sliceIdx] = dcm.pixel_array
+            pixel_array = dcm.pixel_array
+            pixel_array = np.fliplr(pixel_array)
+            pixel_array = np.flipud(pixel_array)
+            imageMatrix[:, :, sliceIdx] = pixel_array.T
 
         # create the affine transformation to map from vox to mm space
         affine = self.createAffine(firstSliceDcm, lastSliceDcm)
+        affine = np.eye(4)
+        #affine = np.diag([2,2,2,1])
 
         return imageMatrix, affine
 
@@ -108,7 +120,7 @@ class NiftiBuilder():
         space to mm space.
 
         For helpful info on how to build this, see:
-        http://nipy.org/nibabel/dicom/dicom_orientation.html
+        http://nipy.org/nibabel/dicom/dicom_orientation.html &
         http://nipy.org/nibabel/coordinate_systems.html
         """
 
