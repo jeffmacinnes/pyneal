@@ -5,6 +5,7 @@ User supplies path to a series directory containing dicom slices. Image
 parameters, like voxel spacing and dimensions, are obtained automatically
 from info in the dicom tags
 
+Output is a Nifti2 formatted 4D file
 """
 from __future__ import print_function
 from __future__ import division
@@ -33,15 +34,15 @@ class NiftiBuilder():
         self.affine = None
 
         # make a list of all of the dicoms in this dir
-        rawDicoms = [f for f in os.listdir(seriesDir) if GE_filePattern.match(f)]
+        self.rawDicoms = [f for f in os.listdir(seriesDir) if GE_filePattern.match(f)]
 
         # figure out what type of image this is, 4d or 3d
-        self.scanType = self.getScanType(rawDicoms[0])
+        self.scanType = self.getScanType(self.rawDicoms[0])
 
         if self.scanType == 'anat':
-            self.niftiImage = self.buildAnat(rawDicoms)
+            self.niftiImage = self.buildAnat(self.rawDicoms)
         elif self.scanType == 'func':
-            self.dataset, self.affine = self.buildFunc(rawDicoms)
+            self.niftiImage = self.buildFunc(self.rawDicoms)
 
         # Write the output to disk
         fName = '{}_{}.nii.gz'.format(self.scanType, os.path.split(self.seriesDir)[-1])
@@ -119,12 +120,90 @@ class NiftiBuilder():
         # be a scale transform that scales each dimension to the appropriate
         # voxel size
         affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
-        #affine = self.createAffine(firstSliceDcm, lastSliceDcm)
 
         ### Build a Nifti object
         anatImage = nib.Nifti2Image(imageMatrix, affine=affine)
 
         return anatImage
+
+
+    def buildFunc(self, dicomFiles):
+        """
+        Given a list of dicomFiles, build a 4D functional image from them.
+        Figure out the image dimensions and affine transformation to map
+        from voxels to mm from the dicom tags
+        """
+
+        # read the first dicom in the list to get overall image dimensions
+        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        sliceDims = (getattr(dcm, 'Rows'), getattr(dcm, 'Columns'))
+        nSlices = getattr(dcm, 'ImagesInAcquisition')
+        nVols = getattr(dcm, 'NumberOfTemporalPositions')
+        sliceThickness = getattr(dcm, 'SliceThickness')
+        voxSize = getattr(dcm, 'PixelSpacing')
+
+
+        ### Build 4D array of voxel data
+        # create an empty array to store the slice data
+        imageMatrix = np.zeros(shape=(
+                                sliceDims[0],
+                                sliceDims[1],
+                                nSlices,
+                                nVols),
+                                dtype='int16'
+                            )
+        print('Nifti image dims: {}'.format(imageMatrix.shape))
+
+        ### Assemble 4D matrix
+        # loop over every dicom file
+        for s in dicomFiles:
+
+            # read in the dcm file
+            dcm = dicom.read_file(join(self.seriesDir, s))
+
+            # The dicom tag 'InStackPositionNumber' will tell
+            # what slice number within a volume this dicom is.
+            # Note: InStackPositionNumber uses one-based indexing
+            sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
+
+            # We can figure out the volume index using the dicom
+            # tags "InstanceNumber" (# out of all images), and
+            # "ImagesInAcquisition" (# of slices in a single vol).
+            # Divide InstanceNumber by ImagesInAcquisition and drop
+            # the remainder. Note: InstanceNumber is also one-based index
+            instanceIdx = getattr(dcm, 'InstanceNumber')-1
+            volIdx = int(np.floor(instanceIdx/nSlices))
+            
+            # extract the pixel data as a numpy array
+            pixel_array = dcm.pixel_array
+
+            # GE DICOM images are collected in an LPS+ coordinate
+            # system. For the purposes of standardizing everything
+            # in pyneal we need to convert to and RAS+ coordinate system.
+            # In other words, need to flip our data array along the
+            # first axis (left/right), and then flip along the 2nd axis
+            # (up/down). This is equivalent to rotating the array 180 degrees
+            # (less steps = better).
+            pixel_array = np.rot90(pixel_array, k=2)
+
+            # Next, numpy arrays are indexed as [row, col], which in
+            # cartesian coords translats to [y,x]. We want our data to
+            # be an array that is indexed like [x,y,z,t], so we need to
+            # transpose each slice before adding to the full dataset
+            imageMatrix[:, :, sliceIdx, volIdx] = pixel_array.T
+
+        ### create the affine transformation to map from vox to mm space
+        # Our reference space (in mm) will have the same origin and
+        # axes as the voxel array. So, our affine transform just needs to
+        # be a scale transform that scales each dimension to the appropriate
+        # voxel size
+        affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+
+        ### Build a Nifti object
+        funcImage = nib.Nifti2Image(imageMatrix, affine=affine)
+
+        return funcImage
+
 
 
     def createAffineOLD(self, firstSlice, lastSlice):
@@ -211,11 +290,6 @@ class NiftiBuilder():
             sys.exit()
 
         return scanType
-
-
-
-
-
 
 
 if __name__ == '__main__':
