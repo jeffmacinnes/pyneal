@@ -3,5 +3,5 @@
 #*
 *~
 .DS_Store
-*scannerSettings.json
+*scannerConfig.yaml
 *.log

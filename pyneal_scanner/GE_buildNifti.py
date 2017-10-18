@@ -173,7 +173,7 @@ class NiftiBuilder():
             # the remainder. Note: InstanceNumber is also one-based index
             instanceIdx = getattr(dcm, 'InstanceNumber')-1
             volIdx = int(np.floor(instanceIdx/nSlices))
-            
+
             # extract the pixel data as a numpy array
             pixel_array = dcm.pixel_array
 
@@ -302,4 +302,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # build nifti for this dir
-    a = NiftiBuilder(args.seriesDir)
+    NiftiBuilder(args.seriesDir)
