@@ -21,6 +21,9 @@ class ScannerSettings():
 
     If no scanner config file exists, user will be prompted to fill in
     values and a config file will be written
+
+    This class contains methods for returning specific configuration settings
+    that may be needed by other components of Pyneal
     """
 
     def __init__(self, settingsDir, config_fname='scannerConfig.yaml'):
@@ -39,9 +42,12 @@ class ScannerSettings():
             with open(self.config_file, 'r') as ymlFile:
                 self.scannerSettings = yaml.load(ymlFile)
         else:
-            # create a file
+            # or create the configuration file
             with open(self.config_file, 'w') as ymlFile:
                 pass
+
+        # if the yaml config file exists, but is empty, it'll return None.
+        # this will make sure self.scannerSettings is a dict before progressing
         if self.scannerSettings is None:
             self.scannerSettings = {}
 
@@ -88,6 +94,14 @@ class ScannerSettings():
 
         # return response
         return self.scannerSettings['socketPort']
+    
+
+    def get_all_settings(self):
+        """
+        Return the scannerSettings dictionary
+        """
+        return self.scannerSettings
+
 
     def set_scannerSetting(self, dictKey, instructions=None):
         """
@@ -106,7 +120,7 @@ class ScannerSettings():
         userResponse = input()
 
         # store the userResponse in scannerSettings
-        self.scannerSettings[dictKey] = str(userResponse)
+        self.scannerSettings[dictKey] = userResponse
 
         # write the new value to the config file
         with open(self.config_file, 'w') as ymlFile:

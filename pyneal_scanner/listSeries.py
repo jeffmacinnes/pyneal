@@ -15,19 +15,46 @@ from utils.general_utils import ScannerSettings
 
 if __name__ == '__main__':
 
-    # retrieve the path to the directory that holds this script
+    # Retrieve the path to the directory that holds this script
     pynealScannerDir = os.path.dirname(os.path.abspath(__file__))
 
-    # initialize the ScannerSetting class. This will take care of
+    # Initialize the ScannerSetting class. This will take care of
     # reading the config file (if found), or creating one if necessary
     scannerConfig = ScannerSettings(pynealScannerDir)
 
-    # get the scanner manufacturer
-    scannerMake = scannerConfig.get_scannerMake()
-    print('scanner make is {}'.format(scannerMake))
+    # Retrieve a dictionary of all settings in the config file
+    scannerSettings = scannerConfig.get_all_settings()
 
-    scannerPort= scannerConfig.get_socketPort()
-    print('Scanner Port is: {}'.format(scannerPort))
+    # Get the scanner make from the dictionary, and
+    # if its not there, prompt user for it
+    if 'scannerMake' in scannerSettings:
+        scannerMake = scannerSettings['scannerMake']
+    else:
+        scannerMake = scannerConfig.get_scannerMake()
+    print('Scanning Environment: {}'.format(scannerMake))
 
-    scannerHost = scannerConfig.get_socketHost()
-    print('scanner host is: {}'.format(scannerHost))
+    # Import the appropriate tools for this scanning environment.
+    # Regardless of the environment, give the tools the same name
+    # so subsequent steps can proceed
+    if scannerMake == 'GE':
+        from utils.GE_utils import GE_DirStructure as ScannerDirs
+
+        # check to see if a base directory is specified in the
+        # scanner settings dict.
+        if 'scannerBaseDir' in scannerSettings:
+            thisDirStruct = ScannerDirs(baseDir=scannerSettings['scannerBaseDir'])
+        else:
+            thisDirStruct = ScannerDirs()
+
+
+
+    elif scannerMake == 'Phillips':
+        # fill in methods as they become available
+        pass
+
+    elif scannerMake == 'Siemens':
+        # fill in methods as they become available
+        pass
+
+    else:
+        print('Unrecognized Scanner Make: {}'.format(scannerMake))
