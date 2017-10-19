@@ -38,16 +38,6 @@ if __name__ == '__main__':
     # so subsequent steps can proceed
     if scannerMake == 'GE':
         from utils.GE_utils import GE_DirStructure as ScannerDirs
-
-        # check to see if a base directory is specified in the
-        # scanner settings dict.
-        if 'scannerBaseDir' in scannerSettings:
-            thisDirStruct = ScannerDirs(baseDir=scannerSettings['scannerBaseDir'])
-        else:
-            thisDirStruct = ScannerDirs()
-
-
-
     elif scannerMake == 'Phillips':
         # fill in methods as they become available
         pass
@@ -58,3 +48,14 @@ if __name__ == '__main__':
 
     else:
         print('Unrecognized Scanner Make: {}'.format(scannerMake))
+
+    # check to see if a base directory is specified in the
+    # scanner settings dict.
+    if 'scannerBaseDir' in scannerSettings:
+        scannerDirs = ScannerDirs(baseDir=scannerSettings['scannerBaseDir'])
+    else:
+        scannerDirs = ScannerDirs()
+
+    # get the session dir
+    sessionDir = scannerDirs.get_sessionDir()
+    print('session dir: {}'.format(sessionDir))
