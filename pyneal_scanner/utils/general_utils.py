@@ -94,7 +94,7 @@ class ScannerSettings():
 
         # return response
         return self.scannerSettings['socketPort']
-    
+
 
     def get_all_settings(self):
         """
@@ -122,6 +122,10 @@ class ScannerSettings():
         # store the userResponse in scannerSettings
         self.scannerSettings[dictKey] = userResponse
 
+        # save the file
+        self.writeSettingsFile()
+
+    def writeSettingsFile(self):
         # write the new value to the config file
         with open(self.config_file, 'w') as ymlFile:
             yaml.dump(self.scannerSettings, ymlFile, default_flow_style=False)

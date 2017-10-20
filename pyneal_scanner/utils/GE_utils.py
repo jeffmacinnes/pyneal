@@ -119,8 +119,6 @@ class GE_DirStructure():
         if self.sessionDir is None:
             self.findSessionDir()
 
-        print('session dir: {}'.format(self.sessionDir))
-
         # get a list of all series dirs in the sessionDir
         seriesDirs = self._findAllSubdirs(self.sessionDir)
 

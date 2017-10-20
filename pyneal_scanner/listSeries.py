@@ -12,10 +12,8 @@ from os.path import join
 
 from utils.general_utils import ScannerSettings
 
-
-if __name__ == '__main__':
-
-    # Retrieve the path to the directory that holds this script
+def listSeries():
+    # Path to this directory
     pynealScannerDir = os.path.dirname(os.path.abspath(__file__))
 
     # Initialize the ScannerSetting class. This will take care of
@@ -31,30 +29,45 @@ if __name__ == '__main__':
         scannerMake = scannerSettings['scannerMake']
     else:
         scannerMake = scannerConfig.get_scannerMake()
+    print('='*15)
     print('Scanning Environment: {}'.format(scannerMake))
 
     # Import the appropriate tools for this scanning environment.
     # Regardless of the environment, give the tools the same name
     # so subsequent steps can proceed
     if scannerMake == 'GE':
+        #######################################
+        ### ---- GE RELEVANT COMMANDS ----- ###
+        #######################################
         from utils.GE_utils import GE_DirStructure as ScannerDirs
+
+        # check to see if a base directory is specified already
+        if 'scannerBaseDir' in scannerSettings:
+            scannerDirs = ScannerDirs(baseDir=scannerSettings['scannerBaseDir'])
+        else:
+            scannerDirs = ScannerDirs()
+
+        # List all of the current series
+        scannerDirs.listSeriesDirs()
+
+
     elif scannerMake == 'Phillips':
-        # fill in methods as they become available
+        #############################################
+        ### ---- Phillips RELEVANT COMMANDS ----- ###
+        #############################################
         pass
 
     elif scannerMake == 'Siemens':
-        # fill in methods as they become available
+        ############################################
+        ### ---- Siemens RELEVANT COMMANDS ----- ###
+        ############################################
         pass
 
     else:
         print('Unrecognized Scanner Make: {}'.format(scannerMake))
 
-    # check to see if a base directory is specified in the
-    # scanner settings dict.
-    if 'scannerBaseDir' in scannerSettings:
-        scannerDirs = ScannerDirs(baseDir=scannerSettings['scannerBaseDir'])
-    else:
-        scannerDirs = ScannerDirs()
 
-    # List all of the current series
-    scannerDirs.listSeriesDirs()
+
+# If called directly from the command line
+if __name__ == '__main__':
+    listSeries()
