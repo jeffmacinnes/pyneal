@@ -51,10 +51,7 @@ class GE_DirStructure():
         self.sessionDir = None
         self.pDir = None
         self.eDir = None
-        self.seriesDirs = {}
-
-        # try to find the sessionDir first
-        self.pDir, self.eDir, self.sessionDir = self.findSessionDir()
+        self.seriesDirs = None
 
 
     def findSessionDir(self):
@@ -62,54 +59,103 @@ class GE_DirStructure():
         Find the most recently modified p###/e### directory in the
         baseDir
         """
-
-        # Find the most recent p### dir
         try:
-            # Find all subdirectores in the baseDir
-            pDirs = self._findAllSubdirs(self.baseDir)
+            # Find the most recent p### dir
+            try:
+                # Find all subdirectores in the baseDir
+                pDirs = self._findAllSubdirs(self.baseDir)
 
-            # remove any dirs that don't start with p
-            pDirs = [x for x in pDirs if os.path.split(x[0])[-1][0] == 'p']
+                # remove any dirs that don't start with p
+                pDirs = [x for x in pDirs if os.path.split(x[0])[-1][0] == 'p']
 
-            # sort based on modification time, take the most recent
-            pDirs = sorted(pDirs, key=lambda x: x[1], reverse=True)
-            newest_pDir = pDirs[0][0]
+                # sort based on modification time, take the most recent
+                pDirs = sorted(pDirs, key=lambda x: x[1], reverse=True)
+                newest_pDir = pDirs[0][0]
 
-            # just the p### portion
-            pDir = os.path.split(newest_pDir)[-1]
+                # just the p### portion
+                pDir = os.path.split(newest_pDir)[-1]
 
+            except:
+                print('Error: Could not find any p### dirs in {}'.format(self.baseDir))
+
+            # Find the most recent e### dir
+            try:
+                # find all subdirectories in the most recent p### dir
+                eDirs = self._findAllSubdirs(newest_pDir)
+
+                # remove any dirs that don't start with e
+                eDirs = [x for x in eDirs if os.path.split(x[0])[-1][0] == 'e']
+
+                # sort based on modification time, take the most recent
+                eDirs = sorted(eDirs, key=lambda x: x[1], reverse=True)
+                newest_eDir = eDirs[0][0]
+
+                # just the e### portion
+                eDir = os.path.split(newest_eDir)[-1]
+
+            except:
+                print('Error: Could not find an e### dirs in {}'.format(newest_pDir))
+
+            # set the session dir as the full path including the eDir
+            sessionDir = newest_eDir
         except:
-            print('Error: Could not find any p### dirs in {}'.format(self.baseDir))
+            print('Error: Failed to find a sessionDir')
+            sessionDir = None
+            pDir = None
+            eDir = None
 
-        # Find the most recent e### dir
-        try:
-            # find all subdirectories in the most recent p### dir
-            eDirs = self._findAllSubdirs(newest_pDir)
+        # set values to these attributes
+        self.pDir = pDir
+        self.eDir = eDir
+        self.sessionDir = sessionDir
 
-            # remove any dirs that don't start with e
-            eDirs = [x for x in eDirs if os.path.split(x[0])[-1][0] == 'e']
 
-            # sort based on modification time, take the most recent
-            eDirs = sorted(eDirs, key=lambda x: x[1], reverse=True)
-            newest_eDir = eDirs[0][0]
-
-            # just the e### portion
-            eDir = os.path.split(newest_eDir)[-1]
-
-        except:
-            print('Error: Could not find an e### dirs in {}'.format(newest_pDir))
-
-        # set the session dir as the full path including the eDir
-        sessionDir = newest_eDir
-
-        return pDir, eDir, sessionDir
-
-    def findAllSeries(self, sessionDir):
+    def listSeriesDirs(self):
         """
-        Return a list of all of the series dirs within the specified
-        sessionDir
+        Find all of the series dirs in given sessionDir, and print them
+        all, along with time since last modification, and directory size
         """
-        pass
+        # find the sessionDir, if not already found
+        if self.sessionDir is None:
+            self.findSessionDir()
+
+        print('session dir: {}'.format(self.sessionDir))
+
+        # get a list of all series dirs in the sessionDir
+        seriesDirs = self._findAllSubdirs(self.sessionDir)
+
+        if seriesDirs is not None:
+            # sort based on modification time
+            seriesDirs = sorted(seriesDirs, key=lambda x: x[1])
+
+            # print directory info to the screen
+            print('{}'.format('='*15))
+            print('Session Dir: ')
+            print('{}'.format(self.sessionDir))
+            print('Series Dirs: ')
+
+            currentTime = int(time.time())
+            for s in seriesDirs:
+                # get the info from this series dir
+                dirName = s[0].split('/')[-1]
+
+                # calculate & format directory size
+                dirSize = sum([os.path.getsize(join(s[0], f)) for f in os.listdir(s[0])])
+                if dirSize < 1000:
+                    size_string = '{:5.1f} bytes'.format(dirSize)
+                elif 1000 <= dirSize < 1000000:
+                    size_string = '{:5.1f} kB'.format(dirSize/1000)
+                elif 1000000 <= dirSize:
+                    size_string = '{:5.1f} MB'.format(dirSize/1000000)
+
+                # calculate time (in mins/secs) since it was modified
+                mTime = s[1]
+                timeElapsed = currentTime - mTime
+                m,s = divmod(timeElapsed,60)
+                time_string = '{} min, {} s ago'.format(int(m),int(s))
+
+                print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
+
 
     def _findAllSubdirs(self, parentDir):
         """

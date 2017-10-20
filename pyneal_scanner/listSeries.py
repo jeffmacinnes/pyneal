@@ -56,6 +56,5 @@ if __name__ == '__main__':
     else:
         scannerDirs = ScannerDirs()
 
-    # get the session dir
-    sessionDir = scannerDirs.get_sessionDir()
-    print('session dir: {}'.format(sessionDir))
+    # List all of the current series
+    scannerDirs.listSeriesDirs()
