@@ -23,19 +23,13 @@ def listSeries():
     # Retrieve a dictionary of all settings in the config file
     scannerSettings = scannerConfig.get_all_settings()
 
-    # Get the scanner make from the dictionary, and
-    # if its not there, prompt user for it
-    if 'scannerMake' in scannerSettings:
-        scannerMake = scannerSettings['scannerMake']
-    else:
-        scannerMake = scannerConfig.get_scannerMake()
     print('='*15)
-    print('Scanning Environment: {}'.format(scannerMake))
+    print('Scanning Environment: {}'.format(scannerSettings['scannerMake']))
 
     # Import the appropriate tools for this scanning environment.
     # Regardless of the environment, give the tools the same name
     # so subsequent steps can proceed
-    if scannerMake == 'GE':
+    if scannerSettings['scannerMake'] == 'GE':
         #######################################
         ### ---- GE RELEVANT COMMANDS ----- ###
         #######################################
@@ -51,20 +45,20 @@ def listSeries():
         scannerDirs.listSeriesDirs()
 
 
-    elif scannerMake == 'Phillips':
+    elif scannerSettings['scannerMake'] == 'Phillips':
         #############################################
         ### ---- Phillips RELEVANT COMMANDS ----- ###
         #############################################
         pass
 
-    elif scannerMake == 'Siemens':
+    elif scannerSettings['scannerMake'] == 'Siemens':
         ############################################
         ### ---- Siemens RELEVANT COMMANDS ----- ###
         ############################################
         pass
 
     else:
-        print('Unrecognized Scanner Make: {}'.format(scannerMake))
+        print('Unrecognized Scanner Make: {}'.format(scannerSettings['scannerMake']))
 
 
 

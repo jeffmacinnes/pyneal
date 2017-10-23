@@ -51,6 +51,18 @@ class ScannerSettings():
         if self.scannerSettings is None:
             self.scannerSettings = {}
 
+        # Get the scanner make from the dictionary, and
+        # if its not there, prompt user for it
+        ### CONSIDER HAVING THIS LOOP OVER ALL REQUIRED SETTINGS
+        ### TO CHECK IF THEY EXIST
+        if 'scannerMake' not in self.scannerSettings:
+            self.get_scannerMake()
+
+        print('='*15)
+        print('SCANNER SETTINGS: ')
+        for s in self.scannerSettings:
+            print('{}: {}'.format(s, self.scannerSettings[s]))
+
 
     def get_scannerMake(self):
         """
