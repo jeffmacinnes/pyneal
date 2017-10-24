@@ -31,8 +31,8 @@ class ScannerSettings():
         Initialize the class, read yaml config file, create one
         if necessary
         """
-        # initialize var to store dict of scannerSettings
-        self.scannerSettings = None
+        # initialize var to store dict of all of the config parameters
+        self.allSettings = None
         self.config_file = join(settingsDir, config_fname)
 
         # when class is initiated, attempts to find a scanner config file
@@ -40,88 +40,94 @@ class ScannerSettings():
         if os.path.isfile(self.config_file):
             # open the file, create dict of all scanner settings
             with open(self.config_file, 'r') as ymlFile:
-                self.scannerSettings = yaml.load(ymlFile)
+                self.allSettings = yaml.load(ymlFile)
         else:
             # or create the configuration file
             with open(self.config_file, 'w') as ymlFile:
                 pass
 
         # if the yaml config file exists, but is empty, it'll return None.
-        # this will make sure self.scannerSettings is a dict before progressing
-        if self.scannerSettings is None:
-            self.scannerSettings = {}
+        # this will make sure self.allSettings is a dict before progressing
+        if self.allSettings is None:
+            self.allSettings = {}
 
         # Get the scanner make from the dictionary, and
         # if its not there, prompt user for it
         ### CONSIDER HAVING THIS LOOP OVER ALL REQUIRED SETTINGS
         ### TO CHECK IF THEY EXIST
-        if 'scannerMake' not in self.scannerSettings:
+        if 'scannerMake' not in self.allSettings:
             self.get_scannerMake()
 
+
+    def print_allSettings(self):
+        """
+        Print all of the current scanner settings to std.out
+        """
         print('='*15)
         print('SCANNER SETTINGS: ')
-        for s in self.scannerSettings:
-            print('{}: {}'.format(s, self.scannerSettings[s]))
+        for s in self.allSettings:
+            print('{}: {}'.format(s, self.allSettings[s]))
+        print('='*15)
 
 
     def get_scannerMake(self):
         """
         Return the make of the scanner (e.g. GE)
         """
-        # check if scannerMake already exists scannerSettings dict
-        if 'scannerMake' in self.scannerSettings:
-            self.scannerMake = self.scannerSettings['scannerMake']
+        # check if scannerMake already exists allSettings dict
+        if 'scannerMake' in self.allSettings:
+            self.scannerMake = self.allSettings['scannerMake']
         else:
-            self.scannerMake = self.set_scannerSetting('scannerMake',
+            self.scannerMake = self.set_config('scannerMake',
                 instructions="type: GE, Phillips, or Siemens")
 
         # return response
-        return self.scannerSettings['scannerMake']
+        return self.allSettings['scannerMake']
 
     def get_socketHost(self):
         """
         Return the host IP for the socket the scanner should communicate over
         """
-        # check if socketHost already exists in the scannerSettings dict
-        if 'socketHost' in self.scannerSettings:
-            self.socketHost = self.scannerSettings['socketHost']
+        # check if socketHost already exists in the allSettings dict
+        if 'socketHost' in self.allSettings:
+            self.socketHost = self.allSettings['socketHost']
         else:
-            self.set_scannerSetting('socketHost',
+            self.set_setting('socketHost',
                 instructions="IP address of machine running real-time analysis")
 
         # return response
-        return self.scannerSettings['socketHost']
+        return self.allSettings['socketHost']
 
 
     def get_socketPort(self):
         """
         Return the port number for the socket the scanner should communicate over
         """
-        # check if socketPort already exists in the scannerSettings dict
-        if 'socketPort' in self.scannerSettings:
-            self.socketPort = self.scannerSettings['socketPort']
+        # check if socketPort already exists in the allSettings dict
+        if 'socketPort' in self.allSettings:
+            self.socketPort = self.allSettings['socketPort']
         else:
-            self.set_scannerSetting('socketPort',
+            self.set_config('socketPort',
                 instructions='Port # for communicating with real-time analysis machine')
 
         # return response
-        return self.scannerSettings['socketPort']
+        return self.allSettings['socketPort']
 
 
-    def get_all_settings(self):
+    def get_allSettings(self):
         """
-        Return the scannerSettings dictionary
+        Return the allSettings dictionary
         """
-        return self.scannerSettings
+        return self.allSettings
 
 
-    def set_scannerSetting(self, dictKey, instructions=None):
+    def set_config(self, dictKey, instructions=None):
         """
-        prompt user for the specified parameter. [optional] instructions will
+        prompt user for the specified config parameter. [optional] instructions will
         be printed to the screen to show users how to format input.
 
         The input values supplied by the user will be stored in the
-        scannerSettings dictionary, as well as written to the yaml config file
+        allSettings dictionary, as well as written to the yaml config file
         """
         # print instructions to user
         print('Please enter the {}'.format(dictKey))
@@ -131,8 +137,8 @@ class ScannerSettings():
         # ask for input
         userResponse = input()
 
-        # store the userResponse in scannerSettings
-        self.scannerSettings[dictKey] = userResponse
+        # store the userResponse in allSettings
+        self.allSettings[dictKey] = userResponse
 
         # save the file
         self.writeSettingsFile()
@@ -140,4 +146,48 @@ class ScannerSettings():
     def writeSettingsFile(self):
         # write the new value to the config file
         with open(self.config_file, 'w') as ymlFile:
-            yaml.dump(self.scannerSettings, ymlFile, default_flow_style=False)
+            yaml.dump(self.allSettings, ymlFile, default_flow_style=False)
+
+
+
+def initializeSession():
+    """
+    Method that gets called at the beginning of any of the
+    pyneal_scanner command line functions. This method will return
+    two things:
+        - scannerSettings: [object] - Class that reads the current scannerSettings config
+                file, or creates one if necessary. Stores all of the current
+                scan settings as a dictionary in an attribute named 'allSettings'.
+                Contains methods for getting & writing a config file with new
+                settings.
+
+        - scannerDirs: [object] - Class that stores all of the relevant dirs and
+                path info for a particular scanning environment. The particular
+                attributes will vary according to the specific environment.
+    """
+
+    # path to the pyneal dir (this assumes this file is stored in a directory
+    # one level deeper than the pyneal_scanner dir, AND that this method will only ever
+    # be called by command line functions in the pyneal_scanner dir)
+    pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+    # Intialize the ScannerSettings class. This will take care of reading the
+    # config file (if found), or creating one if necessary.
+    scannerSettings = ScannerSettings(pynealScannerDir)
+
+    # Initialize the ScannerDirs class. Which flavor of this to load will
+    # depend on the particular scanning environment, so check the scannerSettings
+    scannerMake = scannerSettings.allSettings['scannerMake']
+    if scannerMake == 'GE':
+        from utils.GE_utils import GE_DirStructure
+
+        scannerDirs = GE_DirStructure(scannerSettings)
+
+    elif scannerMake == 'Phillips':
+        print('no ScannerDirs for Phillips scanners yet...')
+    elif scannerMake == 'Siemens':
+        print('no ScannerDirs for Siemens scanners yet...')
+    else:
+        print('Unrecognized Scanner Make: {}'.format(scannerMake))
+
+    return scannerSettings, scannerDirs

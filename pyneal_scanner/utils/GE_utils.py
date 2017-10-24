@@ -9,7 +9,7 @@ import sys
 import time
 
 
-GE_baseDir = '/export/home1/sdc_image_pool/images'
+GE_default_baseDir = '/export/home1/sdc_image_pool/images'
 
 
 class GE_DirStructure():
@@ -44,10 +44,13 @@ class GE_DirStructure():
     match a particular task scan (e.g. anatomicals, or experimentRun1) with
     the full path to its raw data on the scanner console
     """
-    def __init__(self, baseDir=GE_baseDir):
+    def __init__(self, scannerSettings):
 
         # initialize the class attributes
-        self.baseDir = baseDir
+        if 'scannerBaseDir' in scannerSettings.allSettings:
+            self.baseDir = scannerSettings.allSettings['scannerBaseDir']
+        else:
+            self.baseDir = GE_default_baseDir
         self.sessionDir = None
         self.pDir = None
         self.eDir = None
@@ -110,7 +113,7 @@ class GE_DirStructure():
         self.sessionDir = sessionDir
 
 
-    def listSeriesDirs(self):
+    def print_seriesDirs(self):
         """
         Find all of the series dirs in given sessionDir, and print them
         all, along with time since last modification, and directory size
@@ -127,7 +130,6 @@ class GE_DirStructure():
             seriesDirs = sorted(seriesDirs, key=lambda x: x[1])
 
             # print directory info to the screen
-            print('{}'.format('='*15))
             print('Session Dir: ')
             print('{}'.format(self.sessionDir))
             print('Series Dirs: ')
