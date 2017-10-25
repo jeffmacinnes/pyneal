@@ -1,5 +1,5 @@
 """
-Set of General Utilities that provide functionality independent of the specific
+Set of general utilities that provide functionality independent of the specific
 scanning environment
 """
 # python 2/3 compatibility

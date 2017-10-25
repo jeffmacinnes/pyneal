@@ -23,12 +23,23 @@ import argparse
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
 
-class NiftiBuilder():
+class GE_BuildNifti():
     """
-    methods and attributes needed to build a nifti image from raw dicom slices
+    Build a 3D or 4D Nifti image from all of the dicom slice imagas in a directory.
+
+    Input is a path to a series directory containing dicom slices. Image
+    parameters, like voxel spacing and dimensions, are obtained automatically
+    from info in the dicom tags
+
+    Output is a Nifti2 formatted 4D file
     """
 
     def __init__(self, seriesDir):
+        """
+        Initialize class:
+            - seriesDir needs to be the full path to directory containing
+            raw dicom slices
+        """
         # initialize attributes
         self.seriesDir = seriesDir
         self.affine = None
@@ -302,4 +313,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # build nifti for this dir
-    NiftiBuilder(args.seriesDir)
+    GE_BuildNifti(args.seriesDir)

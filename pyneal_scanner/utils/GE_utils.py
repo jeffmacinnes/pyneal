@@ -51,10 +51,14 @@ class GE_DirStructure():
             self.baseDir = scannerSettings.allSettings['scannerBaseDir']
         else:
             self.baseDir = GE_default_baseDir
-        self.sessionDir = None
+
         self.pDir = None
         self.eDir = None
+        self.sessionDir = None
         self.seriesDirs = None
+
+        # (hopefully) find and initialize the sessionDir (and subdirs)
+        self.findSessionDir()
 
 
     def findSessionDir(self):
@@ -139,6 +143,8 @@ class GE_DirStructure():
                 # get the info from this series dir
                 dirName = s[0].split('/')[-1]
 
+                # add to self.seriesDirs
+
                 # calculate & format directory size
                 dirSize = sum([os.path.getsize(join(s[0], f)) for f in os.listdir(s[0])])
                 if dirSize < 1000:
@@ -173,6 +179,26 @@ class GE_DirStructure():
 
         # return the subdirectories
         return subDirs
+
+
+    def get_seriesDirs(self):
+        """
+        build a list that contains the directory names of all of the series
+        """
+
+        # get a list of all sub dirs in the sessionDir
+        print
+        subDirs = self._findAllSubdirs(self.sessionDir)
+
+        if subDirs is not None:
+            # extract just the dirname from subDirs and append to a list
+            self.seriesDirs = []
+            for d in subDirs:
+                self.seriesDirs.append(d[0].split('/')[-1])
+        else:
+            self.seriesDirs = None
+
+        return self.seriesDirs
 
 
     def get_pDir(self):
