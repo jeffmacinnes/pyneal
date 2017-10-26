@@ -48,7 +48,9 @@ def getSeries_GE(scannerSettings, scannerDirs):
 
         # progress update to stdOut
         print('')
-        print('Nifti saved to:\n{}'.format(output_fName))
+        print('Saving complete')
+        print('\tOutput Name: {}'.format(os.path.split(output_fName)[1]))
+        print('\tFull Path: {}'.format(output_fName))
 
 
 
@@ -59,8 +61,6 @@ def getSeries_GE(scannerSettings, scannerDirs):
         # check scannerSettings for remote dir and ip address and username
         print('No methods for this yet....')
         pass
-
-
 
 
     # prompt user to specifiy a series. Make sure that it is a valid
