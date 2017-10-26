@@ -117,14 +117,11 @@ class GE_processSlice(Thread):
         # read in the dicom file
         dcmFile = dicom.read_file(dcm_fname)
 
-
         ### Prep the Pixel Data ###
         pixel_array = dcmFile.pixel_array
-        #print('origin prior to rotation: {}'.format(pixel_array[0,0]))
         pixel_array = np.ascontiguousarray(
                         np.rot90(pixel_array, k=2, axes=(0,1))
                         )
-        #print('origin after to rotation: {}'.format(pixel_array[0,0]))
 
         ### Prep the Header ###
         # extract relevant metadata tags from from this slice
@@ -156,7 +153,6 @@ class GE_processSlice(Thread):
 
 
     def stop(self):
-
         # function to stop the Thread
         self.alive = False
 
@@ -178,7 +174,6 @@ def launchScanRead(sessionDir):
     context = zmq.Context.instance()
     sock = context.socket(zmq.REQ)
     sock.bind('tcp://{}:{}'.format(host,port))
-
 
     # wait for series directory to be created
     seriesDir = waitForSeriesDir(sessionDir)

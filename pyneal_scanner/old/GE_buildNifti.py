@@ -33,7 +33,6 @@ class GE_BuildNifti():
 
     Output is a Nifti2 formatted 4D file
     """
-
     def __init__(self, seriesDir):
         """
         Initialize class:
@@ -214,7 +213,6 @@ class GE_BuildNifti():
         funcImage = nib.Nifti2Image(imageMatrix, affine=affine)
 
         return funcImage
-
 
 
     def createAffineOLD(self, firstSlice, lastSlice):
