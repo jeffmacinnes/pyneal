@@ -14,12 +14,19 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 thread = None
 
+
+
 def background_thread():
     while True:
-        newText = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
-        print('sent {}'.format(newText))
-        socketio.emit('message', {'newText': newText})
-        time.sleep(2)
+        newH1= ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        print('sent {}'.format(newH1))
+        socketio.emit('headerText', {'value': newH1})
+
+        newH2 = str(random.choice([1,2,3,4,5,6,7]))
+        print('sent {}'.format(newH2))
+        socketio.emit('header2Text', {'value': newH2})
+        time.sleep(1)
+
 
 @socketio.on('client_connected')
 def handle_client_connect_event(json):

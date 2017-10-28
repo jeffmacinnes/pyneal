@@ -5,12 +5,25 @@ socket.on('connect', function() {
     console.log("this works")
 });
 
-socket.on('message', function(data) {
-    console.log(data);
+socket.on('message', function(msg) {
+    console.log(msg);
     update_header(data.newText);
+})
+
+socket.on('headerText', function(msg) {
+    update_header(msg.value);
+})
+
+socket.on('header2Text', function(msg) {
+    update_header2(msg.value);
 })
 
 
 function update_header(newHeader){
     $('#topTitle').text(newHeader);
+}
+
+
+function update_header2(newHeader){
+    $('#bottomTitle').text(newHeader);
 }
