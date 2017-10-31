@@ -40,9 +40,10 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
     """
     Tools for processing a real-time scan in a GE environment
     """
-    #from utils.GE_utils import GE_rtfMRI
+    from utils.GE_utils import GE_launch_rtfMRI
 
-    logger.debug('You are in GE land, bub!')
+    # launch a real-time session
+    GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
 def pynealScanner_Phillips(scannerSettings, scannerDirs):
     """
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     ### set up logging
     # write log messages to file if they are DEBUG level or higher
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s',
+                        format='%(asctime)s - %(levelname)s - %(threadName)s - (%(filename)s) %(funcName)s - %(message)s',
                         datefmt='%m-%d %H:%M:%S',
                         filename='./pynealScanner.log',
                         filemode='w')
@@ -81,6 +82,10 @@ if __name__ == "__main__":
 
     # initialize the session classes:
     scannerSettings, scannerDirs = initializeSession()
+
+    # print all of the current settings and series dirs to the terminal
+    scannerSettings.print_allSettings()
+    scannerDirs.print_seriesDirs()
 
     # load the appropriate tools for this scanning environment
     scannerMake = scannerSettings.allSettings['scannerMake']

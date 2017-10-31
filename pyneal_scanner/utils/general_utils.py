@@ -12,6 +12,7 @@ import sys
 from os.path import join
 
 import yaml
+import zmq
 
 
 class ScannerSettings():
@@ -84,34 +85,34 @@ class ScannerSettings():
         # return response
         return self.allSettings['scannerMake']
 
-    def get_socketHost(self):
+    def get_scannerSocketHost(self):
         """
         Return the host IP for the socket the scanner should communicate over
         """
-        # check if socketHost already exists in the allSettings dict
-        if 'socketHost' in self.allSettings:
-            self.socketHost = self.allSettings['socketHost']
+        # check if scannerSocketHost already exists in the allSettings dict
+        if 'scannerSocketHost' in self.allSettings:
+            self.scannerSocketHost = self.allSettings['scannerSocketHost']
         else:
-            self.set_setting('socketHost',
+            self.set_config('scannerSocketHost',
                 instructions="IP address of machine running real-time analysis")
 
         # return response
-        return self.allSettings['socketHost']
+        return self.allSettings['scannerSocketHost']
 
 
-    def get_socketPort(self):
+    def get_scannerSocketPort(self):
         """
         Return the port number for the socket the scanner should communicate over
         """
-        # check if socketPort already exists in the allSettings dict
-        if 'socketPort' in self.allSettings:
-            self.socketPort = self.allSettings['socketPort']
+        # check if scannerSocketPort already exists in the allSettings dict
+        if 'scannerSocketPort' in self.allSettings:
+            self.scannerSocketPort = self.allSettings['scannerSocketPort']
         else:
-            self.set_config('socketPort',
+            self.set_config('scannerSocketPort',
                 instructions='Port # for communicating with real-time analysis machine')
 
         # return response
-        return self.allSettings['socketPort']
+        return self.allSettings['scannerSocketPort']
 
 
     def get_allSettings(self):
@@ -147,7 +148,6 @@ class ScannerSettings():
         # write the new value to the config file
         with open(self.config_file, 'w') as ymlFile:
             yaml.dump(self.allSettings, ymlFile, default_flow_style=False)
-
 
 
 def initializeSession():
@@ -191,3 +191,15 @@ def initializeSession():
         print('Unrecognized Scanner Make: {}'.format(scannerMake))
 
     return scannerSettings, scannerDirs
+
+
+def create_scannerSocket(host, port):
+    """
+    create a zero-mq socket to use for communication between
+    pyneal_scanner and a remote source
+    """
+    context = zmq.Context.instance()
+    socket = context.socket(zmq.REQ)
+    socket.bind('tcp://{}:{}'.format(host, port))
+
+    return socket

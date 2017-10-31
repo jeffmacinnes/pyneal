@@ -9,6 +9,9 @@ from os.path import join
 import sys
 import time
 import re
+import logging
+from threading import Thread
+from queue import Queue
 
 import numpy as np
 import dicom
@@ -513,15 +516,97 @@ class GE_BuildNifti():
         nib.save(self.niftiImage, output_fName)
 
 
+class GE_monitorSeriesDir(Thread):
+    """
+    Class to monitor for new slices images to appear in the seriesDir.
+    This class will run indpendently in a separate thread.
+    Each new dicom file that appears will be added to the Queue
+    for further processing
+    """
+    def __init__(self, seriesDir, dicomQ, interval=.2):
+        # start the thead upon creation
+        Thread.__init__(self)
 
-if __name__ == '__main__':
+        # initialize class parameters
+        self.interval = interval            # interval for looping the thread
+        self.seriesDir = seriesDir          # full path to series directory
+        self.dicomQ = dicomQ                # queue to store dicom files
+        self.alive = True                   # thread status
+        self.numSlicesAdded = 0             # counter to keep track of # of slices added overall
+        self.dicom_files = set()            # empty set to store names of processed dicoms
 
-    # set up arg parser:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('seriesDir',
-                        help="Path to the series directory (i.e. where dicom slices images are stored)")
-    # retrieve the args
-    args = parser.parse_args()
+    def run(self):
+        # function that loops while the Thead is still alive
+        while self.alive:
 
-    # build nifti for this dir
-    GE_BuildNifti(args.seriesDir)
+            # create a set of all dicoms currently in the series directory
+            currentDicoms = set(os.listdir(self.seriesDir))
+
+            # grab only the the dicoms which haven't already been added to the queue
+            newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
+
+            # add all of the new dicoms to the queue
+            for f in newDicoms:
+                dicom_fname = join(self.seriesDir, f)
+                try:
+                    self.dicomQ.put(dicom_fname)
+                except:
+                    logger.error('failed on: {}'.format(dicom_fname))
+                    print(sys.exc_info())
+                    sys.exit()
+            logger.debug('Put {} new slices on the queue'.format(len(newDicoms)))
+            self.numSlicesAdded += len(newDicoms)
+
+            # now update the set of dicoms added to the queue
+            self.dicom_files.update(set(newDicoms))
+
+            # pause
+            time.sleep(self.interval)
+
+    def get_numSlicesAdded(self):
+        return self.numSlicesAdded
+
+    def stop(self):
+        # function to stop the Thread
+        self.alive = False
+
+
+def GE_launch_rtfMRI(scannerSettings, scannerDirs):
+    """
+    launch a real-time session in a GE environment. This should be called
+    from pynealScanner.py before starting the scanner. Once called, this
+    method will take care of:
+        - monitoring the sessionDir for a new series directory to appear (and
+        then returing the name of the new series dir)
+        - set up the socket connection to send slice data over
+        - creating a Queue to store newly arriving DICOM files
+        - start a separate thread to monitor the new seriesDir
+        - start a separate thread to process DICOMs that are in the Queue
+    """
+
+    # Create a reference to the logger. This assumes the logger has already
+    # been created and customized by pynealScanner.py
+    logger = logging.getLogger(__name__)
+
+    #### SET UP SCANNERSOCKET (this is what we'll use to
+    #### send data (e.g. header, slice pixel data) to remote connections)
+    # figure out host and port number to use
+    host = scannerSettings.get_scannerSocketHost()
+    port = scannerSettings.get_scannerSocketPort()
+    logger.debug('Scanner Socket Host: {}'.format(host))
+    logger.debug('Scanner Socket Port: {}'.format(port))
+
+    # create a socket connection
+    from .general_utils import create_scannerSocket
+
+    scannerSocket = create_scannerSocket(host, port)
+    logger.debug('Created scannerSocket')
+
+    
+
+
+    # initialize the dicom queue to keep store newly arrived
+    # dicom slices, and keep track of which have been processed
+    dicomQ = Queue()
+
+    pass
