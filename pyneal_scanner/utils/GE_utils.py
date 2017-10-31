@@ -59,6 +59,7 @@ class GE_DirStructure():
         if 'scannerBaseDir' in scannerSettings.allSettings:
             self.baseDir = scannerSettings.allSettings['scannerBaseDir']
         else:
+            print('No scannerBaseDir found in scannerConfig file. Using default: {}'.format(GE_default_baseDir))
             self.baseDir = GE_default_baseDir
 
         self.pDir = None
