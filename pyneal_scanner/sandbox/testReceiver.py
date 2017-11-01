@@ -22,12 +22,15 @@ image_matrix = np.zeros(shape=(64, 64, 18, 10))	# build empty data matrix (xyzt)
 context = zmq.Context.instance()
 sock = context.socket(zmq.REP)
 sock.connect('tcp://{}:{}'.format(host,port))
-print('here')
 
-slice1_pos = None
-slice1_or = None
-sliceEnd_pos = None
-sliceEnd_or = None
+# wait for initial contact
+while True:
+    msg = sock.recv_string()
+    sock.send_string(msg)
+    break
+
+print('Waiting for slice data to appear...')
+
 
 while True:
 
@@ -44,7 +47,6 @@ while True:
     data = sock.recv(flags=0, copy=False, track=False)
     pixel_array = np.frombuffer(data, dtype=sliceDtype)
     pixel_array = pixel_array.reshape(sliceShape)
-
 
     # add the pixel data to the appropriate slice location
     image_matrix[:, :, sliceIdx, volIdx] = pixel_array

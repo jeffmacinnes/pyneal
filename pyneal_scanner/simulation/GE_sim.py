@@ -40,10 +40,12 @@ from builtins import input
 import os, sys
 from os.path import join
 import argparse
+import atexit
 import re
 import time
-import dicom
 import subprocess
+
+import dicom
 
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
@@ -103,6 +105,18 @@ def GE_sim(dicomDir, outputDir, TR):
         # introduce delay
         time.sleep(sliceDelay)
 
+
+
+def rmOutputDir(outputDir):
+    """ Remove the output dir upon exiting"""
+    # if outputDir exists, delete
+    if os.path.isdir(outputDir):
+        print('Deleting output dir: {}'.format(outputDir))
+        subprocess.call(['rm', '-r', outputDir])
+
+
+
+
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate a GE scan')
@@ -134,6 +148,9 @@ if __name__ == "__main__":
         outputDir = join(sessionDir, defaultNewDir)
     else:
         outputDir = args.outputDir
+
+    # set up the cleanup function
+    atexit.register(rmOutputDir, outputDir)
 
     # run main function
     GE_sim(args.inputDir, outputDir, args.TR)

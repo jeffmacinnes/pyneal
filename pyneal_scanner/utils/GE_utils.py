@@ -202,8 +202,6 @@ class GE_DirStructure():
         in the sessionDir. By the time this function is called, this
         class should already have the sessionDir defined
         """
-        print('Waiting for next series directory to appear...')
-
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
         while keepWaiting:
@@ -626,6 +624,7 @@ class GE_processSlice(Thread):
         self.interval = interval
         self.alive = True
         self.scannerSocket = scannerSocket
+        self.totalProcessed = 0             # counter for total number of slices processed
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -636,7 +635,6 @@ class GE_processSlice(Thread):
             # if there are any slices in the queue, process them
             if not self.dicomQ.empty():
                 self.numSlicesInQueue = self.dicomQ.qsize()
-                self.logger.debug('There are {} items in queue'.format(self.numSlicesInQueue))
 
                 # loop through all slices currently in queue & process
                 for s in range(self.numSlicesInQueue):
@@ -648,8 +646,13 @@ class GE_processSlice(Thread):
                     # complete this task, thereby clearing it from the queue
                     self.dicomQ.task_done()
 
+                # log how many were processed
+                self.totalProcessed += self.numSlicesInQueue
+                self.logger.debug('Processed {} tasks from the queue ({} total)'.format(self.numSlicesInQueue, self.totalProcessed))
+
             # pause for a bit
             time.sleep(self.interval)
+
 
     def processDcmSlice(self, dcm_fname):
         """
@@ -759,8 +762,18 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     scannerSocket = create_scannerSocket(host, port)
     logger.debug('Created scannerSocket')
 
+    # wait for remote to connect on scannerSocket
+    logger.info('Waiting for connection on scannerSocket...')
+    while True:
+        scannerSocket.send_string('hello')
+        msg = scannerSocket.recv_string()
+        if msg == 'hello':
+            break
+    logger.info('scannerSocket connected')
+
+
     ### Wait for a new series directory appear
-    logger.debug('Waiting for new seriesDir...')
+    logger.info('Waiting for new seriesDir...')
     seriesDir = scannerDirs.waitForSeriesDir()
     logger.info('New Series Directory: {}'.format(seriesDir))
 
