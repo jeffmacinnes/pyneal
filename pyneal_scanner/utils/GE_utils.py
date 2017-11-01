@@ -17,6 +17,7 @@ import numpy as np
 import dicom
 import nibabel as nib
 import argparse
+import zmq
 
 # default path to where new series directories
 # will appear (e.g. [baseDir]/p###/e###/s###)
@@ -578,7 +579,7 @@ class GE_monitorSeriesDir(Thread):
             # grab only the the dicoms which haven't already been added to the queue
             newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
 
-            # add all of the new dicoms to the queue
+            # loop over each of the newDicoms and add them to queue
             for f in newDicoms:
                 dicom_fname = join(self.seriesDir, f)
                 try:
@@ -599,6 +600,130 @@ class GE_monitorSeriesDir(Thread):
 
     def get_numSlicesAdded(self):
         return self.numSlicesAdded
+
+    def stop(self):
+        # function to stop the Thread
+        self.alive = False
+
+
+class GE_processSlice(Thread):
+    """
+    Class to process each dicom slice in the dicom queue. This class is
+    designed to run in a separate thread. While running, it will pull 'tasks'
+    off of the dicom queue and process each task. Processing each task will
+    include making sure the data is formatted correctly, and sending the data
+    out over the socket connection
+    """
+    def __init__(self, dicomQ, scannerSocket, interval=.2):
+        # start the thread upon creation
+        Thread.__init__(self)
+
+        # set up logger
+        self.logger = logging.getLogger(__name__)
+
+        # initialize class parameters
+        self.dicomQ = dicomQ
+        self.interval = interval
+        self.alive = True
+        self.scannerSocket = scannerSocket
+
+    def run(self):
+        self.logger.debug('GE_processSlice thread started')
+
+        # function to run on loop
+        while self.alive:
+
+            # if there are any slices in the queue, process them
+            if not self.dicomQ.empty():
+                self.numSlicesInQueue = self.dicomQ.qsize()
+                self.logger.debug('There are {} items in queue'.format(self.numSlicesInQueue))
+
+                # loop through all slices currently in queue & process
+                for s in range(self.numSlicesInQueue):
+                    dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
+
+                    # process this slice
+                    self.processDcmSlice(dcm_fname)
+
+                    # complete this task, thereby clearing it from the queue
+                    self.dicomQ.task_done()
+
+            # pause for a bit
+            time.sleep(self.interval)
+
+    def processDcmSlice(self, dcm_fname):
+        """
+        read the slice dicom. Format the data and header.
+        Send data and header out over the socket connection
+        """
+        # read in the dicom file
+        dcm = dicom.read_file(dcm_fname)
+
+        ### Format the slice pixel data
+        # extract the pixel data as a numpy array
+        pixel_array = dcm.pixel_array
+
+        # GE DICOM images are collected in an LPS+ coordinate
+        # system. For the purposes of standardizing everything
+        # in pyneal we need to convert to and RAS+ coordinate system.
+        # In other words, need to flip our data array along the
+        # first axis (left/right), and then flip along the 2nd axis
+        # (up/down). This is equivalent to rotating the array 180 degrees
+        # (less steps = better).
+        pixel_array = np.ascontiguousarray(
+            np.rot90(pixel_array, k=2)
+            )
+
+        # Next, numpy arrays are indexed as [row, col], which in
+        # cartesian coords translats to [y,x]. We want our data to
+        # be an array that is indexed like [x,y,z], so we need to
+        # transpose each slice before adding to the full dataset
+        pixel_array = pixel_array.T
+
+        ### Format the header
+        # The dicom tag 'InStackPositionNumber' will tell
+        # what slice number within a volume this dicom is.
+        # Note: InStackPositionNumber uses one-based indexing,
+        # and we want sliceIdx to reflect 0-based indexing
+        sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
+
+        # We can figure out the volume index using the dicom
+        # tags "InstanceNumber" (# out of all images), and
+        # "ImagesInAcquisition" (# of slices in a single vol).
+        # Divide InstanceNumber by ImagesInAcquisition and drop
+        # the remainder. Note: InstanceNumber is also one-based index
+        volIdx = int(getattr(dcm, 'InstanceNumber')/getattr(dcm, 'ImagesInAcquisition'))
+
+        # create a header with metadata info
+        sliceHeader = {
+            'sliceIdx':sliceIdx,
+            'volIdx':volIdx,
+            'dtype':str(pixel_array.dtype),
+            'shape':pixel_array.shape,
+            }
+
+        ### Send the pixel array and header to the scannerSocket
+        self.sendSliceToScannerSocket(sliceHeader, pixel_array)
+
+
+    def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):
+        """
+        Send the dicom slice over the scannerSocket.
+            - 'sliceHeader' is expected to be a dictionary with key:value
+            pairs for relevant slice metadata like 'sliceIdx', and 'volIdx'
+            - 'slicePixelArray' is expected to be a 2D numpy array of pixel
+            data from the slice reoriented to RAS+
+        """
+        self.logger.debug('TO scannerSocket: vol {}, slice {}'.format(sliceHeader['volIdx'], sliceHeader['sliceIdx']))
+
+        ### Send data out the socket, listen for response
+        self.scannerSocket.send_json(sliceHeader, zmq.SNDMORE) # header as json
+        self.scannerSocket.send(slicePixelArray, flags=0, copy=False, track=False)
+        scannerSocketResponse = self.scannerSocket.recv_string()
+
+        # log the success
+        self.logger.debug('FROM scannerSocket: {}'.format(scannerSocketResponse))
+
 
     def stop(self):
         # function to stop the Thread
@@ -649,3 +774,9 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     # a copy of the dicom queue. Start the thread going
     scanWatcher = GE_monitorSeriesDir(seriesDir, dicomQ)
     scanWatcher.start()
+
+    # create an instance of the class that will grab slice dicoms
+    # from the queue, reformat the data, and pass over the socket
+    # to pyneal. Start the thread going
+    sliceProcessor = GE_processSlice(dicomQ, scannerSocket)
+    sliceProcessor.start()

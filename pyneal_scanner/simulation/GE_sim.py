@@ -1,14 +1,36 @@
 """
-Simulate a GE scan
-
+Simulate a GE scan.
 GE scanners store reconstructed slice images as individual DICOM files within
 a certain directory on the scanner console. This script will simulate that directory
-and pass in individual slice DICOM images.
+and copy in individual slice DICOM images.
 
-You must specify a local path to a directory that already contains a set of reconstructed
-GE slice DICOMS. Within that directory, this script will create a new directory called "scanned"
-and prompt you to start the simulation. Once you press [RETURN], slice images will be copied into
-the new directory.
+Usage:
+    python GE_sim.py inputDir [--outputDir] [--TR]
+
+You must specify a local path to the inputDir. That is, the directory that already
+contains a set of reconstructed GE slice DICOMS. Let's call directory the seriesDir. Everything in the path up to the seriesDir
+we'll call the sessionDir. So, your input slice data is stored somewhere like:
+
+<sessionDir>/<seriesDir>/
+
+To use this tool, you must specify an inputDir as the full path (i.e. <sessionDir>/<seriesDir>) to
+the source data.
+
+[OPTIONAL]: You can specify the full path to an output directory where the slices
+will be copied to. If you don't specify an output directory, this tool will default
+to creating a new seriesDir, named 's9999' in the sessionDir.
+
+e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --outputDir /Where/I/Want/New/Slice/Data/To/appear
+
+if you did not specify an outputDir, new slices would be copied to:
+
+/Path/To/My/Existing/Slice/s9999
+
+[OPTIONAL]: You can specify the TR at which new slice data is copied. Default is 1000ms, and
+represents the approximate amount of time it should take to copy over all of the slices for
+one volume of data.
+
+e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --TR 2000
 
 """
 # python 2/3 compatibility
@@ -32,17 +54,16 @@ def GE_sim(dicomDir, outputDir, TR):
     Read DICOM slices from 'dicomDir',
     copy to outputDir at a rate set by TR
     """
-    # build full path to outputDir
-    outputDir = join(dicomDir, outputDir)
-    print('-'*25)
-    print('Output saved to: ', outputDir)
 
+    # build full path to outputDir
+    print('-'*25)
+    print('Source slices: {}'.format(dicomDir))
+    print('Output dir: {}'.format(outputDir))
 
     # if outputDir exists, delete
     if os.path.isdir(outputDir):
         print('Deleting existing {}'.format(outputDir))
         subprocess.call(['rm', '-r', outputDir])
-        #shutil.rmtree(outputDir)
 
     # make a list of slice files
     sliceFiles = []
@@ -84,24 +105,35 @@ def GE_sim(dicomDir, outputDir, TR):
 
 if __name__ == "__main__":
     # parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('dicomDir',
+    parser = argparse.ArgumentParser(description='Simulate a GE scan')
+    parser.add_argument('inputDir',
                 help='path to directory that contains slice DICOMS')
     parser.add_argument('-o', '--outputDir',
-                default='s100',
-                help='name of output directory where new slices images will appear (i.e. series directory) [default: s100]')
+                default=None,
+                help='path to output directory where new slices images will appear (i.e. series directory)')
     parser.add_argument('-t', '--TR',
                 type=int,
-                default=2000,
-                help='TR, how quickly to transfer the slices comprising 1 volume (ms) [default: 2000]')
+                default=1000,
+                help='TR (ms) [default = 1000ms]')
 
     # grab the input args
     args = parser.parse_args()
 
     # check if input dir is valid
-    if not os.path.isdir(args.dicomDir):
-        print('Invalid input dir: {}').format(args.dicomDir)
+    if not os.path.isdir(args.inputDir):
+        print('Invalid input dir: {}').format(args.inputDir)
         sys.exit()
+
+    # check if the output Dir is specified. If not, create it
+    if args.outputDir is None:
+        # strip trailing slash, if present
+        if args.inputDir[-1] == os.sep:
+            args.inputDir = args.inputDir[:-1]
+        sessionDir, seriesDir = os.path.split(args.inputDir)
+        defaultNewDir = 's9999'
+        outputDir = join(sessionDir, defaultNewDir)
     else:
-        # run main function
-        GE_sim(args.dicomDir, args.outputDir, args.TR)
+        outputDir = args.outputDir
+
+    # run main function
+    GE_sim(args.inputDir, outputDir, args.TR)

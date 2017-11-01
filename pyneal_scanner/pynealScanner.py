@@ -42,8 +42,6 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
     """
     from utils.GE_utils import GE_launch_rtfMRI
 
-    logger.debug('test')
-
     # launch a real-time session
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
