@@ -42,6 +42,8 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
     """
     from utils.GE_utils import GE_launch_rtfMRI
 
+    logger.debug('test')
+
     # launch a real-time session
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
@@ -64,21 +66,25 @@ def pynealScanner_Siemens(scannerSettings, scannerDirs):
 if __name__ == "__main__":
 
     ### set up logging
-    # write log messages to file if they are DEBUG level or higher
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(levelname)s - %(threadName)s - (%(filename)s) %(funcName)s - %(message)s',
-                        datefmt='%m-%d %H:%M:%S',
-                        filename='./pynealScanner.log',
-                        filemode='w')
+    # logging to file
+    fileLogger = logging.FileHandler('./pynealScanner.log', mode='w')
+    fileLogger.setLevel(logging.DEBUG)
+    fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
+                                        '%m-%d %H:%M:%S')
+    fileLogger.setFormatter(fileLogFormat)
 
-    # set up logging to console
-    consoleLogger = logging.StreamHandler()
-    consoleLogger.setLevel(logging.INFO)        # console will print logs if they are INFO or higher
-    consoleLogFormat = logging.Formatter('%(threadName)s - %(levelname)-8s %(message)s')
+    # logging to console
+    consoleLogger = logging.StreamHandler(sys.stdout)
+    consoleLogger.setLevel(logging.INFO)
+    consoleLogFormat = logging.Formatter('%(threadName)s -  %(message)s')
     consoleLogger.setFormatter(consoleLogFormat)
 
-    logging.getLogger(__name__).addHandler(consoleLogger)
-    logger = logging.getLogger(__name__)
+    # root logger, add handlers. (subsequent modules can access this same
+    # logger by calling: logger = logging.getLogger(__name__)
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(fileLogger)
+    logger.addHandler(consoleLogger)
 
     # initialize the session classes:
     scannerSettings, scannerDirs = initializeSession()

@@ -194,6 +194,36 @@ class GE_DirStructure():
         return subDirs
 
 
+    def waitForSeriesDir(self, interval=.1):
+        """
+        listen for the creation of a new series directory.
+        Once a scan starts, a new series directory will be created
+        in the sessionDir. By the time this function is called, this
+        class should already have the sessionDir defined
+        """
+        print('Waiting for next series directory to appear...')
+
+        startTime = int(time.time())    # tag the start time
+        keepWaiting = True
+        while keepWaiting:
+            # obtain a list of all directories in sessionDir
+            childDirs = [join(self.sessionDir, d) for d in os.listdir(self.sessionDir) if os.path.isdir(join(self.sessionDir, d))]
+
+            # loop through all dirs, check modification time
+            for thisDir in childDirs:
+                thisDir_mTime = os.path.getmtime(thisDir)
+                if thisDir_mTime > startTime:
+                    seriesDir = thisDir
+                    keepWaiting = False
+                    break
+
+            # pause before searching directories again
+            time.sleep(interval)
+
+        # return the found series directory
+        return seriesDir
+
+
     def get_seriesDirs(self):
         """
         build a list that contains the directory names of all of the series
@@ -527,6 +557,9 @@ class GE_monitorSeriesDir(Thread):
         # start the thead upon creation
         Thread.__init__(self)
 
+        # set up logger
+        self.logger = logging.getLogger(__name__)
+
         # initialize class parameters
         self.interval = interval            # interval for looping the thread
         self.seriesDir = seriesDir          # full path to series directory
@@ -551,10 +584,11 @@ class GE_monitorSeriesDir(Thread):
                 try:
                     self.dicomQ.put(dicom_fname)
                 except:
-                    logger.error('failed on: {}'.format(dicom_fname))
+                    self.logger.error('failed on: {}'.format(dicom_fname))
                     print(sys.exc_info())
                     sys.exit()
-            logger.debug('Put {} new slices on the queue'.format(len(newDicoms)))
+            if len(newDicoms) > 0:
+                self.logger.debug('Put {} new slices on the queue'.format(len(newDicoms)))
             self.numSlicesAdded += len(newDicoms)
 
             # now update the set of dicoms added to the queue
@@ -583,7 +617,6 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
         - start a separate thread to monitor the new seriesDir
         - start a separate thread to process DICOMs that are in the Queue
     """
-
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py
     logger = logging.getLogger(__name__)
@@ -598,15 +631,21 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
 
     # create a socket connection
     from .general_utils import create_scannerSocket
-
     scannerSocket = create_scannerSocket(host, port)
     logger.debug('Created scannerSocket')
 
-    
+    ### Wait for a new series directory appear
+    logger.debug('Waiting for new seriesDir...')
+    seriesDir = scannerDirs.waitForSeriesDir()
+    logger.info('New Series Directory: {}'.format(seriesDir))
 
-
+    ### Start threads to A) watch for new slices, and B) process
+    # slices as they appear
     # initialize the dicom queue to keep store newly arrived
     # dicom slices, and keep track of which have been processed
     dicomQ = Queue()
 
-    pass
+    # create instance of class that will monitor seriesDir. Pass in
+    # a copy of the dicom queue. Start the thread going
+    scanWatcher = GE_monitorSeriesDir(seriesDir, dicomQ)
+    scanWatcher.start()
