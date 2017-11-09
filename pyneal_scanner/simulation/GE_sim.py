@@ -81,6 +81,7 @@ def GE_sim(dicomDir, outputDir, TR):
     sliceDelay = TR/slicesPerVol/1000
 
     # print parameters
+    print('Total Slices Found: ', len(sliceFiles))
     print('TR: ', TR)
     print('slices per vol:', slicesPerVol)
     print('delay between slices:', sliceDelay)
@@ -106,14 +107,12 @@ def GE_sim(dicomDir, outputDir, TR):
         time.sleep(sliceDelay)
 
 
-
 def rmOutputDir(outputDir):
     """ Remove the output dir upon exiting"""
     # if outputDir exists, delete
     if os.path.isdir(outputDir):
         print('Deleting output dir: {}'.format(outputDir))
         subprocess.call(['rm', '-r', outputDir])
-
 
 
 

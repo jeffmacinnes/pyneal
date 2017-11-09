@@ -44,6 +44,7 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
 
     # launch a real-time session
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
+    
 
 def pynealScanner_Phillips(scannerSettings, scannerDirs):
     """

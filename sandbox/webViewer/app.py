@@ -9,6 +9,10 @@ from flask_socketio import send, emit
 import time
 import random
 import string
+import zmq
+
+context = zmq.Context()
+socket = context.socket(zmq.SUB)
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -17,15 +21,25 @@ thread = None
 
 
 def background_thread():
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.setsockopt_string(zmq.SUBSCRIBE, '')
+    socket.connect("tcp://127.0.0.1:5556")
     while True:
-        newH1= ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
-        print('sent {}'.format(newH1))
-        socketio.emit('headerText', {'value': newH1})
+        msg = socket.recv_string()
+        print('received string: {}'.format(msg))
 
-        newH2 = str(random.choice([1,2,3,4,5,6,7]))
-        print('sent {}'.format(newH2))
-        socketio.emit('header2Text', {'value': newH2})
-        time.sleep(1)
+        if msg == '1':
+            socketio.emit('headerText', {'value': msg})
+        # newH1= ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        # print('sent {}'.format(newH1))
+        # socketio.emit('headerText', {'value': newH1})
+        #
+        # newH2 = str(random.choice([1,2,3,4,5,6,7]))
+        # print('sent {}'.format(newH2))
+        # socketio.emit('header2Text', {'value': newH2})
+        #
+        # time.sleep(1)
 
 
 @socketio.on('client_connected')
