@@ -11,6 +11,11 @@ import random
 import string
 import zmq
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
+
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
 
@@ -29,17 +34,11 @@ def background_thread():
         msg = socket.recv_string()
         print('received string: {}'.format(msg))
 
-        if msg == '1':
-            socketio.emit('headerText', {'value': msg})
-        # newH1= ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
-        # print('sent {}'.format(newH1))
-        # socketio.emit('headerText', {'value': newH1})
-        #
-        # newH2 = str(random.choice([1,2,3,4,5,6,7]))
-        # print('sent {}'.format(newH2))
-        # socketio.emit('header2Text', {'value': newH2})
-        #
-        # time.sleep(1)
+        # send the message to web server
+        if msg == 'open':
+            print('got open message')
+        else:
+            socketio.emit('sliceReceived', {'sliceNum': msg})
 
 
 @socketio.on('client_connected')
