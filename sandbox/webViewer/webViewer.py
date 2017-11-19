@@ -24,7 +24,6 @@ socketio = SocketIO(app)
 thread = None
 
 
-
 def background_thread():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)

@@ -7,7 +7,7 @@ socket.on('connect', function() {
     console.log("client connected")
 });
 
-var slices = Array.apply(null, new Array(500)).map(Number.prototype.valueOf, 0);
+var slices = Array.apply(null, new Array(9000)).map(Number.prototype.valueOf, 0);
 var circles
 
 socket.on('sliceReceived', function(msg) {
@@ -21,10 +21,10 @@ socket.on('sliceReceived', function(msg) {
 
 // ---------- PAGE FUNCTIONS -----------
 
-circleRadius = 8
-circleGrid_w = 50
-circleGrid_h = 10
-cellSize = 20;
+circleRadius = 2
+circleGrid_w = 500
+circleGrid_h = 18
+cellSize = 5;
 
 var svg = d3.select('#sliceArea').append('svg')
     .attr('width', 1200)

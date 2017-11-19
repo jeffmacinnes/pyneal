@@ -22,4 +22,4 @@ while True:
 
     # increment sliceNumber
     sliceNum += 1
-    time.sleep(.1)
+    time.sleep(.01)
