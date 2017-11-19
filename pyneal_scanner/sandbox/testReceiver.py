@@ -4,7 +4,8 @@ This is a server to receive incoming slice files
 """
 from __future__ import division
 
-import sys, os
+import os
+import sys
 import time
 import zmq
 import dicom
