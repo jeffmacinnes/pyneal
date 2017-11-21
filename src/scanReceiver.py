@@ -42,11 +42,94 @@ from __future__ import print_function
 
 import os
 import sys
+import threading
 
 import numpy as np
+import zmq
+
+# ADD LOGGING
+
+# HAVE IT BUILD EMPTY MATRIX BASED ON INFO FROM FIRST INCOMING SLICE
+
+# SET UP ZMQ PUBLISH SOCKET FOR SENDING MESSASGES OUT ABOUT VOLUMES
+# THAT HAVE ARRIVED
+
+
+
+
+class ScanReceiver(threading.Thread):
+    """
+    Class to listen in for incoming scan data. As new slices
+    arrive, the header is decoded, and the slice is added to
+    the appropriate place in the 4D data matrix
+
+    input args:
+        nTmpts: number of expected timepoints in series [500]
+        host: host IP for scanner socket ['127.0.0.1']
+        port: port # for scanner socket [5555]
+    """
+
+    def __init__(self, nTmpts=500, host='127.0.0.1', port=5555):
+        threading.Thread.__init__(self)
+
+        # class config vars
+        self.host = host
+        self.port = port
+
+        # initiate socket
+        context = zmq.Context.instance()
+        self.socket = context.socket(zmq.PAIR)
+        self.socket.connect('tcp://{}:{}'.format(self.host, self.port))
+
+    def run(self):
+        # make contact with scanner socket
+        while True:
+            self.socket.send_string('open')
+            msg = self.socket.recv_string()
+            break
+        print('scanner socket opened...')
+
+        # ------------------------------------
+        # Listen to incoming data
+        while True:
+            sliceInfo = self.socket.recv_json(flags=0)
+            sliceDtype = sliceInfo['dtype']
+            sliceShape = sliceInfo['shape']
+            print(sliceInfo.keys())
+
+            data = self.socket.recv(flags=0, copy=False, track=False)
+            pixel_array = np.frombuffer(data, dtype=sliceDtype)
+            pixel_array = pixel_array.reshape(sliceShape)
+
+            print(pixel_array.shape)
+
+            self.socket.send_string('got it')
+
+
+    def get_vol(self, volIdx):
+        """
+        Return the requested vol, if it is here.
+        Note: volIdx is 0-based
+        """
+        pass
+
+
+    def get_slice(self, volIdx, sliceIdx):
+        """
+        Return the requested slice, if it is here.
+        Note: volIdx, and sliceIdx are 0-based
+        """
+        pass
 
 
 
 
 
-class scanReceiver(threading.Thread)
+
+
+host = '127.0.0.1'
+port = 5555
+
+if __name__ == '__main__':
+    scanReceiver = ScanReceiver(host, port)
+    scanReceiver.start()
