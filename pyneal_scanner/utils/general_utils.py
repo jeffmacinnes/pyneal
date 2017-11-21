@@ -165,7 +165,6 @@ def initializeSession():
                 path info for a particular scanning environment. The particular
                 attributes will vary according to the specific environment.
     """
-
     # path to the pyneal dir (this assumes this file is stored in a directory
     # one level deeper than the pyneal_scanner dir, AND that this method will only ever
     # be called by command line functions in the pyneal_scanner dir)

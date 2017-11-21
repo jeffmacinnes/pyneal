@@ -19,20 +19,26 @@ while True:
         socket.send_string(msg)
         break
 
-for a in range(10):
-    matrixSize = np.random.randint(30,60)
-    m = np.random.random((matrixSize, matrixSize))
-    sliceHeader = {
-        'dtype':str(m.dtype),
-        'shape':m.shape,
-        }
+for v in range(100):
+    for s in range(18):
 
-    ### Send data out the socket, listen for response
-    socket.send_json(sliceHeader, zmq.SNDMORE) # header as json
-    socket.send(m, flags=0, copy=False, track=False)
+        # build each slice
+        matrixSize = 64
+        m = np.random.random((matrixSize, matrixSize))
+        sliceHeader = {
+            'dtype':str(m.dtype),
+            'shape':m.shape,
+            'sliceIdx':s,
+            'volIdx':v,
+            'nSlicesPerVol':18
+            }
 
-    scannerSocketResponse = socket.recv_string()
-    print(scannerSocketResponse)
+        ### Send data out the socket, listen for response
+        socket.send_json(sliceHeader, zmq.SNDMORE) # header as json
+        socket.send(m, flags=0, copy=False, track=False)
+
+        scannerSocketResponse = socket.recv_string()
+        print(scannerSocketResponse)
 
 
 

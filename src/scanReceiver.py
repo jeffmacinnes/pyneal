@@ -10,13 +10,13 @@ data from the scanner)
 In additiona, it also includes various methods for accessing the progress of an on-going scan, and returning data that has successfully arrived, etc.
 
 --- Notes for setting up:
-Socket Connection:
+** Socket Connection:
 This tool uses the ZeroMQ library, instead of the standard python socket library.
 ZMQ takes care of a lot of the backend work, is incredibily reliable, and offers
 methods for easily sending pre-formatted types of data, including JSON dicts,
 and numpy arrays.
 
-Expectations for data formatting:
+** Expectations for data formatting:
 Once a scan has begun, this tool expects data to arrive over the socket
 connection one slice at a time (though not necessarily in the proper
 chronologic order).
@@ -32,32 +32,32 @@ There should be two parts to each slice transmission:
 Once both of those peices of data have arrived, this tool will send back a
 confirmation string message.
 
-Slice Orientation:
+** Slice Orientation:
 This tools presumes that arriving slices have been reoriented to RAS+
 This is a critical premise for downstream analyses, so MAKE SURE the
 slices are oriented in that way on the pynealScanner side before sending.
+
+In addition, the numpy arrays are presumed to be indexed like [X,Y]. This is
+the opposite of how numpy would default to storing image data (default is
+[rows, cols], which is [y,x] in cartesian coords). So, make sure this
+assumption holds as well
 """
 # python2/3 compatibility
 from __future__ import print_function
 
 import os
 import sys
-import threading
+from threading import Thread
+import logging
 
 import numpy as np
 import zmq
-
-# ADD LOGGING
-
-# HAVE IT BUILD EMPTY MATRIX BASED ON INFO FROM FIRST INCOMING SLICE
 
 # SET UP ZMQ PUBLISH SOCKET FOR SENDING MESSASGES OUT ABOUT VOLUMES
 # THAT HAVE ARRIVED
 
 
-
-
-class ScanReceiver(threading.Thread):
+class ScanReceiver(Thread):
     """
     Class to listen in for incoming scan data. As new slices
     arrive, the header is decoded, and the slice is added to
@@ -68,42 +68,92 @@ class ScanReceiver(threading.Thread):
         host: host IP for scanner socket ['127.0.0.1']
         port: port # for scanner socket [5555]
     """
-
     def __init__(self, nTmpts=500, host='127.0.0.1', port=5555):
-        threading.Thread.__init__(self)
+        # start the thread upon creation
+        Thread.__init__(self)
+
+        # set up logger
+        self.logger = logging.getLogger(__name__)
 
         # class config vars
-        self.host = host
-        self.port = port
+        self.nTmpts = nTmpts        # total number of vols (or timepts) expected
+        self.alive = True           # thread status
+        self.imageMatrix = None     # matrix that will hold the incoming data
+        self.completedSlices = None # nSlices x nVols matrix that will store bools
+                                    # indicating whether each slice has arrived
 
-        # initiate socket
+        # set up socket to communicate with scanner
         context = zmq.Context.instance()
-        self.socket = context.socket(zmq.PAIR)
-        self.socket.connect('tcp://{}:{}'.format(self.host, self.port))
+        self.scannerSocket = context.socket(zmq.PAIR)
+        self.scannerSocket.connect('tcp://{}:{}'.format(host, port))
+        self.logger.debug('Scanner socket connecting to {}:{}'.format(host, port))
 
     def run(self):
-        # make contact with scanner socket
+        # Once this thread is up and running, confirm that the scanner socket
+        # is alive and working before proceeding.
         while True:
-            self.socket.send_string('open')
-            msg = self.socket.recv_string()
+            self.scannerSocket.send_string('open')
+            msg = self.scannerSocket.recv_string()
             break
-        print('scanner socket opened...')
+        self.logger.debug('Scanner socket connected to Pyneal-Scanner')
 
-        # ------------------------------------
-        # Listen to incoming data
-        while True:
-            sliceInfo = self.socket.recv_json(flags=0)
-            sliceDtype = sliceInfo['dtype']
-            sliceShape = sliceInfo['shape']
-            print(sliceInfo.keys())
+        # Start the main loop to listen for new data
+        while self.alive:
+            # wait for json header to appear. The header is assumed to
+            # have key:value pairs for:
+            # sliceIdx - slice index (0-based)
+            # volIdx - volume index (0-based)
+            # nSlicesPerVol - total slices per vol
+            # dtype - dtype of slice pixel data
+            # shape - dims of slice pixel data
+            sliceHeader = self.scannerSocket.recv_json(flags=0)
 
-            data = self.socket.recv(flags=0, copy=False, track=False)
-            pixel_array = np.frombuffer(data, dtype=sliceDtype)
-            pixel_array = pixel_array.reshape(sliceShape)
+            # if this is the first slice, initialize the matrix
+            # and the completedVols table
+            if self.imageMatrix is None:
+                self.createDataMatrix(sliceHeader)
 
-            print(pixel_array.shape)
+            # now listen for the image data as a string buffer
+            pixel_array = self.scannerSocket.recv(flags=0, copy=False, track=False)
 
-            self.socket.send_string('got it')
+            # format the pixel array according to params from the slice header
+            pixel_array = np.frombuffer(pixel_array, dtype=sliceHeader['dtype'])
+            pixel_array = pixel_array.reshape(sliceHeader['shape'])
+
+            # add the slice to the appropriate location in the image matrix
+            sliceIdx = sliceHeader['sliceIdx']
+            volIdx = sliceHeader['volIdx']
+            self.imageMatrix[:,:, sliceIdx, volIdx]
+
+            # update the completed slices table
+            self.completedSlices[sliceIdx, volIdx] = True
+
+            # send response back to Pyneal-Scanner
+            response = 'Received vol {}, slice {}'.format(volIdx, sliceIdx)
+            self.scannerSocket.send_string(response)
+            self.logger.info(response)
+
+
+    def createDataMatrix(self, sliceHeader):
+        """
+        Once the first slice appears, this function should be called
+        to build the empty matrix to store incoming slice data, using
+        info from the slice header. Also, build the table that will
+        store T/F values for whether each slice has appeared
+        """
+        # create the empty imageMatrix (note: nTmpts is NOT in the slice header)
+        self.imageMatrix = np.zeros(shape=(
+                                sliceHeader['shape'][0],
+                                sliceHeader['shape'][1],
+                                sliceHeader['nSlicesPerVol'],
+                                self.nTmpts))
+
+        # create the table for indicated arrived slices
+        self.completedSlices = np.zeros(shape=(
+                                sliceHeader['nSlicesPerVol'],
+                                self.nTmpts), dtype=bool)
+
+        self.logger.debug('Image Matrix dims: {}'.format(self.imageMatrix.shape))
 
 
     def get_vol(self, volIdx):
@@ -121,6 +171,10 @@ class ScanReceiver(threading.Thread):
         """
         pass
 
+    def stop(self):
+        # function to stop the Thread
+        self.alive = False
+
 
 
 
@@ -131,5 +185,18 @@ host = '127.0.0.1'
 port = 5555
 
 if __name__ == '__main__':
-    scanReceiver = ScanReceiver(host, port)
+    ### set up logging
+    fileLogger = logging.FileHandler('./scanReceiver.log', mode='w')
+    fileLogger.setLevel(logging.DEBUG)
+    fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
+                                        '%m-%d %H:%M:%S')
+    fileLogger.setFormatter(fileLogFormat)
+
+    #
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(fileLogger)
+
+    # start the scanReceiver
+    scanReceiver = ScanReceiver(nTmpts=100, host=host, port=port)
     scanReceiver.start()

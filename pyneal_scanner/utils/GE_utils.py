@@ -625,6 +625,7 @@ class GE_processSlice(Thread):
         self.alive = True
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0             # counter for total number of slices processed
+        self.nSlicesPerVol = None           # once set, won't need to be retrieved each time
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -690,17 +691,25 @@ class GE_processSlice(Thread):
         # and we want sliceIdx to reflect 0-based indexing
         sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
 
+        # The tag 'ImagesInAcquisition' stores the total number of
+        # slices for every volume. Setting this as a class attribute
+        # means it does not have to be retrieved, redundantly, when
+        # processing each slice.
+        if self.nSlicesPerVol is None:
+            self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquistion')
+
         # We can figure out the volume index using the dicom
         # tags "InstanceNumber" (# out of all images), and
-        # "ImagesInAcquisition" (# of slices in a single vol).
+        # the total number of slices.
         # Divide InstanceNumber by ImagesInAcquisition and drop
         # the remainder. Note: InstanceNumber is also one-based index
-        volIdx = int(getattr(dcm, 'InstanceNumber')/getattr(dcm, 'ImagesInAcquisition'))
+        volIdx = int(getattr(dcm, 'InstanceNumber')/self.nSlicesPerVol))
 
         # create a header with metadata info
         sliceHeader = {
             'sliceIdx':sliceIdx,
             'volIdx':volIdx,
+            'nSlicesPerVol':self.nSlicesPerVol,
             'dtype':str(pixel_array.dtype),
             'shape':pixel_array.shape,
             }
