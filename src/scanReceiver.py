@@ -86,7 +86,7 @@ class ScanReceiver(Thread):
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
         self.scannerSocket.connect('tcp://{}:{}'.format(host, port))
-        self.logger.debug('Scanner socket connecting to {}:{}'.format(host, port))
+        self.logger.debug('scanReceiver connecting to host: {}, port: {}'.format(host, port))
 
     def run(self):
         # Once this thread is up and running, confirm that the scanner socket
@@ -111,6 +111,7 @@ class ScanReceiver(Thread):
             # if this is the first slice, initialize the matrix
             # and the completedVols table
             if self.imageMatrix is None:
+                self.scanStarted = True
                 self.createDataMatrix(sliceHeader)
 
             # now listen for the image data as a string buffer
