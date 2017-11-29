@@ -1,0 +1,18 @@
+#kivy 1.10.0
+<SetupGUI>
+    f_username: username
+    f_password: password
+    GridLayout:
+        rows: 2
+        cols: 2
+        padding: 10
+        spacing: 10
+        Label:
+            text: 'User Name:'
+        TextInput:
+            id: username
+        Label:
+            text: 'Password:'
+        TextInput:
+            id: password
+            password: True

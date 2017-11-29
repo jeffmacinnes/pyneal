@@ -5,6 +5,9 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
+from kivy.core.window import Window
+
+Window.clearcolor = (1,1,1,1)
 
 # load all of the kv files
 kv_path = './kv/'
