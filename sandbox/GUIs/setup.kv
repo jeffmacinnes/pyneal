@@ -3,6 +3,8 @@ MainContainer:
 
 <MainContainer>:
     orientation: 'vertical'
+    # custom Properties
+
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
@@ -14,6 +16,10 @@ MainContainer:
                 pos: self.pos
         Label:
             text: 'Pyneal Logo'
+        Button:
+            text: 'Load Settings'
+            on_release: root.show_loadSettingsDialog()
+
 
     ### Communication Box ------------------
     BoxLayout:
@@ -34,12 +40,14 @@ MainContainer:
                 Label:
                     text: 'Scanner Port:'
                 TextInput:
+                    text: root.scannerPort_setting
                     size_hint_x: 1.5
             # output port
             BoxLayout:
                 Label:
                     text: 'Output Port:'
                 TextInput:
+                    text: root.outputPort_setting
                     size_hint_x: 1.5
 
 
@@ -62,6 +70,7 @@ MainContainer:
                 Label:
                     text: '# of timepts:'
                 TextInput:
+                    text: root.numTimepts_setting
                     size_hint_x: 1.5
 
     ### Mask Box ------------------
@@ -117,3 +126,25 @@ MainContainer:
                 text: 'Submit'
             Button:
                 text: 'Submit'
+
+### Load Settings File Dialog Window #################################
+<LoadSettingsDialog>:
+    BoxLayout:
+        font_size: '10sp'
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: '/Users/jeffmacinnes/Desktop'
+            filters: ['*.yaml']
+
+        BoxLayout:
+            size_hint_y: None
+            height: 50
+            Button:
+                text: "Load"
+                on_release: root.loadSettings(filechooser.path, filechooser.selection)
+            Button:
+                text: "Cancel"
+                on_release: root.cancelSettings()

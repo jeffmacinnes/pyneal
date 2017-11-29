@@ -1,0 +1,3 @@
+scannerPort: 5555
+outputPort: 6666
+numTimepts: 500
