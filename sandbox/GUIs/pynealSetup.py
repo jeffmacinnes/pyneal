@@ -1,10 +1,17 @@
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
 
+# Set Window Size
+from kivy.config import Config
+Config.set('graphics', 'width', '400')
+Config.set('graphics', 'height', '700')
 
-
-class SetupGUI(Widget):
+class MainContainer(BoxLayout):
+    """
+    Custom widget that is the root level container for all
+    other widgets
+    """
     pass
 
 
@@ -13,19 +20,9 @@ class SetupApp(App):
     Root App class. Calling run method on this class launches
     the GUI
     """
-
-    def build(self):
-        self.title = 'Pyneal Setup'
-        return SetupGUI()
-
-
-
+    title = 'Pyneal Setup'
+    pass
 
 if __name__ == '__main__':
-    settings = {}
-    settings['scannerPort'] = 5555
-    settings['outputPort'] = 5556
-
-    # instantiate the app
-    app = SetupApp()
-    app.run()
+    # run the app
+    SetupApp().run()

@@ -1,18 +1,119 @@
 #kivy 1.10.0
-<SetupGUI>
-    f_username: username
-    f_password: password
-    GridLayout:
-        rows: 2
-        cols: 2
-        padding: 10
-        spacing: 10
+MainContainer:
+
+<MainContainer>:
+    orientation: 'vertical'
+    ### Logo Box ------------------------
+    BoxLayout:
+        size_hint_y: 2
+        canvas:
+            Color:
+                rgb: 1,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
         Label:
-            text: 'User Name:'
-        TextInput:
-            id: username
-        Label:
-            text: 'Password:'
-        TextInput:
-            id: password
-            password: True
+            text: 'Pyneal Logo'
+
+    ### Communication Box ------------------
+    BoxLayout:
+        size_hint_y: 3
+        canvas:
+            Color:
+                rgb: .8,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            Label:
+                text: 'Communication'
+            # scanner port
+            BoxLayout:
+                Label:
+                    text: 'Scanner Port:'
+                TextInput:
+                    size_hint_x: 1.5
+            # output port
+            BoxLayout:
+                Label:
+                    text: 'Output Port:'
+                TextInput:
+                    size_hint_x: 1.5
+
+
+    ### Preprocessing Box ------------------
+    BoxLayout:
+        size_hint_y: 2
+        canvas:
+            Color:
+                rgb: .6,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            Label:
+                text: 'Preprocessing'
+            # num timepts
+            BoxLayout:
+                Label:
+                    text: '# of timepts:'
+                TextInput:
+                    size_hint_x: 1.5
+
+    ### Mask Box ------------------
+    BoxLayout:
+        size_hint_y: 4
+        canvas:
+            Color:
+                rgb: .4,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            # box label
+            Label:
+                text: 'Mask'
+
+    ### Stats Box ------------------
+    BoxLayout:
+        size_hint_y: 2
+        canvas:
+            Color:
+                rgb: .2,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            Label:
+                text: 'Stats'
+            # buttons
+            BoxLayout:
+                Button:
+                    text: 'Average'
+                Button:
+                    text: 'Median'
+                Button:
+                    text: 'Custom'
+
+    ### Submit Box ------------------
+    BoxLayout:
+        size_hint_y: 2
+        canvas:
+            Color:
+                rgb: 0,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            Label:
+                text: 'Submit'
+            Button:
+                text: 'Submit'
