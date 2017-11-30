@@ -6,7 +6,7 @@ import yaml
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, ObjectProperty, DictProperty
+from kivy.properties import StringProperty, NumericProperty, ObjectProperty, DictProperty
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
@@ -18,6 +18,10 @@ from kivy.config import Config
 Config.set('graphics', 'width', '400')
 Config.set('graphics', 'height', '700')
 
+# Path to the setup config file that stores all of the settings
+setupConfigFile = 'setupConfig.yaml'
+
+
 class LoadSettingsDialog(BoxLayout):
     loadSettings = ObjectProperty(None)
     cancelSettings = ObjectProperty(None)
@@ -28,40 +32,40 @@ class MainContainer(BoxLayout):
     Custom widget that is the root level container for all
     other widgets
     """
-    # create properties for all of the settings
-    #scannerPort_setting = ObjectProperty('')
-    mySettings = DictProperty('')
+    # create a kivy DictProperty that will store a dictionary with all of the
+    # settings for the GUI.
+    GUI_settings = DictProperty({}, rebind=True)
+    
 
     def __init__(self, **kwargs):
-        self.mySettings = self.readSettings('setupConfig.yaml')
 
+        # When the GUI is first created, read the setupConfigFile
+        # to get values for all of the settings. If the setupConfigFile
+        # doesn't exist, default values will be set
+        self.GUI_settings = self.readSettings(setupConfigFile)
+
+        # pass the keywords along to the parent class
         super().__init__(**kwargs)
-
-        # Read settings file upon first initialization
-        #self.mySettings = self.readSettings('setupConfig.yaml')
-
-        # Populate GUI with these settings
-        self.populate_settings(self.mySettings)
 
 
     ### Methods for dealing with loading/saving Settings -----------------------
     def readSettings(self, settingsFile):
         """
-        Look for the setupConfig.yaml file, and if it exists, overwrite
-        the default settings.
-        If it doesn't exist, create it with default values.
-        Return a dict with all settings
+        Open the supplied settingsFile, and compare to the default
+        values. Any valid setting in the settingsFile will override
+        the default
         """
         # set up defaults. Store the value and the dtype. This is used
         # to confirm that a loaded setting is valid
-        defaultSettings ={
+        defaultSettings = {
             'scannerPort': [999, int],
             'outputPort': [999, int],
-            'numTimepts': [999, int]
+            'numTimepts': [999, int],
+            'test': [True, bool]
             }
 
-        # initialize dictionary that will eventually hold all of the settings
-        settings = {}
+        # initialize dictionary that will eventually hold the new settings
+        newSettings = {}
 
         # load the settingsFile, if it exists
         if os.path.isfile(settingsFile):
@@ -79,7 +83,7 @@ class MainContainer(BoxLayout):
                     # does the dtype of the value match what is
                     # specifed by the default?
                     if type(loadedValue) == defaultSettings[k][1]:
-                        settings[k] = loadedValue
+                        newSettings[k] = loadedValue
                     else:
                         # throw error and quit
                         print('Problem loading the settings file!')
@@ -91,24 +95,15 @@ class MainContainer(BoxLayout):
                         sys.exit()
                 # if the loaded file doesn't have this setting, take the default
                 else:
-                    settings[k] = defaultSettings[k][0]
+                    newSettings[k] = defaultSettings[k][0]
         # if no settings file, take the defaults
         else:
             for k in defaultSettings.keys():
-                settings[k] = defaultSettings[k][0]
+                newSettings[k] = defaultSettings[k][0]
 
         # return the settings dict
-        return settings
+        return newSettings
 
-
-    def populate_settings(self, settings):
-        """
-        set all of the GUI values based on the settings dict
-        """
-        #self.scannerPort_setting = str(settings['scannerPort'])
-        #self.outputPort_setting = str(settings['outputPort'])
-        #self.numTimepts_setting = str(settings['numTimepts'])
-        self.mySettings = settings
 
     ### Load Settings Dialog Methods -----------------
     def show_loadSettingsDialog(self):
@@ -124,12 +119,9 @@ class MainContainer(BoxLayout):
         # load the selected settings file
         settingsFile = selection[0]
 
-        # read the settings file, return dict
-        self.mySettings = self.readSettings(settingsFile)
-
-        # populate the GUI with the loaded settings
-        self.populate_settings(self.mySettings)
-        print(self.mySettings)
+        # read the settings file, override the dict property
+        # that has the current settings
+        self.GUI_settings = self.readSettings(settingsFile)
 
         # close settings dialog
         self._popup.dismiss()
@@ -143,6 +135,9 @@ class MainContainer(BoxLayout):
         method for the GUI submit button.
         Get all setting, save new default settings file
         """
+        print(self.scannerPortInput)
+        for i in self.GUI_settings:
+            print(self.GUI_settings[i])
 
 
 

@@ -39,14 +39,15 @@ MainContainer:
                 Label:
                     text: 'Scanner Port:'
                 TextInput:
-                    text: str(root.mySettings.scannerPort)
+                    id: scannerPortInput
+                    text: str(root.GUI_settings.scannerPort)
                     size_hint_x: 1.5
             # output port
             BoxLayout:
                 Label:
                     text: 'Output Port:'
                 TextInput:
-                    text: str(root.mySettings.outputPort)
+                    text: str(root.GUI_settings.outputPort)
                     size_hint_x: 1.5
 
 
@@ -69,7 +70,7 @@ MainContainer:
                 Label:
                     text: '# of timepts:'
                 TextInput:
-                    text: str(root.mySettings.numTimepts)
+                    text: str(root.GUI_settings.numTimepts)
                     size_hint_x: 1.5
 
     ### Mask Box ------------------
@@ -136,7 +137,7 @@ MainContainer:
         orientation: "vertical"
         FileChooserListView:
             id: filechooser
-            path: '/Users/jeffmacinnes/Desktop'
+            path: '/Users/jeff/gDrive/jeffCloud/real-time'
             filters: ['*.yaml']
 
         BoxLayout:
