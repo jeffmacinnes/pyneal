@@ -107,14 +107,20 @@ MainContainer:
             # buttons
             BoxLayout:
                 ToggleButton:
+                    id: statsChoice_average
                     text: 'Average'
-                    group: 'stats'
+                    group: 'statsChoice'
+                    on_state: root.setStatChoice('Average')
                 ToggleButton:
+                    id: statsChoice_median
                     text: 'Median'
-                    group: 'stats'
+                    group: 'statsChoice'
+                    on_state: root.setStatChoice('Median')
                 ToggleButton:
+                    id: statsChoice_custom
                     text: 'Custom'
-                    group: 'stats'
+                    group: 'statsChoice'
+                    on_state: root.setStatChoice('Custom')
 
     ### Submit Box ------------------
     BoxLayout:

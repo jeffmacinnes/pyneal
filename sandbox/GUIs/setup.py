@@ -41,11 +41,18 @@ class MainContainer(BoxLayout):
 
         # When the GUI is first created, read the setupConfigFile
         # to get values for all of the settings. If the setupConfigFile
-        # doesn't exist, default values will be set
+        # doesn't exist, default values will be set. Note: this has to be
+        # called BEFORE super(), because these settings values need to exist
+        # before the GUI is created
         self.GUI_settings = self.readSettings(setupConfigFile)
 
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
+
+        # populate the GUI according to the settings. Many of the text
+        # settings (e.g. scanner port) read directly from GUI_settings,
+        # and will update automatically. But other
+        self.populateGUI(self.GUI_settings)
 
 
     ### Methods for dealing with loading/saving Settings -----------------------
@@ -61,7 +68,7 @@ class MainContainer(BoxLayout):
             'scannerPort': [999, int],
             'outputPort': [999, int],
             'numTimepts': [999, int],
-            'test': [True, bool]
+            'statsChoice': ['Median', str]
             }
 
         # initialize dictionary that will eventually hold the new settings
@@ -104,6 +111,18 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
+    def populateGUI(self, settings):
+        statsChoice = settings['statsChoice']
+        if statsChoice == 'Average':
+            self.ids.statsChoice_average.state = 'down'
+        elif statsChoice == 'Median':
+            self.ids.statsChoice_median.state = 'down'
+        elif statsChoice == 'Custom':
+            self.ids.statsChoice_custom.state = 'down'
+
+    def setStatChoice(self, choice):
+        print('choice is {}'.format(choice))
+        self.GUI_settings['statsChoice'] = choice
 
     ### Load Settings Dialog Methods -----------------
     def show_loadSettingsDialog(self):
@@ -135,10 +154,14 @@ class MainContainer(BoxLayout):
         method for the GUI submit button.
         Get all setting, save new default settings file
         """
+        print(self.GUI_settings)
+
+        ### POSSIBLE TO HAVE ALL OF THIS ACCESSED DIRECTLY FROM GUI_SETTINGS?
         allSettings = {
             'scannerPort': int(self.ids.scannerPort.text),
             'outputPort': int(self.ids.outputPort.text),
-            'numTimepts': int(self.ids.numTimepts.text)
+            'numTimepts': int(self.ids.numTimepts.text),
+            'statsChoice': self.getStatsChoice()
         }
 
         # write the file
