@@ -6,11 +6,12 @@ import yaml
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.properties import StringProperty, ObjectProperty, DictProperty
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
+from kivy.clock import Clock
 
 # Set Window Size
 from kivy.config import Config
@@ -28,20 +29,22 @@ class MainContainer(BoxLayout):
     other widgets
     """
     # create properties for all of the settings
-    scannerPort_setting = ObjectProperty('')
-    outputPort_setting = ObjectProperty('')
-    numTimepts_setting = ObjectProperty('')
+    #scannerPort_setting = ObjectProperty('')
+    mySettings = DictProperty('')
 
     def __init__(self, **kwargs):
-        super(MainContainer, self).__init__(**kwargs)
+        self.mySettings = self.readSettings('setupConfig.yaml')
+
+        super().__init__(**kwargs)
 
         # Read settings file upon first initialization
-        self.settings = self.readSettings('setupConfig.yaml')
+        #self.mySettings = self.readSettings('setupConfig.yaml')
 
         # Populate GUI with these settings
-        self.populate_settings(self.settings)
+        self.populate_settings(self.mySettings)
 
 
+    ### Methods for dealing with loading/saving Settings -----------------------
     def readSettings(self, settingsFile):
         """
         Look for the setupConfig.yaml file, and if it exists, overwrite
@@ -102,10 +105,10 @@ class MainContainer(BoxLayout):
         """
         set all of the GUI values based on the settings dict
         """
-        self.scannerPort_setting = str(settings['scannerPort'])
-        self.outputPort_setting = str(settings['outputPort'])
-        self.numTimepts_setting = str(settings['numTimepts'])
-
+        #self.scannerPort_setting = str(settings['scannerPort'])
+        #self.outputPort_setting = str(settings['outputPort'])
+        #self.numTimepts_setting = str(settings['numTimepts'])
+        self.mySettings = settings
 
     ### Load Settings Dialog Methods -----------------
     def show_loadSettingsDialog(self):
@@ -122,16 +125,24 @@ class MainContainer(BoxLayout):
         settingsFile = selection[0]
 
         # read the settings file, return dict
-        self.settings = self.readSettings(settingsFile)
+        self.mySettings = self.readSettings(settingsFile)
 
         # populate the GUI with the loaded settings
-        self.populate_settings(self.settings)
+        self.populate_settings(self.mySettings)
+        print(self.mySettings)
 
         # close settings dialog
         self._popup.dismiss()
 
+
     def cancelSettings(self):
         self._popup.dismiss()
+
+    def submitGUI(self):
+        """
+        method for the GUI submit button.
+        Get all setting, save new default settings file
+        """
 
 
 
@@ -142,9 +153,12 @@ class SetupApp(App):
     """
     title = 'Pyneal Setup'
 
+    def build(self):
+        return MainContainer()
+    #
+    # def update(self, *args):
+
     pass
-    # def build(self):
-    #     return MainContainer()
 
 
 Factory.register('MainContainer', cls=MainContainer)

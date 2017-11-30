@@ -4,7 +4,6 @@ MainContainer:
 <MainContainer>:
     orientation: 'vertical'
     # custom Properties
-
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
@@ -40,14 +39,14 @@ MainContainer:
                 Label:
                     text: 'Scanner Port:'
                 TextInput:
-                    text: root.scannerPort_setting
+                    text: str(root.mySettings.scannerPort)
                     size_hint_x: 1.5
             # output port
             BoxLayout:
                 Label:
                     text: 'Output Port:'
                 TextInput:
-                    text: root.outputPort_setting
+                    text: str(root.mySettings.outputPort)
                     size_hint_x: 1.5
 
 
@@ -70,7 +69,7 @@ MainContainer:
                 Label:
                     text: '# of timepts:'
                 TextInput:
-                    text: root.numTimepts_setting
+                    text: str(root.mySettings.numTimepts)
                     size_hint_x: 1.5
 
     ### Mask Box ------------------
@@ -126,6 +125,7 @@ MainContainer:
                 text: 'Submit'
             Button:
                 text: 'Submit'
+                on_release: root.submitGUI()
 
 ### Load Settings File Dialog Window #################################
 <LoadSettingsDialog>:
