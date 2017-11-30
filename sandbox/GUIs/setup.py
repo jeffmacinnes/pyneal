@@ -35,7 +35,7 @@ class MainContainer(BoxLayout):
     # create a kivy DictProperty that will store a dictionary with all of the
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
-    
+
 
     def __init__(self, **kwargs):
 
@@ -135,9 +135,15 @@ class MainContainer(BoxLayout):
         method for the GUI submit button.
         Get all setting, save new default settings file
         """
-        print(self.scannerPortInput)
-        for i in self.GUI_settings:
-            print(self.GUI_settings[i])
+        allSettings = {
+            'scannerPort': int(self.ids.scannerPort.text),
+            'outputPort': int(self.ids.outputPort.text),
+            'numTimepts': int(self.ids.numTimepts.text)
+        }
+
+        # write the file
+        with open(setupConfigFile, 'w') as outputFile:
+            yaml.dump(allSettings, outputFile, default_flow_style=False)
 
 
 

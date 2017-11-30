@@ -4,6 +4,7 @@ MainContainer:
 <MainContainer>:
     orientation: 'vertical'
     # custom Properties
+    #scannerPortInput: scannerPortInput
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
@@ -39,7 +40,7 @@ MainContainer:
                 Label:
                     text: 'Scanner Port:'
                 TextInput:
-                    id: scannerPortInput
+                    id: scannerPort
                     text: str(root.GUI_settings.scannerPort)
                     size_hint_x: 1.5
             # output port
@@ -47,6 +48,7 @@ MainContainer:
                 Label:
                     text: 'Output Port:'
                 TextInput:
+                    id: outputPort
                     text: str(root.GUI_settings.outputPort)
                     size_hint_x: 1.5
 
@@ -70,6 +72,7 @@ MainContainer:
                 Label:
                     text: '# of timepts:'
                 TextInput:
+                    id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
                     size_hint_x: 1.5
 
@@ -103,12 +106,15 @@ MainContainer:
                 text: 'Stats'
             # buttons
             BoxLayout:
-                Button:
+                ToggleButton:
                     text: 'Average'
-                Button:
+                    group: 'stats'
+                ToggleButton:
                     text: 'Median'
-                Button:
+                    group: 'stats'
+                ToggleButton:
                     text: 'Custom'
+                    group: 'stats'
 
     ### Submit Box ------------------
     BoxLayout:
