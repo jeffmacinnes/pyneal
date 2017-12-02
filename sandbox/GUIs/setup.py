@@ -1,3 +1,22 @@
+"""
+Pyneal Setup GUI:
+Pyneal is configured using settings stored in a setupConfig.yaml file in the root
+dir. This setup GUI is basically just a way to view the current settings as specified
+by that file, as well as a convenient way for users to update those settings to
+fit the parameters of a particular experiment.
+
+When pyneal is launched, it'll first open this GUI and give users a chance to
+verify/change the current settings. When the user hits 'Submit', the settings
+from the GUI will be re-written to the setupConfig.yaml file, and subsequent
+stages of pyneal will read from that file.
+
+Users should not need to edit the setupConfig.yaml file directly. Instead, they
+can make a custom .yaml file with any of the Pyneal settings they wish to specify,
+and load that file from within the GUI. Any setting specified by this file will
+overwrite the current GUI value; all other settings will be taken from the
+setupConfig.yaml file. This is a way for users to keep unique settings files for
+different experiements.
+"""
 import os
 import sys
 
@@ -18,9 +37,8 @@ from kivy.config import Config
 Config.set('graphics', 'width', '400')
 Config.set('graphics', 'height', '700')
 
-# Path to the setup config file that stores all of the settings
-setupConfigFile = 'setupConfig.yaml'
-
+# initialize global var that will store path to the setupConfigFile
+setupConfigFile = None
 
 class LoadSettingsDialog(BoxLayout):
     loadSettings = ObjectProperty(None)
@@ -36,14 +54,7 @@ class MainContainer(BoxLayout):
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
 
-
     def __init__(self, **kwargs):
-
-        # When the GUI is first created, read the setupConfigFile
-        # to get values for all of the settings. If the setupConfigFile
-        # doesn't exist, default values will be set. Note: this has to be
-        # called BEFORE super(), because these settings values need to exist
-        # before the GUI is created
         self.GUI_settings = self.readSettings(setupConfigFile)
 
         # pass the keywords along to the parent class
@@ -103,7 +114,8 @@ class MainContainer(BoxLayout):
                 # if the loaded file doesn't have this setting, take the default
                 else:
                     newSettings[k] = defaultSettings[k][0]
-        # if no settings file, take the defaults
+
+        # if no settings file exists, use the defaults
         else:
             for k in defaultSettings.keys():
                 newSettings[k] = defaultSettings[k][0]
@@ -169,27 +181,37 @@ class MainContainer(BoxLayout):
             yaml.dump(allSettings, outputFile, default_flow_style=False)
 
 
-
 class SetupApp(App):
     """
     Root App class. Calling run method on this class launches
     the GUI
     """
     title = 'Pyneal Setup'
-
-    def build(self):
-        return MainContainer()
-    #
-    # def update(self, *args):
-
     pass
-
 
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadSettingsDialog', cls=LoadSettingsDialog)
 
 
+def launchPynealSetupGUI(settingsFile):
+    """
+    Launch the pyneal setup GUI. Call this function from the main pyneal.py
+    script in order to open the GUI. The GUI will be populated with all of
+    the settings specified in the 'settingsFile'.
+
+    settingsFile: path to yaml file containing all of the GUI settings
+    """
+    # update the global setupConfigFile var with the path passed in
+    global setupConfigFile
+    setupConfigFile = settingsFile
+
+    # launch the app
+    SetupApp().run()
+
 
 if __name__ == '__main__':
-    # run the app
-    SetupApp().run()
+    # specify the settings file to read
+    settingsFile = 'setupConfig.yaml'
+
+    # launch setup GUI
+    launchPynealSetupGUI(settingsFile)
