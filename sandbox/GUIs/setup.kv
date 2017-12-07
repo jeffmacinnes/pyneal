@@ -1,4 +1,6 @@
 #kivy 1.10.0
+#:import split os.path.split
+
 MainContainer:
 
 <MainContainer>:
@@ -17,7 +19,7 @@ MainContainer:
             text: 'Pyneal Logo'
         Button:
             text: 'Load Settings'
-            on_release: root.show_loadSettingsDialog()
+            on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
 
 
     ### Communication Box ------------------
@@ -77,7 +79,7 @@ MainContainer:
                 # load mask button
                 Button:
                     text: 'Load Mask'
-                    on_release: root.show_loadMaskDialog()
+                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
             BoxLayout:
                 CheckBox:
                     id: maskBinarizeChoice
@@ -145,8 +147,10 @@ MainContainer:
                     id: statsChoice_custom
                     text: 'Custom'
                     group: 'statsChoice'
-                    state: 'down' if root.GUI_settings.statsChoice == 'Custom' else 'normal'
-                    on_release: root.setStatsChoice('Custom')
+                    state: 'down' if root.GUI_settings.statsChoice not in ['Average', 'Median'] else 'normal'
+                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomStats)
+            Label:
+                text: '' if root.GUI_settings.statsChoice in ['Average', 'Median'] else ('Custom stats: ' + split(root.GUI_settings.statsChoice)[1])
 
     ### Submit Box ------------------
     BoxLayout:
@@ -166,8 +170,9 @@ MainContainer:
                 text: 'Submit'
                 on_release: root.submitGUI()
 
-### Load Settings File Dialog Window #################################
-<LoadSettingsDialog>:
+
+### Generic Load File Dialog Window #################################
+<LoadFileDialog>:
     BoxLayout:
         font_size: '10sp'
         size: root.size
@@ -175,41 +180,21 @@ MainContainer:
         orientation: "vertical"
         FileChooserListView:
             id: filechooser
-            path: '/Users/jeff/gDrive/jeffCloud/real-time'
-            filters: ['*.yaml']
+            path: root.path
+            filters: root.fileFilter
+            font_name: 'Roboto-Bold'
 
         BoxLayout:
             size_hint_y: None
             height: 50
             Button:
                 text: "Load"
-                on_release: root.loadSettings(filechooser.path, filechooser.selection)
+                on_release: root.loadFunc(filechooser.path, filechooser.selection)
             Button:
                 text: "Cancel"
-                on_release: root.cancelSettings()
+                on_release: root.cancelFileChooser()
 
 
-### Load Settings File Dialog Window #################################
-<LoadMaskDialog>:
-    BoxLayout:
-        font_size: '10sp'
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            path: '/Users/jeff/gDrive/jeffCloud/real-time'
-            filters: ['*.nii.gz']
-
-        BoxLayout:
-            size_hint_y: None
-            height: 50
-            Button:
-                text: "Load"
-                on_release: root.loadMask(filechooser.path, filechooser.selection)
-            Button:
-                text: "Cancel"
-                on_release: root.cancelMask()
 
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:

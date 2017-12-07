@@ -25,7 +25,7 @@ import yaml
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, ObjectProperty, DictProperty
+from kivy.properties import StringProperty, ListProperty, ObjectProperty, DictProperty
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
@@ -38,16 +38,13 @@ Config.set('graphics', 'height', '700')
 # initialize global var that will store path to the setupConfigFile
 setupConfigFile = None
 
-class LoadSettingsDialog(BoxLayout):
-    """ class to load settings file """
-    loadSettings = ObjectProperty(None)
-    cancelSettings = ObjectProperty(None)
 
-
-class LoadMaskDialog(BoxLayout):
-    """ class to load mask file """
-    loadMask = ObjectProperty(None)
-    cancelMask = ObjectProperty(None)
+class LoadFileDialog(BoxLayout):
+    """ generic class to present file chooser popup """
+    loadFunc= ObjectProperty(None)
+    cancelFileChooser = ObjectProperty(None)
+    path = StringProperty()
+    fileFilter = ListProperty()
 
 
 class ErrorNotification(BoxLayout):
@@ -187,57 +184,60 @@ class MainContainer(BoxLayout):
             with open(setupConfigFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
-
-    ### Load Settings Dialog Methods ##########################################
-    def show_loadSettingsDialog(self):
-        # method to pop open the file browser for loading a settings file
-        content = LoadSettingsDialog(loadSettings=self.loadSettings,
-                                    cancelSettings=self.cancelSettings)
-        self._popup = Popup(title="Load file", content=content,
-                            size_hint=(1, 0.9))
+    ### File Chooser Dialog Methods ###########################################
+    def show_loadFileDialog(self, path='~/', fileFilter=[], loadFunc=None):
+        """
+        generic function to present a popup window that will allow users
+        to select a file. Customize this with the parameters you pass in
+            - path: path where the file browswer will start
+            - fileFilter: list of file types to filter; e.g. ['*.txt']
+            - loadFunc: function that will be called when 'load' button pressed
+        """
+        # method to pop open a file browser
+        content = LoadFileDialog(loadFunc=loadFunc,
+                                    cancelFileChooser=self.cancelFileChooser,
+                                    path=path,
+                                    fileFilter=fileFilter)
+        self._popup = Popup(title="Load File", content=content,
+                            size_hint=(0.9,0.9))
         self._popup.open()
 
+    def cancelFileChooser(self):
+        # close the file chooser dialog
+        self._popup.dismiss()
 
+    ### Custom functions for different load button behaviors ------------------
     def loadSettings(self, path, selection):
-        # load the selected settings file
-        settingsFile = selection[0]
+        # called by the load button on settings file selection dialog
+        if len(selection) > 0:
+            # read the settings file, load new settings into GUI
+            settingsFile = selection[0]
+            self.GUI_settings = self.readSettings(settingsFile)
 
-        # read the settings file, override the dict property
-        # that has the current settings
-        self.GUI_settings = self.readSettings(settingsFile)
-
-        # close settings dialog
+        # close  dialog
         self._popup.dismiss()
-
-
-    def cancelSettings(self):
-        self._popup.dismiss()
-
-
-    ### Load Mask Dialog Methods ##############################################
-    def show_loadMaskDialog(self):
-        # method to pop open the file browser
-        content = LoadMaskDialog(loadMask=self.loadMask,
-                                    cancelMask=self.cancelMask)
-        self._popup = Popup(title="Load Mask", content=content,
-                            size_hint=(1, 0.9))
-        self._popup.open()
 
 
     def loadMask(self, path, selection):
-        # load the selected mask file
-        maskFile = selection[0]
+        # called by load button on mask selection dialog
+        if len(selection) > 0:
+            # Store maskFile in the GUI settings dict
+            maskFile = selection[0]
+            self.GUI_settings['maskFile'] = maskFile
 
-        # Store maskFile in the GUI settings dict
-        self.GUI_settings['maskFile'] = maskFile
-
-        # close settings dialog
+        # close dialog
         self._popup.dismiss()
 
 
-    def cancelMask(self):
-        self._popup.dismiss()
+    def loadCustomStats(self, path, selection):
+        # called by load button on custom stats selection dialog
+        if len(selection) > 0:
+            # Store custom stat file in the GUI settings dict
+            customStatFile = selection[0]
+            self.GUI_settings['statsChoice'] = customStatFile
 
+            # close dialog
+            self._popup.dismiss()
 
     ### Show Notification Pop-up ##############################################
     def show_ErrorNotification(self, msg):
@@ -259,8 +259,7 @@ class SetupApp(App):
 
 # Register the various components of the GUI
 Factory.register('MainContainer', cls=MainContainer)
-Factory.register('LoadSettingsDialog', cls=LoadSettingsDialog)
-Factory.register('LoadMaskDialog', cls=LoadMaskDialog)
+Factory.register('LoadFileDialog', cls=LoadFileDialog)
 Factory.register('ErrorNotification', cls=ErrorNotification)
 
 def launchPynealSetupGUI(settingsFile):
