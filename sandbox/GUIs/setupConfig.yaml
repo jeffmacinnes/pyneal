@@ -1,3 +1,6 @@
-numTimepts: 375
+maskBinarizeChoice: false
+maskFile: /Users/jeff/gDrive/jeffCloud/real-time/testMask.nii.gz
+numTimepts: 385
 outputPort: 666
-scannerPort: 555
+scannerPort: 666
+statsChoice: Average

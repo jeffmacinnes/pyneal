@@ -25,12 +25,10 @@ import yaml
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, NumericProperty, ObjectProperty, DictProperty
-from kivy.storage.jsonstore import JsonStore
+from kivy.properties import StringProperty, ObjectProperty, DictProperty
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
-from kivy.clock import Clock
 
 # Set Window Size
 from kivy.config import Config
@@ -41,14 +39,25 @@ Config.set('graphics', 'height', '700')
 setupConfigFile = None
 
 class LoadSettingsDialog(BoxLayout):
+    """ class to load settings file """
     loadSettings = ObjectProperty(None)
     cancelSettings = ObjectProperty(None)
 
 
+class LoadMaskDialog(BoxLayout):
+    """ class to load mask file """
+    loadMask = ObjectProperty(None)
+    cancelMask = ObjectProperty(None)
+
+
+class ErrorNotification(BoxLayout):
+    """ class to load error notification popup """
+    errorMsg = StringProperty('')
+
+
 class MainContainer(BoxLayout):
     """
-    Custom widget that is the root level container for all
-    other widgets
+    Root level widget for the setup GUI
     """
     # create a kivy DictProperty that will store a dictionary with all of the
     # settings for the GUI.
@@ -59,11 +68,6 @@ class MainContainer(BoxLayout):
 
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
-
-        # populate the GUI according to the settings. Many of the text
-        # settings (e.g. scanner port) read directly from GUI_settings,
-        # and will update automatically. But other
-        self.populateGUI(self.GUI_settings)
 
 
     ### Methods for dealing with loading/saving Settings -----------------------
@@ -78,15 +82,17 @@ class MainContainer(BoxLayout):
         defaultSettings = {
             'scannerPort': [999, int],
             'outputPort': [999, int],
+            'maskFile': ['None', str],
+            'maskBinarizeChoice': [True, bool],
             'numTimepts': [999, int],
-            'statsChoice': ['Median', str]
+            'statsChoice': ['Average', str]
             }
 
         # initialize dictionary that will eventually hold the new settings
         newSettings = {}
 
-        # load the settingsFile, if it exists
-        if os.path.isfile(settingsFile):
+        # load the settingsFile, if it exists and is not empty
+        if os.path.isfile(settingsFile) and os.path.getsize(settingsFile) > 0:
             # open the file, load all settings from the file into a dict
             with open(settingsFile, 'r') as ymlFile:
                 loadedSettings = yaml.load(ymlFile)
@@ -123,22 +129,68 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
-    def populateGUI(self, settings):
-        statsChoice = settings['statsChoice']
-        if statsChoice == 'Average':
-            self.ids.statsChoice_average.state = 'down'
-        elif statsChoice == 'Median':
-            self.ids.statsChoice_median.state = 'down'
-        elif statsChoice == 'Custom':
-            self.ids.statsChoice_custom.state = 'down'
 
-    def setStatChoice(self, choice):
-        print('choice is {}'.format(choice))
+    def setMaskBinarizeChoice(self):
+        print(self.ids.maskBinarizeChoice.active)
+        self.GUI_settings['maskBinarizeChoice'] = self.ids.maskBinarizeChoice.active
+
+
+    def setStatsChoice(self, choice):
         self.GUI_settings['statsChoice'] = choice
 
-    ### Load Settings Dialog Methods -----------------
+    def check_GUI_settings(self):
+        """
+        Examine the GUI_settings dict to make sure everything is valid
+        """
+        errorMsg = []
+        # check if text inputs are valid integers
+        for k in ['scannerPort', 'outputPort', 'numTimepts']:
+            try:
+                tmp = int(self.GUI_settings[k])
+            except:
+                errorMsg.append('{}: not an integer'.format(k))
+                pass
+
+        # check if maskFile is a valid path
+        if not os.path.isfile(self.GUI_settings['maskFile']):
+            errorMsg.append('{} is not a valid mask file'.format(self.GUI_settings['maskFile']))
+
+        # show the error notification, if any
+        if len(errorMsg) > 0:
+            self.show_ErrorNotification('\n\n'.join(errorMsg))
+            errorCheckPassed = False
+        else:
+            errorCheckPassed = True
+        return errorCheckPassed
+
+    def submitGUI(self):
+        """
+        method for the GUI submit button. Get all setting, confirm they
+        are valid, and save new settings file
+        """
+        ## Error Check All GUI SETTINGS
+        errorCheckPassed = self.check_GUI_settings()
+
+        # write GUI settings to file
+        if errorCheckPassed:
+            # Convery the GUI_settings from kivy dictproperty to a regular ol'
+            # python dict (and do some reformatting along the way)
+            allSettings = {}
+            for k in self.GUI_settings.keys():
+                # convert text inputs to integers
+                if k in ['scannerPort', 'outputPort', 'numTimepts']:
+                        allSettings[k] = int(self.GUI_settings[k])
+                else:
+                    allSettings[k] = self.GUI_settings[k]
+
+            # write the settings as the new config yaml file
+            with open(setupConfigFile, 'w') as outputFile:
+                yaml.dump(allSettings, outputFile, default_flow_style=False)
+
+
+    ### Load Settings Dialog Methods ##########################################
     def show_loadSettingsDialog(self):
-        # method to pop open the file browser
+        # method to pop open the file browser for loading a settings file
         content = LoadSettingsDialog(loadSettings=self.loadSettings,
                                     cancelSettings=self.cancelSettings)
         self._popup = Popup(title="Load file", content=content,
@@ -161,37 +213,55 @@ class MainContainer(BoxLayout):
     def cancelSettings(self):
         self._popup.dismiss()
 
-    def submitGUI(self):
-        """
-        method for the GUI submit button.
-        Get all setting, save new default settings file
-        """
-        print(self.GUI_settings)
 
-        ### POSSIBLE TO HAVE ALL OF THIS ACCESSED DIRECTLY FROM GUI_SETTINGS?
-        allSettings = {
-            'scannerPort': int(self.ids.scannerPort.text),
-            'outputPort': int(self.ids.outputPort.text),
-            'numTimepts': int(self.ids.numTimepts.text),
-            'statsChoice': self.getStatsChoice()
-        }
+    ### Load Mask Dialog Methods ##############################################
+    def show_loadMaskDialog(self):
+        # method to pop open the file browser
+        content = LoadMaskDialog(loadMask=self.loadMask,
+                                    cancelMask=self.cancelMask)
+        self._popup = Popup(title="Load Mask", content=content,
+                            size_hint=(1, 0.9))
+        self._popup.open()
 
-        # write the file
-        with open(setupConfigFile, 'w') as outputFile:
-            yaml.dump(allSettings, outputFile, default_flow_style=False)
+
+    def loadMask(self, path, selection):
+        # load the selected mask file
+        maskFile = selection[0]
+
+        # Store maskFile in the GUI settings dict
+        self.GUI_settings['maskFile'] = maskFile
+
+        # close settings dialog
+        self._popup.dismiss()
+
+
+    def cancelMask(self):
+        self._popup.dismiss()
+
+
+    ### Show Notification Pop-up ##############################################
+    def show_ErrorNotification(self, msg):
+        self._notification = Popup(
+                        title='Errors',
+                        content=ErrorNotification(errorMsg=msg),
+                        size_hint=(.5, .5)).open()
+
 
 
 class SetupApp(App):
     """
-    Root App class. Calling run method on this class launches
-    the GUI
+    Root App class. This will look for the setup.kv file in the same
+    directory and build the GUI according to the parameters outlined in
+    that file. Calling 'run' on this class instance will launch the GUI
     """
     title = 'Pyneal Setup'
     pass
 
+# Register the various components of the GUI
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadSettingsDialog', cls=LoadSettingsDialog)
-
+Factory.register('LoadMaskDialog', cls=LoadMaskDialog)
+Factory.register('ErrorNotification', cls=ErrorNotification)
 
 def launchPynealSetupGUI(settingsFile):
     """
@@ -208,7 +278,8 @@ def launchPynealSetupGUI(settingsFile):
     # launch the app
     SetupApp().run()
 
-
+# For testing purposes, you can call this GUI directly from the
+# command line
 if __name__ == '__main__':
     # specify the settings file to read
     settingsFile = 'setupConfig.yaml'

@@ -4,7 +4,6 @@ MainContainer:
 <MainContainer>:
     orientation: 'vertical'
     # custom Properties
-    #scannerPortInput: scannerPortInput
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
@@ -43,6 +42,7 @@ MainContainer:
                     id: scannerPort
                     text: str(root.GUI_settings.scannerPort)
                     size_hint_x: 1.5
+                    on_text: root.GUI_settings.scannerPort = scannerPort.text
             # output port
             BoxLayout:
                 Label:
@@ -51,6 +51,41 @@ MainContainer:
                     id: outputPort
                     text: str(root.GUI_settings.outputPort)
                     size_hint_x: 1.5
+                    on_text: root.GUI_settings.outputPort = outputPort.text
+
+
+    ### Mask Box ------------------
+    BoxLayout:
+        size_hint_y: 4
+        canvas:
+            Color:
+                rgb: .6,0,0
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            Label:
+                # box label
+                text: 'Mask'
+            BoxLayout:
+                # mask info
+                Label:
+                    id: maskFile
+                    text: root.GUI_settings.maskFile
+                # load mask button
+                Button:
+                    text: 'Load Mask'
+                    on_release: root.show_loadMaskDialog()
+            BoxLayout:
+                CheckBox:
+                    id: maskBinarizeChoice
+                    size_hint_x: .25
+                    state: 'down' if root.GUI_settings.maskBinarizeChoice else 'normal'
+                    on_active: root.setMaskBinarizeChoice()
+                Label:
+                    text: 'Binarize Mask?'
 
 
     ### Preprocessing Box ------------------
@@ -58,7 +93,7 @@ MainContainer:
         size_hint_y: 2
         canvas:
             Color:
-                rgb: .6,0,0
+                rgb: .4,0,0
             Rectangle:
                 size: self.size
                 pos: self.pos
@@ -75,20 +110,8 @@ MainContainer:
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
                     size_hint_x: 1.5
+                    on_text: root.GUI_settings.numTimepts = numTimepts.text
 
-    ### Mask Box ------------------
-    BoxLayout:
-        size_hint_y: 4
-        canvas:
-            Color:
-                rgb: .4,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
-        BoxLayout:
-            # box label
-            Label:
-                text: 'Mask'
 
     ### Stats Box ------------------
     BoxLayout:
@@ -110,17 +133,20 @@ MainContainer:
                     id: statsChoice_average
                     text: 'Average'
                     group: 'statsChoice'
-                    on_state: root.setStatChoice('Average')
+                    state: 'down' if root.GUI_settings.statsChoice == 'Average' else 'normal'
+                    on_release: root.setStatsChoice('Average')
                 ToggleButton:
                     id: statsChoice_median
                     text: 'Median'
                     group: 'statsChoice'
-                    on_state: root.setStatChoice('Median')
+                    state: 'down' if root.GUI_settings.statsChoice == 'Median' else 'normal'
+                    on_release: root.setStatsChoice('Median')
                 ToggleButton:
                     id: statsChoice_custom
                     text: 'Custom'
                     group: 'statsChoice'
-                    on_state: root.setStatChoice('Custom')
+                    state: 'down' if root.GUI_settings.statsChoice == 'Custom' else 'normal'
+                    on_release: root.setStatsChoice('Custom')
 
     ### Submit Box ------------------
     BoxLayout:
@@ -161,3 +187,34 @@ MainContainer:
             Button:
                 text: "Cancel"
                 on_release: root.cancelSettings()
+
+
+### Load Settings File Dialog Window #################################
+<LoadMaskDialog>:
+    BoxLayout:
+        font_size: '10sp'
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: '/Users/jeff/gDrive/jeffCloud/real-time'
+            filters: ['*.nii.gz']
+
+        BoxLayout:
+            size_hint_y: None
+            height: 50
+            Button:
+                text: "Load"
+                on_release: root.loadMask(filechooser.path, filechooser.selection)
+            Button:
+                text: "Cancel"
+                on_release: root.cancelMask()
+
+### Error Notification Pop-up Window #################################
+<ErrorNotification>:
+    BoxLayout:
+        Label:
+            text_size: self.size
+            valign: 'top'
+            text: root.errorMsg
