@@ -24,8 +24,9 @@ import yaml
 
 from kivy.app import App
 from kivy.uix.widget import Widget
+from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, ListProperty, ObjectProperty, DictProperty
+from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
@@ -37,6 +38,10 @@ Config.set('graphics', 'height', '700')
 
 # initialize global var that will store path to the setupConfigFile
 setupConfigFile = None
+
+class SectionHeading(BoxLayout):
+    textWidth = NumericProperty()
+    labelText = StringProperty('test')
 
 
 class LoadFileDialog(BoxLayout):
@@ -59,6 +64,7 @@ class MainContainer(BoxLayout):
     # create a kivy DictProperty that will store a dictionary with all of the
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
+    textColor = ListProperty([0,0,0,1])
 
     def __init__(self, **kwargs):
         self.GUI_settings = self.readSettings(setupConfigFile)
@@ -245,7 +251,6 @@ class MainContainer(BoxLayout):
                         title='Errors',
                         content=ErrorNotification(errorMsg=msg),
                         size_hint=(.5, .5)).open()
-
 
 
 class SetupApp(App):

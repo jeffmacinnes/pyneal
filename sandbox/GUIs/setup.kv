@@ -3,43 +3,74 @@
 
 MainContainer:
 
+<SectionHeading>:
+    Label:
+        size: self.texture_size
+        id: sectionLabel
+        text: root.labelText
+        size_hint_y: .8
+        font_size: 35
+        bold: True
+        valign: 'middle'
+        halign: 'left'
+        padding_x: 0.0
+        color: (0,0,0,1)
+        canvas.before:
+            Color:
+                rgba: 0,0,0,1
+            Line:
+                points: self.x+20, self.center_y, (self.width*2)-20, self.center_y
+            Color:
+                rgba: 1,1,1,1
+            Rectangle:
+                pos: [(self.width-self.texture_size[0])/2-10, self.pos[1]]
+                size: [self.texture_size[0]+20, self.height]
+
+    Widget:
+        # canvas.before:
+        #     Color:
+        #         rgba: 1,1,1,1
+        #     Line:
+        #         points: self.x, self.center_y, self.width-20, self.center_y
+
+
+
 <MainContainer>:
+    canvas.before:
+        Color:
+            rgba: 1,1,1,1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+
     orientation: 'vertical'
     # custom Properties
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
-        canvas:
-            Color:
-                rgb: 1,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
         Label:
             text: 'Pyneal Logo'
+            color: root.textColor
         Button:
             text: 'Load Settings'
             on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
 
-
     ### Communication Box ------------------
     BoxLayout:
         size_hint_y: 3
-        canvas:
-            Color:
-                rgb: .8,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
         BoxLayout:
             orientation: 'vertical'
             # box label
-            Label:
-                text: 'Communication'
+            SectionHeading:
+                labelText: 'Communication:'
             # scanner port
             BoxLayout:
+                padding: [.1, 0, .1, 0]
                 Label:
                     text: 'Scanner Port:'
+                    color: root.textColor
+                    halign: 'right'
                 TextInput:
                     id: scannerPort
                     text: str(root.GUI_settings.scannerPort)
@@ -49,6 +80,8 @@ MainContainer:
             BoxLayout:
                 Label:
                     text: 'Output Port:'
+                    color: root.textColor
+                    halign: 'right'
                 TextInput:
                     id: outputPort
                     text: str(root.GUI_settings.outputPort)
@@ -58,24 +91,20 @@ MainContainer:
 
     ### Mask Box ------------------
     BoxLayout:
-        size_hint_y: 4
-        canvas:
-            Color:
-                rgb: .6,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
+        size_hint_y: 3
         BoxLayout:
             orientation: 'vertical'
             # box label
-            Label:
+            SectionHeading:
                 # box label
-                text: 'Mask'
+                labelText: 'Mask:'
             BoxLayout:
                 # mask info
                 Label:
                     id: maskFile
                     text: root.GUI_settings.maskFile
+                    font_size: 16
+                    color: root.textColor
                 # load mask button
                 Button:
                     text: 'Load Mask'
@@ -88,26 +117,22 @@ MainContainer:
                     on_active: root.setMaskBinarizeChoice()
                 Label:
                     text: 'Binarize Mask?'
+                    color: root.textColor
 
 
     ### Preprocessing Box ------------------
     BoxLayout:
         size_hint_y: 2
-        canvas:
-            Color:
-                rgb: .4,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
         BoxLayout:
             orientation: 'vertical'
             # box label
-            Label:
-                text: 'Preprocessing'
+            SectionHeading:
+                labelText: 'Preprocessing:'
             # num timepts
             BoxLayout:
                 Label:
                     text: '# of timepts:'
+                    color: root.textColor
                 TextInput:
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
@@ -117,18 +142,12 @@ MainContainer:
 
     ### Stats Box ------------------
     BoxLayout:
-        size_hint_y: 2
-        canvas:
-            Color:
-                rgb: .2,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
+        size_hint_y: 3
         BoxLayout:
             orientation: 'vertical'
             # box label
-            Label:
-                text: 'Stats'
+            SectionHeading:
+                labelText: 'Stats:'
             # buttons
             BoxLayout:
                 ToggleButton:
@@ -151,21 +170,16 @@ MainContainer:
                     on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomStats)
             Label:
                 text: '' if root.GUI_settings.statsChoice in ['Average', 'Median'] else ('Custom stats: ' + split(root.GUI_settings.statsChoice)[1])
+                color: root.textColor
 
     ### Submit Box ------------------
     BoxLayout:
         size_hint_y: 2
-        canvas:
-            Color:
-                rgb: 0,0,0
-            Rectangle:
-                size: self.size
-                pos: self.pos
         BoxLayout:
             orientation: 'vertical'
             # box label
-            Label:
-                text: 'Submit'
+            SectionHeading:
+                labelText: 'Submit'
             Button:
                 text: 'Submit'
                 on_release: root.submitGUI()
