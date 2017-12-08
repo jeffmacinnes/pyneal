@@ -64,19 +64,20 @@ class ScanReceiver(Thread):
     the appropriate place in the 4D data matrix
 
     input args:
-        nTmpts: number of expected timepoints in series [500]
+        numTimepts: number of expected timepoints in series [500]
         host: host IP for scanner socket ['127.0.0.1']
         port: port # for scanner socket [5555]
     """
-    def __init__(self, nTmpts=500, host='127.0.0.1', port=5555):
+    def __init__(self, numTimepts=500, host='*', port=5555):
         # start the thread upon creation
         Thread.__init__(self)
 
         # set up logger
-        self.logger = logging.getLogger(__name__)
+        #self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('PynealLog')
 
         # class config vars
-        self.nTmpts = nTmpts        # total number of vols (or timepts) expected
+        self.numTimepts = numTimepts        # total number of vols (or timepts) expected
         self.alive = True           # thread status
         self.imageMatrix = None     # matrix that will hold the incoming data
         self.completedSlices = None # nSlices x nVols matrix that will store bools
@@ -85,8 +86,8 @@ class ScanReceiver(Thread):
         # set up socket to communicate with scanner
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
-        self.scannerSocket.connect('tcp://{}:{}'.format(host, port))
-        self.logger.debug('scanReceiver connecting to host: {}, port: {}'.format(host, port))
+        self.scannerSocket.bind('tcp://{}:{}'.format(host, port))
+        self.logger.debug('scanReceiver server bound to host: {}, port: {}'.format(host, port))
 
     def run(self):
         # Once this thread is up and running, confirm that the scanner socket
@@ -142,17 +143,17 @@ class ScanReceiver(Thread):
         info from the slice header. Also, build the table that will
         store T/F values for whether each slice has appeared
         """
-        # create the empty imageMatrix (note: nTmpts is NOT in the slice header)
+        # create the empty imageMatrix (note: numTimepts is NOT in the slice header)
         self.imageMatrix = np.zeros(shape=(
                                 sliceHeader['shape'][0],
                                 sliceHeader['shape'][1],
                                 sliceHeader['nSlicesPerVol'],
-                                self.nTmpts))
+                                self.numTimepts))
 
         # create the table for indicated arrived slices
         self.completedSlices = np.zeros(shape=(
                                 sliceHeader['nSlicesPerVol'],
-                                self.nTmpts), dtype=bool)
+                                self.numTimepts), dtype=bool)
 
         self.logger.debug('Image Matrix dims: {}'.format(self.imageMatrix.shape))
 
@@ -177,12 +178,10 @@ class ScanReceiver(Thread):
         self.alive = False
 
 
-
-
-host = '127.0.0.1'
-port = 5555
-
 if __name__ == '__main__':
+    host = '*'
+    port = 5555
+
     ### set up logging
     fileLogger = logging.FileHandler('./scanReceiver.log', mode='w')
     fileLogger.setLevel(logging.DEBUG)
@@ -196,5 +195,5 @@ if __name__ == '__main__':
     logger.addHandler(fileLogger)
 
     # start the scanReceiver
-    scanReceiver = ScanReceiver(nTmpts=100, host=host, port=port)
+    scanReceiver = ScanReceiver(numTimepts=100, host=host, port=port)
     scanReceiver.start()

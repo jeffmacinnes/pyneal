@@ -24,10 +24,10 @@ def createLogger(log_fName):
     This method will return a logger, but note that once this function has
     been called, any other module can write log messages to this file by
     defining a logger like:
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger('PynealLog')
     """
     logDir, logFile = os.path.split(log_fName)
-    print(logDir)
+    print('Logs written to: {}'.format(logDir))
 
     # create the log dir if necessary
     if not os.path.isdir(logDir):
@@ -47,8 +47,8 @@ def createLogger(log_fName):
     consoleLogger.setFormatter(consoleLogFormat)
 
     ### ROOT LOGGER, add handlers. (subsequent modules can access this same
-    # logger by calling: logger = logging.getLogger(__name__)
-    logger = logging.getLogger()
+    # logger by calling: logger = logging.getLogger('PynealLog')
+    logger = logging.getLogger('PynealLog')
     logger.setLevel(logging.DEBUG)
     logger.addHandler(fileLogger)
     logger.addHandler(consoleLogger)

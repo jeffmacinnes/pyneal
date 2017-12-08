@@ -4,6 +4,7 @@
 MainContainer:
 
 <SectionHeading>:
+    padding_y: 10.0
     Label:
         size: self.texture_size
         id: sectionLabel
@@ -14,25 +15,21 @@ MainContainer:
         valign: 'middle'
         halign: 'left'
         padding_x: 0.0
-        color: (0,0,0,1)
+        color: (1,1,1,1)
         canvas.before:
             Color:
-                rgba: 0,0,0,1
+                rgba: .96,.15,.35,1
             Line:
                 points: self.x+20, self.center_y, (self.width*2)-20, self.center_y
+                width: 3.0
+                cap: 'square'
             Color:
-                rgba: 1,1,1,1
+                rgba: .96,.15,.35,1
             Rectangle:
                 pos: [(self.width-self.texture_size[0])/2-10, self.pos[1]]
                 size: [self.texture_size[0]+20, self.height]
-
+    # additional wiget placeholder just to handle the spacing issues
     Widget:
-        # canvas.before:
-        #     Color:
-        #         rgba: 1,1,1,1
-        #     Line:
-        #         points: self.x, self.center_y, self.width-20, self.center_y
-
 
 
 <MainContainer>:

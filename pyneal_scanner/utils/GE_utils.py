@@ -227,9 +227,7 @@ class GE_DirStructure():
         """
         build a list that contains the directory names of all of the series
         """
-
         # get a list of all sub dirs in the sessionDir
-        print
         subDirs = self._findAllSubdirs(self.sessionDir)
 
         if subDirs is not None:
@@ -265,7 +263,6 @@ class GE_BuildNifti():
 
     Output is a Nifti2 formatted 4D file
     """
-
     def __init__(self, seriesDir):
         """
         Initialize class:
@@ -779,7 +776,6 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
         if msg == 'hello':
             break
     logger.info('scannerSocket connected')
-
 
     ### Wait for a new series directory appear
     logger.info('Waiting for new seriesDir...')

@@ -85,6 +85,7 @@ class ScannerSettings():
         # return response
         return self.allSettings['scannerMake']
 
+
     def get_scannerSocketHost(self):
         """
         Return the host IP for the socket the scanner should communicate over
@@ -195,10 +196,12 @@ def initializeSession():
 def create_scannerSocket(host, port):
     """
     create a zero-mq socket to use for communication between
-    pyneal_scanner and a remote source
+    pyneal_scanner and a remote source where Pyneal is running.
+    In this case, Pyneal_scanner is acting as a client making
+    an outgoing connection to the server (i.e. Pyneal)
     """
     context = zmq.Context.instance()
-    socket = context.socket(zmq.REQ)
-    socket.bind('tcp://{}:{}'.format(host, port))
+    socket = context.socket(zmq.PAIR)
+    socket.connect('tcp://{}:{}'.format(host, port))
 
     return socket

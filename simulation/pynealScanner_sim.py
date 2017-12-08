@@ -21,9 +21,13 @@ import numpy as np
 ### --- Scan Parameters ---
 sliceShape = (64,64)
 nSlicesPerVol = 18
-nTmpts = 30
+nTmpts = 5
 TR = 1           # set TR in s (or None for as fast as possible)
 ### ----------------------
+
+### --- Socket Parameters ---
+port = 5555
+host = '127.0.0.1'
 
 # build dataset of random integers, formatted at dtype='int16'
 fakeDataset = np.random.random((sliceShape[0],
@@ -31,16 +35,13 @@ fakeDataset = np.random.random((sliceShape[0],
                     nSlicesPerVol,
                     nTmpts)).astype('int16')
 
-# Set up host and port for the socket
-port = 5555
-host = '127.0.0.1'
 
 # Create socket, bind to address
 context = zmq.Context.instance()
 socket = context.socket(zmq.PAIR)
-socket.bind('tcp://{}:{}'.format(host, port))
+socket.connect('tcp://{}:{}'.format(host, port))
 
-# Wait for pyneal (e.g. client) to connect to the socket
+# Wait for the server (e.g. Pyneal) to receive a connection from us
 print('waiting for connection...')
 while True:
     msg = socket.recv_string()

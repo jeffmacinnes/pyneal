@@ -1,6 +1,0 @@
-maskBinarizeChoice: true
-maskFile: /Users/jeff/gDrive/jeffCloud/real-time/testMask.nii.gz
-numTimepts: 234
-outputPort: 234
-scannerPort: 123
-statsChoice: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal.py

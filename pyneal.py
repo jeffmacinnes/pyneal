@@ -20,22 +20,20 @@ from os.path import join
 import time
 
 import yaml
+
 from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
+import src.GUIs.setup as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
 pynealDir = os.path.abspath(os.path.dirname(__file__))
 
-
 def launchPyneal():
-    # read settings
-    nTmpts = 100
-    host = '127.0.0.1'
-    port = 5555
-
-    # launch set-up GUI, which SHOWS settings and gives option
-    # to CHANGE & SAVE SETTINGS
-
+    """
+    Main Pyneal Loop. This function will launch setup GUI,
+    retrieve settings, initialize all threads, and start processing
+    incoming scans
+    """
     ### Set Up Logging ------------------------------------
     # The createLogger function will do a lot of the formatting set up
     # behind the scenes. You can write to this log by calling the
@@ -45,9 +43,22 @@ def launchPyneal():
     logFname = join(pynealDir, 'logs/pynealLog.log')
     logger = createLogger(logFname)
 
+    ### Read Settings ------------------------------------
+    settingsFile = join(pynealDir,'src/GUIs/setupConfig.yaml')
+    # Launch GUI to let User update the settings file
+    #setupGUI.launchPynealSetupGUI(settingsFile)
+
+    # Read the new settings file, store as dict, write to log
+    with open(settingsFile, 'r') as ymlFile:
+        settings = yaml.load(ymlFile)
+    for k in settings:
+        logger.debug('Setting: {}: {}'.format(k, settings[k]))
+
+
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming slice data, builds matrix
-    scanReceiver = ScanReceiver(nTmpts=nTmpts, host=host, port=port)
+    scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
+                                port=settings['scannerPort'])
     scanReceiver.daemon = True
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
@@ -61,7 +72,7 @@ def launchPyneal():
         time.sleep(.5)
 
     # Loop over all expected volumes
-    for volIdx in range(nTmpts):
+    for volIdx in range(settings['numTimepts']):
         # check if all slices for this volume have arrived yet
         while True:
             if all(scanReceiver.completedSlices[:,volIdx]):
