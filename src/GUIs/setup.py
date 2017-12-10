@@ -30,7 +30,6 @@ from kivy.properties import StringProperty, NumericProperty, ListProperty, Objec
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
-from kivy.logger import Logger
 
 # Set Window Size
 from kivy.config import Config

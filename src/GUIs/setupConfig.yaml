@@ -1,6 +1,6 @@
 maskBinarizeChoice: true
-maskFile: /Users/jeffmacinnes/gDrive/jeffCloud/real-time/pyneal/sandbox/testMask.nii.gz
+maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/testMask_64-64-18.nii.gz
 numTimepts: 5
 outputPort: 5556
 scannerPort: 5555
-statsChoice: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal.py
+statsChoice: Average

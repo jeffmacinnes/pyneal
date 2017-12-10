@@ -20,6 +20,7 @@ from os.path import join
 import time
 
 import yaml
+import nibabel as nb
 
 from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
@@ -39,14 +40,14 @@ def launchPyneal():
     # behind the scenes. You can write to this log by calling the
     # logger var and specifying the level, e.g.: logger.debug('msg')
     # Other modules can write to this same log by calling
-    # logger = logging.getLogger(__name__)
+    # logger = logging.getLogger('PynealLog')
     logFname = join(pynealDir, 'logs/pynealLog.log')
     logger = createLogger(logFname)
 
     ### Read Settings ------------------------------------
     settingsFile = join(pynealDir,'src/GUIs/setupConfig.yaml')
     # Launch GUI to let User update the settings file
-    #setupGUI.launchPynealSetupGUI(settingsFile)
+    setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
@@ -54,6 +55,9 @@ def launchPyneal():
     for k in settings:
         logger.debug('Setting: {}: {}'.format(k, settings[k]))
 
+    # Load the mask
+    mask_img = nb.load(settings['maskFile'])
+    print(mask_img.shape)
 
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming slice data, builds matrix
@@ -65,11 +69,8 @@ def launchPyneal():
 
     ### Wait For Scan To Start -----------------------------
     # The completedSlices table will stay 'None' until first slice arrives
-    while True:
-        if scanReceiver.completedSlices is not None:
-            logger.debug('Scan started')
-            break
-        time.sleep(.5)
+    while scanReceiver.completedSlices is None: time.sleep(.5)
+    logger.debug('Scan started')
 
     # Loop over all expected volumes
     for volIdx in range(settings['numTimepts']):
