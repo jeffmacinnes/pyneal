@@ -19,12 +19,14 @@ different experiements.
 """
 import os
 import sys
+import re
 
 import yaml
 
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty
 from kivy.uix.filechooser import FileChooserListView
@@ -42,6 +44,14 @@ setupConfigFile = None
 class SectionHeading(BoxLayout):
     textWidth = NumericProperty()
     labelText = StringProperty('test')
+
+class NumberInputField(TextInput):
+    # restrict the number fields to 0-9 input only
+    pat = re.compile('[^0-9]')
+    def insert_text(self, substring, from_undo=False):
+        pat = self.pat
+        s = re.sub(pat, '', substring)
+        return super().insert_text(s, from_undo=from_undo)
 
 
 class LoadFileDialog(BoxLayout):

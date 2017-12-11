@@ -14,7 +14,6 @@ MainContainer:
         bold: True
         valign: 'middle'
         halign: 'left'
-        padding_x: 0.0
         color: (1,1,1,1)
         canvas.before:
             Color:
@@ -26,13 +25,18 @@ MainContainer:
             Color:
                 rgba: .96,.15,.35,1
             Rectangle:
-                pos: [(self.width-self.texture_size[0])/2-10, self.pos[1]]
-                size: [self.texture_size[0]+20, self.height]
+                pos: [(self.width-self.texture_size[0])/2, self.pos[1]]
+                size: [self.texture_size[0]+25, self.height]
     # additional wiget placeholder just to handle the spacing issues
     Widget:
 
+<NumberInputField>:
+    multiline: False
+    write_tab: False
 
 <MainContainer>:
+    padding: root.width * .02, root.height * .02
+    spacing: "10dp"
     canvas.before:
         Color:
             rgba: 1,1,1,1
@@ -40,13 +44,12 @@ MainContainer:
             pos: self.pos
             size: self.size
 
-
     orientation: 'vertical'
-    # custom Properties
     ### Logo Box ------------------------
     BoxLayout:
         size_hint_y: 2
         Label:
+            size_hint_x: 1.5
             text: 'Pyneal Logo'
             color: root.textColor
         Button:
@@ -57,32 +60,40 @@ MainContainer:
     BoxLayout:
         size_hint_y: 3
         BoxLayout:
+            spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
-                labelText: 'Communication:'
+                labelText: 'Communication'
             # scanner port
             BoxLayout:
-                padding: [.1, 0, .1, 0]
+                padding: [20, 10]
+                spacing: 20
                 Label:
+                    size_hint_x: 1.5
+                    text_size: self.size
                     text: 'Scanner Port:'
                     color: root.textColor
                     halign: 'right'
-                TextInput:
+                    valign: 'middle'
+                NumberInputField:
                     id: scannerPort
                     text: str(root.GUI_settings.scannerPort)
-                    size_hint_x: 1.5
                     on_text: root.GUI_settings.scannerPort = scannerPort.text
             # output port
             BoxLayout:
+                padding: [20, 10]
+                spacing: 20
                 Label:
+                    size_hint_x: 1.5
+                    text_size: self.size
                     text: 'Output Port:'
                     color: root.textColor
                     halign: 'right'
-                TextInput:
+                    valign: 'middle'
+                NumberInputField:
                     id: outputPort
                     text: str(root.GUI_settings.outputPort)
-                    size_hint_x: 1.5
                     on_text: root.GUI_settings.outputPort = outputPort.text
 
 
@@ -94,10 +105,11 @@ MainContainer:
             # box label
             SectionHeading:
                 # box label
-                labelText: 'Mask:'
+                labelText: 'Mask'
             BoxLayout:
                 # mask info
                 Label:
+                    size_hint_x: 1.5
                     id: maskFile
                     text: root.GUI_settings.maskFile
                     font_size: 16
@@ -124,16 +136,21 @@ MainContainer:
             orientation: 'vertical'
             # box label
             SectionHeading:
-                labelText: 'Preprocessing:'
+                labelText: 'Preprocessing'
             # num timepts
             BoxLayout:
+                padding: [20, 10]
+                spacing: 20
                 Label:
+                    size_hint_x: 1.5
+                    text_size: self.size
                     text: '# of timepts:'
                     color: root.textColor
-                TextInput:
+                    halign: 'right'
+                    valign: 'middle'
+                NumberInputField:
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
-                    size_hint_x: 1.5
                     on_text: root.GUI_settings.numTimepts = numTimepts.text
 
 
@@ -144,9 +161,10 @@ MainContainer:
             orientation: 'vertical'
             # box label
             SectionHeading:
-                labelText: 'Stats:'
+                labelText: 'Stats'
             # buttons
             BoxLayout:
+                padding: [0, 20, 0, 0]
                 ToggleButton:
                     id: statsChoice_average
                     text: 'Average'
@@ -176,10 +194,13 @@ MainContainer:
             orientation: 'vertical'
             # box label
             SectionHeading:
-                labelText: 'Submit'
-            Button:
-                text: 'Submit'
-                on_release: root.submitGUI()
+                labelText: ''
+            BoxLayout:
+                padding: [150, 10]
+                spacing: 10
+                Button:
+                    text: 'Submit'
+                    on_release: root.submitGUI()
 
 
 ### Generic Load File Dialog Window #################################
