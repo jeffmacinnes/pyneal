@@ -34,7 +34,7 @@ class Siemens_BuildNifti():
     parameters, like voxel spacing and dimensions, are obtained automatically
     from the info in the dicom tags
 
-    Output is a Nifti2 formatted 3D (anat) or 4D (func) file
+    Output is a Nifti1 formatted 3D (anat) or 4D (func) file
     """
     def __init__(self, seriesDir):
         """
@@ -48,15 +48,16 @@ class Siemens_BuildNifti():
         self.affine = None
 
         # make a list of all of the raw dicom files in this dir
-        self.rawDicoms = [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
+        rawDicoms = [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
 
         # figure out what type of image this is, 4d or 3d
-        self.scanType = self._determineScanType(self.rawDicoms[0])
-        if self.scanType == 'anat':
-            self.niftiImage = self.buildAnat(self.rawDicoms)
-        elif self.scanType == 'func':
-            self.niftiImage = self.buildFunc(self.rawDicoms)
+        self.scanType = self._determineScanType(rawDicoms[0])
 
+        # build the nifti image
+        if self.scanType == 'anat':
+            self.niftiImage = self.buildAnat(rawDicoms)
+        elif self.scanType == 'func':
+            self.niftiImage = self.buildFunc(rawDicoms)
 
     def buildAnat(self, dicomFiles):
         """
@@ -122,18 +123,41 @@ class Siemens_BuildNifti():
             for slIdx in range(nSlices):
 
                 # figure out where the pixels for this slice start in the mosaic
-                sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(mosaicDims_slices,
-                                                                        sliceDims,
-                                                                        slIdx)
+                sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(
+                                                    mosaicDims_slices,
+                                                    sliceDims,
+                                                    slIdx)
+
                 # extract this slice from the mosaic
                 thisSlice = mosaic_pixels[sl_rowIdx:sl_rowIdx+sliceDims[0],
                                             sl_colIdx:sl_colIdx+sliceDims[1]]
 
-                ### NEED TO MAKE SURE ITS IN THE RIGHT ORIENTATION!!!
+                # Siemens Dicom images appear to follow the DICOM standard
+                # of collecting images in an LPS+ coordinate system. Pyneal
+                # (and many other neuroimaging tools) expect the coordinate
+                # system to be RAS+. To convert, we need to flip our data
+                # along the first axis (left/right), and then flip along the
+                # 2nd axis (up/down). This is equivalent to rotating the array
+                # 180 degrees (less steps = better)
+                thisSlice = np.rot90(thisSlice, k=2)
 
-                # put this slice in the image matrix
-                imageMatrix[:,:,slIdx, volDix] = thisSlice
-                print('slice {}: row {} , col {} '.format(sl, sl_rowIdx, sl_colIdx))
+                # Numpy arrays are indexed as [row, col], which in cartesian
+                # coords translates to [y,x]. We want our data to be an array
+                # that is indexed like [x,y,z,t], so we need to transpose
+                # each slice before adding to the full image matrix
+                imageMatrix[:,:,slIdx, volIdx] = thisSlice.T
+
+        ### Create the affine transformation that will map from vox to mm
+        # space. Our reference space (in mm) will have the same origin and
+        # axes as the voxel array. So, our affine transform just needs to be
+        # a scale transform that scales each dimension to the appropriate
+        # voxel size
+        affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+
+        ### Build a Nifti object
+        funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
+
+        return funcImage
 
 
     def _determineSlicePixelIndices(self, mosaicDims, sliceDims, sliceIdx):
@@ -197,9 +221,73 @@ class Siemens_BuildNifti():
         nib.save(self.niftiImage, output_fName)
 
 
+class Siemens_monitorSeriesDir(Thread):
+    """
+    Class to monitor for new mosaic images to appear in the seriesDir. This
+    class will run independently in a separate thread. Each new mosaic file
+    that appears will be added to the Queue for further processing
+    """
+    def __init__(self, seriesDir, dicomQ, interval=.5):
+        # start the thread upon completion
+        Thread.__init__(self)
+
+        # set up logger
+        self.logger = logging.getLogger(__name__)
+
+        # initialize class parameters
+        self.interval = interval            # interval for polling for new files
+        self.seriesDir = seriesDir          # full path to series directory
+        self.dicomQ = dicomQ                # queue to store dicom mosaic files
+        self.alive = True                   # thread status
+        self.numMosaicsAdded = 0            # counter to keep track of # mosaics
+        self.queued_mosaic_files = set()    # empty set to store names of queued mosaic
+
+    def run(self):
+        # function that runs while the Thread is still alive
+        while self.alive:
+
+            # create a set of all mosaic files currently in the series dir
+            currentMosaics = set(os.listdir(self.seriesDir))
+
+            # grab only the ones that haven't already been added to the queue
+            newMosaics = [f for f in currentMosaics if f not in self.queued_mosaic_files]
+
+            # loop over each of the new mosaic files, add each to queue
+            for f in newMosaics:
+                mosaic_fname = join(self.seriesDir, f)
+                try:
+                    self.dicomQ.put(mosaic_fname)
+                except:
+                    self.logger.error('failed on: {}'.format(mosaic_fname))
+                    print(sys.exc_info())
+                    sys.exit()
+            if len(newMosaics) > 0:
+                self.logger.debug('Put {} new slices on the queue'.format(len(newMosaics)))
+            self.numMosaicsAdded += len(newMosaics)
+
+            # now update the set of mosaics added to the queue
+            self.queued_mosaic_files.update(set(newMosaics))
+
+            # pause
+            time.sleep(self.interval)
+
+
+    def get_numMosaicsAdded(self):
+        return self.numMosaicsAdded
+
+
+    def stop(self):
+        # function to stop the thread
+        self.alive = False  
+
+
 
 
 if __name__ == '__main__':
     testDir = '../../../sandbox/scansForSimulation/Siemens_UNC/series0013'
 
     testSiemens = Siemens_BuildNifti(testDir)
+
+    outputFile = '../data/siemensOutput.nii.gz'
+    #outputFile = '/Users/jeff/Desktop/test.nii.gz'
+    testSiemens.write_nifti(outputFile)

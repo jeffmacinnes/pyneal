@@ -261,7 +261,7 @@ class GE_BuildNifti():
     parameters, like voxel spacing and dimensions, are obtained automatically
     from info in the dicom tags
 
-    Output is a Nifti2 formatted 3D (anat) or 4D (func) file
+    Output is a Nifti1 formatted 3D (anat) or 4D (func) file
     """
     def __init__(self, seriesDir):
         """
@@ -432,7 +432,7 @@ class GE_BuildNifti():
         affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
 
         ### Build a Nifti object
-        funcImage = nib.Nifti2Image(imageMatrix, affine=affine)
+        funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
 
         return funcImage
 
@@ -555,12 +555,12 @@ class GE_monitorSeriesDir(Thread):
         self.logger = logging.getLogger(__name__)
 
         # initialize class parameters
-        self.interval = interval            # interval for looping the thread
+        self.interval = interval            # interval for polling for new files (s)
         self.seriesDir = seriesDir          # full path to series directory
         self.dicomQ = dicomQ                # queue to store dicom files
         self.alive = True                   # thread status
         self.numSlicesAdded = 0             # counter to keep track of # of slices added overall
-        self.dicom_files = set()            # empty set to store names of processed dicoms
+        self.queued_dicom_files = set()     # empty set to store names of files placed on queue
 
     def run(self):
         # function that loops while the Thead is still alive
@@ -570,7 +570,7 @@ class GE_monitorSeriesDir(Thread):
             currentDicoms = set(os.listdir(self.seriesDir))
 
             # grab only the the dicoms which haven't already been added to the queue
-            newDicoms = [f for f in currentDicoms if f not in self.dicom_files]
+            newDicoms = [f for f in currentDicoms if f not in self.queued_dicom_files]
 
             # loop over each of the newDicoms and add them to queue
             for f in newDicoms:
@@ -586,7 +586,7 @@ class GE_monitorSeriesDir(Thread):
             self.numSlicesAdded += len(newDicoms)
 
             # now update the set of dicoms added to the queue
-            self.dicom_files.update(set(newDicoms))
+            self.queued_dicom_files.update(set(newDicoms))
 
             # pause
             time.sleep(self.interval)
