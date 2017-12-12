@@ -261,7 +261,7 @@ class GE_BuildNifti():
     parameters, like voxel spacing and dimensions, are obtained automatically
     from info in the dicom tags
 
-    Output is a Nifti2 formatted 4D file
+    Output is a Nifti2 formatted 3D (anat) or 4D (func) file
     """
     def __init__(self, seriesDir):
         """
@@ -275,7 +275,7 @@ class GE_BuildNifti():
         self.affine = None
 
         # make a list of all of the dicoms in this dir
-        self.rawDicoms = [f for f in os.listdir(seriesDir) if GE_filePattern.match(f)]
+        self.rawDicoms = [f for f in os.listdir(self.seriesDir) if GE_filePattern.match(f)]
 
         # figure out what type of image this is, 4d or 3d
         self.scanType = self._determineScanType(self.rawDicoms[0])

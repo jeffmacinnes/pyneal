@@ -1,5 +1,5 @@
 """
-Simulate a GE scan.
+Simulate a GE scan [GE MR750 3T].
 GE scanners store reconstructed slice images as individual DICOM files within
 a certain directory on the scanner console. This script will simulate that directory
 and copy in individual slice DICOM images.

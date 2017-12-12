@@ -14,9 +14,8 @@ There are two main components to this software:
 
 
 #### Made possible through funding support by:
-* NIMH R01 MH094743
-* Alfred P. Sloan Fellowship
-* Klingenstein Fellowship Award in the Neurosciences
-* Dana Foundation Brain and Immuno-Imaging Program
 
-awarded to R. Alison Adcock, MD, PhD
+* **W.M. Keck Foundation**; *awarded to Andrea Stocco, PhD, Chantel Prat, PhD, & Rajesh Rao, PhD*
+
+* **NIMH R01 MH094743**, **Alfred P. Sloan Fellowship**, **Klingenstein Fellowship Award in the Neurosciences**, 
+**Dana Foundation Brain and Immuno-Imaging Program**; *awarded to R. Alison Adcock, MD, PhD*
