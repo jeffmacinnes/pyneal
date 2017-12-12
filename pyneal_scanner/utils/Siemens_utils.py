@@ -2,7 +2,7 @@
 Set of classes and methods specific to Siemens scanning environments
 """
 from __future__ import print_function
-from __future__ import divition
+from __future__ import division
 
 import os
 from os.path import join
@@ -21,6 +21,9 @@ import zmq
 
 # regEx for Siemens style file naming
 Siemens_filePattern = re.compile('RESEARCH.*.MR.PRISMA_HEAD.*')
+
+# regEx for pulling the volume field out of the mosaic file name
+Siemens_mosaicVolumeNumberField = re.compile('(?<=HEAD\.\d{4}\.)\d{4}')
 
 class Siemens_BuildNifti():
     """
@@ -45,7 +48,7 @@ class Siemens_BuildNifti():
         self.affine = None
 
         # make a list of all of the raw dicom files in this dir
-        self.rawDicoms [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
+        self.rawDicoms = [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
 
         # figure out what type of image this is, 4d or 3d
         self.scanType = self._determineScanType(self.rawDicoms[0])
@@ -73,18 +76,27 @@ class Siemens_BuildNifti():
         and affine transformation to map from voxels to mm will be determined
         from the dicom tags
         """
-        ### Figure out the overall image dimensions
+        ### Figure out the overall 4D image dimensions
         # each mosaic file represents one volume
         nVols = len(dicomFiles)
 
-        # read the dicom tags from one mosaic to get additional info
-        dcm = dicom.read_file(join(self.seriesDir), dicomFiles[0], stop_before_pixels=1)
+        # read the dicom tags from one mosaic file to get additional info
+        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]))
         sliceThickness = getattr(dcm, 'SliceThickness')
         voxSize = getattr(dcm, 'PixelSpacing')
 
-        # private tags
+        # private tags in mosaic file
         sliceDims = dcm[0x0051, 0x100b].value.split('*')  # tag: [AcquisitionMatrixText]
+        sliceDims = list(map(int, sliceDims))       # convert to integers
         nSlices = dcm[0x0019, 0x100a].value # tag: [NumberOfImagesInMosaic]
+
+        ### figure out how slices are arranged in mosaic
+        mosaic_pixels = dcm.pixel_array        # numpy array of all mosaic pixels
+        mosaicDims_px = mosaic_pixels.shape    # mosaic dims in pixels
+
+        # figure out the mosaic dimensions in terms of slices
+        mosaicDims_slices = np.array([int(mosaicDims_px[0]/sliceDims[0]),
+                                        int(mosaicDims_px[1]/sliceDims[1])])
 
         ### Build a 4D array to store voxel data
         imageMatrix = np.zeros(shape=(
@@ -99,11 +111,52 @@ class Siemens_BuildNifti():
         # add to imageMatrix
         for m in dicomFiles:
 
+            # get volume Idx from the file name (note: needs to be 0-based)
+            volIdx = int(Siemens_mosaicVolumeNumberField.search(m).group(0))-1
+
             # read the mosaic file
             dcm = dicom.read_file(join(self.seriesDir, m))
+            mosaic_pixels = dcm.pixel_array
 
-            #
+            # grab each slice from this mosaic, add to image matrix
+            for slIdx in range(nSlices):
 
+                # figure out where the pixels for this slice start in the mosaic
+                sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(mosaicDims_slices,
+                                                                        sliceDims,
+                                                                        slIdx)
+                # extract this slice from the mosaic
+                thisSlice = mosaic_pixels[sl_rowIdx:sl_rowIdx+sliceDims[0],
+                                            sl_colIdx:sl_colIdx+sliceDims[1]]
+
+                ### NEED TO MAKE SURE ITS IN THE RIGHT ORIENTATION!!!
+
+                # put this slice in the image matrix
+                imageMatrix[:,:,slIdx, volDix] = thisSlice
+                print('slice {}: row {} , col {} '.format(sl, sl_rowIdx, sl_colIdx))
+
+
+    def _determineSlicePixelIndices(self, mosaicDims, sliceDims, sliceIdx):
+        """
+        Figure out the mosaic pixel indices that correspond to a given slice
+        index (0-based)
+
+        mosaicDims: dimensions of the mosaic in terms of number of slices
+        sliceDims: dimensions of the slice in terms of pixels
+        sliceIdx: the index value of the slice you want to find
+
+        Returns: rowIdx, colIdx
+            - row and column index of starting pixel for this slice
+        """
+        # determine where this slice is in the mosaic
+        mWidth = mosaicDims[1]
+        mRow= int(np.floor(sliceIdx/mWidth))
+        mCol = int(sliceIdx % mWidth)
+
+        rowIdx = mRow*sliceDims[0]
+        colIdx = mCol*sliceDims[1]
+
+        return rowIdx, colIdx
 
 
     def _determineScanType(self, dicomFile):
@@ -113,7 +166,7 @@ class Siemens_BuildNifti():
         in the dicom tags
         """
         # read the dicom file
-        dcm = dicom.read_file(join(self.seriesDir, sliceDcm), stop_before_pixels=1)
+        dcm = dicom.read_file(join(self.seriesDir, dicomFile), stop_before_pixels=1)
 
         if getattr(dcm,'MRAcquisitionType') == '3D':
             scanType = 'anat'
@@ -142,3 +195,11 @@ class Siemens_BuildNifti():
         specified by output_fName
         """
         nib.save(self.niftiImage, output_fName)
+
+
+
+
+if __name__ == '__main__':
+    testDir = '../../../sandbox/scansForSimulation/Siemens_UNC/series0013'
+
+    testSiemens = Siemens_BuildNifti(testDir)

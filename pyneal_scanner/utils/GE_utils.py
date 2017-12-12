@@ -279,7 +279,6 @@ class GE_BuildNifti():
 
         # figure out what type of image this is, 4d or 3d
         self.scanType = self._determineScanType(self.rawDicoms[0])
-
         if self.scanType == 'anat':
             self.niftiImage = self.buildAnat(self.rawDicoms)
         elif self.scanType == 'func':
@@ -368,7 +367,6 @@ class GE_BuildNifti():
         Figure out the image dimensions and affine transformation to map
         from voxels to mm from the dicom tags
         """
-
         # read the first dicom in the list to get overall image dimensions
         dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
         sliceDims = (getattr(dcm, 'Rows'), getattr(dcm, 'Columns'))
