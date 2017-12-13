@@ -28,7 +28,7 @@ GE_filePattern = re.compile('i\d*.MRDC.\d*')
 
 class GE_DirStructure():
     """
-    Methods for finding a returning the names and paths of
+    Methods for finding and returning the names and paths of
     series directories in a GE scanning environment
 
     In GE enviroments, a new folder is created for every series (i.e. each
@@ -562,6 +562,7 @@ class GE_monitorSeriesDir(Thread):
         self.numSlicesAdded = 0             # counter to keep track of # of slices added overall
         self.queued_dicom_files = set()     # empty set to store names of files placed on queue
 
+
     def run(self):
         # function that loops while the Thead is still alive
         while self.alive:
@@ -591,8 +592,10 @@ class GE_monitorSeriesDir(Thread):
             # pause
             time.sleep(self.interval)
 
+
     def get_numSlicesAdded(self):
         return self.numSlicesAdded
+
 
     def stop(self):
         # function to stop the Thread
@@ -630,10 +633,10 @@ class GE_processSlice(Thread):
 
             # if there are any slices in the queue, process them
             if not self.dicomQ.empty():
-                self.numSlicesInQueue = self.dicomQ.qsize()
+                numSlicesInQueue = self.dicomQ.qsize()
 
                 # loop through all slices currently in queue & process
-                for s in range(self.numSlicesInQueue):
+                for s in range(numSlicesInQueue):
                     dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
 
                     # process this slice
@@ -643,8 +646,8 @@ class GE_processSlice(Thread):
                     self.dicomQ.task_done()
 
                 # log how many were processed
-                self.totalProcessed += self.numSlicesInQueue
-                self.logger.debug('Processed {} tasks from the queue ({} total)'.format(self.numSlicesInQueue, self.totalProcessed))
+                self.totalProcessed += numSlicesInQueue
+                self.logger.debug('Processed {} tasks from the queue ({} total)'.format(numSlicesInQueue, self.totalProcessed))
 
             # pause for a bit
             time.sleep(self.interval)

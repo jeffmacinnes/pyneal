@@ -44,7 +44,7 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
 
     # launch a real-time session
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
-    
+
 
 def pynealScanner_Phillips(scannerSettings, scannerDirs):
     """
@@ -57,7 +57,10 @@ def pynealScanner_Siemens(scannerSettings, scannerDirs):
     """
     Tools for processing a real-time scan in a Siemens environment
     """
-    pass
+    from utils.Siemens_utils import Siemens_launch_rtfMRI
+
+    # launch a real-time session
+    Siemens_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
 
@@ -99,6 +102,6 @@ if __name__ == "__main__":
     elif scannerMake == 'Phillips':
         pynealScanner_Phillips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':
-        pynealScanner_Seimens(scannerSettings, scannerDirs)
+        pynealScanner_Siemens(scannerSettings, scannerDirs)
     else:
         print('Unrecognized scanner make: {}'.format(scannerMake))

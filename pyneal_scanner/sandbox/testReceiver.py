@@ -14,15 +14,15 @@ import numpy as np
 import nibabel as nib
 
 
-host = 'localhost'
+host = '*'
 port = 5555
 
 
-image_matrix = np.zeros(shape=(64, 64, 18, 10))	# build empty data matrix (xyzt)
+image_matrix = np.zeros(shape=(64, 64, 18, 60))	# build empty data matrix (xyzt)
 
 context = zmq.Context.instance()
-sock = context.socket(zmq.REP)
-sock.connect('tcp://{}:{}'.format(host,port))
+sock = context.socket(zmq.PAIR)
+sock.bind('tcp://{}:{}'.format(host,port))
 
 # wait for initial contact
 while True:

@@ -180,13 +180,15 @@ def initializeSession():
     scannerMake = scannerSettings.allSettings['scannerMake']
     if scannerMake == 'GE':
         from utils.GE_utils import GE_DirStructure
-
         scannerDirs = GE_DirStructure(scannerSettings)
 
     elif scannerMake == 'Phillips':
         print('no ScannerDirs for Phillips scanners yet...')
+
     elif scannerMake == 'Siemens':
-        print('no ScannerDirs for Siemens scanners yet...')
+        from utils.Siemens_utils import Siemens_DirStructure
+        scannerDirs = Siemens_DirStructure(scannerSettings)
+
     else:
         print('Unrecognized Scanner Make: {}'.format(scannerMake))
 
