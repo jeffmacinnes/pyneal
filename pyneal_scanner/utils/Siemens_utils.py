@@ -235,7 +235,9 @@ class Siemens_BuildNifti():
 
         #imageMatrix = np.rot90(imageMatrix, axes=(0,2))
         #imageMatrix = np.rot90(imageMatrix, k=2, axes=(0,1))
-        print(imageMatrix.shape)
+        print('preswap shape: {}'.format(imageMatrix.shape))
+        imageMatrix = np.swapaxes(imageMatrix,0,2)
+        print('postswap shape: {}'.format(imageMatrix.shape))
 
 
         ### create the affine transformation to map from vox to mm space
@@ -246,6 +248,12 @@ class Siemens_BuildNifti():
         firstSlice = sliceDict[sorted(sliceDict.keys())[0]]
         lastSlice = sliceDict[sorted(sliceDict.keys())[-1]]
         affine = self.createAffine(firstSlice, lastSlice)
+
+        affine = affine[:, [2,0,1,3]]
+        affine[2,0] = -affine[2,0]
+        affine[2,2] = -affine[2,2]
+        affine[2,3] = -affine[2,3]
+
 
         #affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
         #affine = np.eye(4)
@@ -368,7 +376,7 @@ class Siemens_BuildNifti():
         # but we need to make sure the bottom right position is set to 1
         affine[3,3] = 1
 
-        # affine[:3, :2] reprsents the rotations needed to position our voxel
+        # affine[:3, :2] represents the rotations needed to position our voxel
         # array in reference space. We can safely assume these rotations will
         # be the same for all slices in our 3D volume, so we can just grab the
         # ImageOrientationPatient tag from the first slice only...
@@ -772,6 +780,6 @@ if __name__ == '__main__':
     #dicomQ = Queue()
     #scanWatcher = Siemens_monitorSeriesDir(testSeriesDir, dicomQ)
 
-    outputFile = '../data/siemensOutput.nii.gz'
+    outputFile = '../data/siemensOutput2.nii.gz'
     testSiemens = Siemens_BuildNifti(testSeriesDir)
     testSiemens.write_nifti(outputFile)
