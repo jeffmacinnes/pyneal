@@ -175,7 +175,85 @@ class Siemens_BuildNifti():
         them. Figure out the image dimensions and affine transformation to
         map from voxels to mm from the dicom tags
         """
-        print('Add methods for building an anat file!!')
+        # read the first dicom in the list to get overall image dimensions
+        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        sliceDims = (getattr(dcm, 'Rows'), getattr(dcm, 'Columns'))
+        nSlices = len(dicomFiles)
+        sliceThickness = getattr(dcm, 'SliceThickness')
+        voxSize = getattr(dcm, 'PixelSpacing')
+        print('rows, cols from dicom header {}'.format(sliceDims))
+
+        ### Build 3D array of voxel data
+        # create an empty array to store the slice data
+        imageMatrix = np.zeros(shape=(
+                                sliceDims[0],
+                                sliceDims[1],
+                                nSlices),
+                                dtype='int16'
+                            )
+        print('Nifti image dims: {}'.format(imageMatrix.shape))
+
+        # With functional data, the dicom tag 'InStackPositionNumber'
+        # seems to correspond to the slice index (one-based indexing).
+        # But with anatomical data, there are 'InStackPositionNumbers'
+        # that may start at 2, and go past the total number of slices.
+        # To correct, we first pull out all of the InStackPositionNumbers,
+        # and create a dictionary with InStackPositionNumbers:dicomPath
+        # keys. Sort by the position numbers, and assemble the image in order
+        sliceDict = {}
+        for s in dicomFiles:
+            dcm = dicom.read_file(join(self.seriesDir, s))
+            sliceDict[dcm.InstanceNumber] = join(self.seriesDir, s)
+
+        # sort by instance number and assemble the image
+        for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
+            dcm = dicom.read_file(sliceDict[ISPN])
+
+            # grab the slices necessary for creating the affine transformation
+            if sliceIdx == 0:
+                firstSliceDcm = dcm
+            if sliceIdx == nSlices-1:
+                lastSliceDcm = dcm
+
+            # extract the pixel data as a numpy array
+            pixel_array = dcm.pixel_array
+
+            # GE DICOM images are collected in an LPS+ coordinate
+            # system. For the purposes of standardizing everything
+            # in pyneal we need to convert to and RAS+ coordinate system.
+            # In other words, need to flip our data array along the
+            # first axis (left/right), and then flip along the 2nd axis
+            # (up/down). This is equivalent to rotating the array 180 degrees
+            # (less steps = better).
+            #pixel_array = np.rot90(pixel_array, k=3)
+
+            # Next, numpy arrays are indexed as [row, col], which in
+            # cartesian coords translats to [y,x]. We want our data to
+            # be an array that is indexed like [x,y,z], so we need to
+            # transpose each slice before adding to the full dataset
+            imageMatrix[:, :, sliceIdx] = pixel_array
+
+        #imageMatrix = np.rot90(imageMatrix, axes=(0,2))
+        #imageMatrix = np.rot90(imageMatrix, k=2, axes=(0,1))
+        print(imageMatrix.shape)
+
+
+        ### create the affine transformation to map from vox to mm space
+        # Our reference space (in mm) will have the same origin and
+        # axes as the voxel array. So, our affine transform just needs to
+        # be a scale transform that scales each dimension to the appropriate
+        # voxel size
+        firstSlice = sliceDict[sorted(sliceDict.keys())[0]]
+        lastSlice = sliceDict[sorted(sliceDict.keys())[-1]]
+        affine = self.createAffine(firstSlice, lastSlice)
+
+        #affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+        #affine = np.eye(4)
+
+        ### Build a Nifti object
+        anatImage = nib.Nifti1Image(imageMatrix, affine=affine)
+
+        return anatImage
 
 
     def buildFunc(self, dicomFiles):
@@ -268,6 +346,73 @@ class Siemens_BuildNifti():
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
 
         return funcImage
+
+
+    def createAffine(self, firstSlice, lastSlice):
+        """
+        build an affine transformation matrix that maps from voxel
+        space to mm space.
+
+        For helpful info on how to build this, see:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        http://nipy.org/nibabel/coordinate_systems.html
+        """
+        firstSlice_dcm = dicom.read_file(firstSlice)
+        lastSlice_dcm = dicom.read_file(lastSlice)
+
+        # initialize an empty 4x4 matrix that will serve as our
+        # affine transformation. This will allow us to combine
+        # rotations and translations into the same transform
+        affine = np.zeros(shape=(4,4))
+
+        # but we need to make sure the bottom right position is set to 1
+        affine[3,3] = 1
+
+        # affine[:3, :2] reprsents the rotations needed to position our voxel
+        # array in reference space. We can safely assume these rotations will
+        # be the same for all slices in our 3D volume, so we can just grab the
+        # ImageOrientationPatient tag from the first slice only...
+        imageOrientation = getattr(firstSlice_dcm, 'ImageOrientationPatient')
+
+        # multiply the imageOrientation values by the voxel size
+        voxSize = getattr(firstSlice_dcm, 'PixelSpacing')
+        imageOrientation = np.array(imageOrientation)*voxSize[0]
+
+        # ...and populate the affine matrix
+        affine[:3,0] = imageOrientation[:3]
+        affine[:3,1] = imageOrientation[3:]
+
+        # affine[:3,3] represents the translations along the x,y,z axis,
+        # respectively, that would bring voxel location 0,0,0 to the origin
+        # of the reference space. Thus, we can grab these 3 values from the
+        # ImagePositionPatient tag of the first slice as well
+        # (first slice is z=0, so has voxel 0,0,0):
+        imagePosition = getattr(firstSlice_dcm, 'ImagePositionPatient')
+
+        # ...and populate the affine matrix
+        affine[:3,3] = imagePosition
+
+        # affine[:3,2] represents the translations needed to go from the first
+        # slice to the last slice. So we need to know the positon of the last slice
+        # before we can fill in these values. First, we figure out the spatial difference
+        # between the first and last slice.
+        firstSliceImagePos = getattr(firstSlice_dcm, 'ImagePositionPatient')
+        lastSliceImagePos = getattr(lastSlice_dcm, 'ImagePositionPatient')
+        positionDiff = np.array([
+                            firstSliceImagePos[0] - lastSliceImagePos[0],
+                            firstSliceImagePos[1] - lastSliceImagePos[1],
+                            firstSliceImagePos[2] - lastSliceImagePos[2]
+                        ])
+
+        # divide each element of the difference in position by 1-numSlices
+        numSlices = 52
+        positionDiff = positionDiff/(1-numSlices)
+
+        # ...and populate the affine
+        affine[:3,2] = positionDiff
+
+        # all done, return the affine
+        return affine
 
 
     def _determineSlicePixelIndices(self, mosaicDims, sliceDims, sliceIdx):
@@ -478,7 +623,7 @@ class Siemens_processMosaic(Thread):
         for slIdx in range(self.nSlicesPerVol):
             #figure out where the pixels for this slice start in the mosaic
             sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(slIdx)
-            
+
             # extract this slice from the mosaic
             thisSlice = mosaic_pixels[sl_rowIdx:sl_rowIdx + self.sliceDims[0],
                                         sl_colIdx:sl_colIdx + self.sliceDims[1]]
@@ -622,12 +767,11 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
 
 
 if __name__ == '__main__':
-    testSeriesDir = '../../../sandbox/scansForSimulation/Siemens_UNC/series0999'
+    testSeriesDir = '../../../sandbox/scansForSimulation/Siemens_UNC/series0017'
 
-    dicomQ = Queue()
-    scanWatcher = Siemens_monitorSeriesDir(testSeriesDir, dicomQ)
-
+    #dicomQ = Queue()
+    #scanWatcher = Siemens_monitorSeriesDir(testSeriesDir, dicomQ)
 
     outputFile = '../data/siemensOutput.nii.gz'
-    #outputFile = '/Users/jeff/Desktop/test.nii.gz'
+    testSiemens = Siemens_BuildNifti(testSeriesDir)
     testSiemens.write_nifti(outputFile)

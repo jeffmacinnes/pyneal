@@ -356,7 +356,7 @@ class GE_BuildNifti():
         affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
 
         ### Build a Nifti object
-        anatImage = nib.Nifti2Image(imageMatrix, affine=affine)
+        anatImage = nib.Nifti1Image(imageMatrix, affine=affine)
 
         return anatImage
 
