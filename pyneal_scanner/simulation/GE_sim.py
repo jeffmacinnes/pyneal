@@ -8,8 +8,9 @@ Usage:
     python GE_sim.py inputDir [--outputDir] [--TR]
 
 You must specify a local path to the inputDir. That is, the directory that already
-contains a set of reconstructed GE slice DICOMS. Let's call directory the seriesDir. Everything in the path up to the seriesDir
-we'll call the sessionDir. So, your input slice data is stored somewhere like:
+contains a set of reconstructed GE slice DICOMS. Let's call thie directory the
+seriesDir. Everything in the path up to the seriesDir we'll call the sessionDir.
+So, your input slice data is stored somewhere like:
 
 <sessionDir>/<seriesDir>/
 
@@ -31,7 +32,6 @@ represents the approximate amount of time it should take to copy over all of the
 one volume of data.
 
 e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --TR 2000
-
 """
 # python 2/3 compatibility
 from __future__ import print_function
