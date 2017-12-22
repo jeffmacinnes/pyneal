@@ -63,6 +63,15 @@ def pynealScanner_Siemens(scannerSettings, scannerDirs):
     Siemens_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
+def pynealScanner_sandbox(scannerSettings, scannerDirs):
+    """
+    method for launching a real-time scan using experimental methods.
+    Mainly for debugging and testing
+    """
+    from sandbox.test_GE_utils import test_GE_launch_rtfMRI
+
+    # launch a real-time session
+    GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
 if __name__ == "__main__":
