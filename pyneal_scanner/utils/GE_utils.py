@@ -694,14 +694,14 @@ class GE_processSlice(Thread):
         # means it does not have to be retrieved, redundantly, when
         # processing each slice.
         if self.nSlicesPerVol is None:
-            self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquistion')
+            self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
 
         # We can figure out the volume index using the dicom
         # tags "InstanceNumber" (# out of all images), and
         # the total number of slices.
         # Divide InstanceNumber by ImagesInAcquisition and drop
         # the remainder. Note: InstanceNumber is also one-based index
-        volIdx = int(getattr(dcm, 'InstanceNumber')/self.nSlicesPerVol))
+        volIdx = int(int(getattr(dcm, 'InstanceNumber')-1)/self.nSlicesPerVol)
 
         # create a header with metadata info
         sliceHeader = {

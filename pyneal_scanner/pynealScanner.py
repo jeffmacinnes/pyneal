@@ -71,7 +71,7 @@ def pynealScanner_sandbox(scannerSettings, scannerDirs):
     from sandbox.test_GE_utils import test_GE_launch_rtfMRI
 
     # launch a real-time session
-    GE_launch_rtfMRI(scannerSettings, scannerDirs)
+    test_GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
 if __name__ == "__main__":
@@ -112,5 +112,7 @@ if __name__ == "__main__":
         pynealScanner_Phillips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':
         pynealScanner_Siemens(scannerSettings, scannerDirs)
+    elif scannerMake == 'sandbox':
+        pynealScanner_sandbox(scannerSettings, scannerDirs)
     else:
         print('Unrecognized scanner make: {}'.format(scannerMake))

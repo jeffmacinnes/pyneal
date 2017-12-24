@@ -189,6 +189,11 @@ def initializeSession():
         from utils.Siemens_utils import Siemens_DirStructure
         scannerDirs = Siemens_DirStructure(scannerSettings)
 
+    elif scannerMake == 'sandbox':
+        # UPDATE THIS AS NEEDED FOR DIFFERENT TESTING SCENARIOS
+        from utils.GE_utils import GE_DirStructure
+        scannerDirs = GE_DirStructure(scannerSettings)
+
     else:
         print('Unrecognized Scanner Make: {}'.format(scannerMake))
 
