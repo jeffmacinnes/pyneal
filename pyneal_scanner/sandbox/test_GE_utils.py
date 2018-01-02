@@ -49,13 +49,18 @@ class test_GE_processSlice(Thread):
         self.alive = True
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0             # counter for total number of slices processed
-        self.nSlicesPerVol = None           # once set, won't need to be retrieved each time
-
-        self.imageMatrix = None         # init var to store imageMatrix in
-        self.completedSlices = None     # table to store booleans indicating which slices have arrived
         self.volCounter = 0
-        self.affine = None              # init var to store RAS+ affine in
+        self.affineExists = False
 
+        # parameters we'll build once dicom data starts arriving
+        self.firstSliceArrived = False
+        self.nSlicesPerVol = None
+        self.sliceDims = None
+        self.nVols = None
+
+        self.completedSlices = None     # store booleans of which slices have arrived
+        self.imageMatrix = None         # 4D image matrix where new slices stored
+        self.affine = None              # var to store RAS+ affine, once created
 
 
     def run(self):
@@ -91,15 +96,14 @@ class test_GE_processSlice(Thread):
         read the slice dicom. Format the data and header.
         Send data and header out over the socket connection
         """
+        # if this is the first slice to have arrived, read the dcm header
+        # to get relevent information about the series, and to construct
+        # the imageMatrix and completedSlices table
+        if not self.firstSliceArrived:
+            self.processFirstSlice(dcm_fname)
+
         # read in the dicom file
         dcm = dicom.read_file(dcm_fname)
-
-        # The tag 'ImagesInAcquisition' stores the total number of
-        # slices for every volume. Setting this as a class attribute
-        # means it does not have to be retrieved, redundantly, when
-        # processing each slice.
-        if self.nSlicesPerVol is None:
-            self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
 
         ### Get the Slice Number
         # The dicom tag 'InStackPositionNumber' will tell
@@ -107,7 +111,6 @@ class test_GE_processSlice(Thread):
         # Note: InStackPositionNumber uses one-based indexing,
         # and we want sliceIdx to reflect 0-based indexing
         sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
-        #print('this slice idx: {}'.format(sliceIdx))
 
         ### Get the volume number
         # We can figure out the volume index using the dicom
@@ -118,7 +121,7 @@ class test_GE_processSlice(Thread):
         volIdx = int(int(getattr(dcm, 'InstanceNumber')-1)/self.nSlicesPerVol)
 
         ### Update completed slices
-        self.updateCompletedSlices(sliceIdx, int(volIdx))
+        self.completedSlices[sliceIdx, volIdx] = True
 
         ### TESTING
         #print(self.volCounter)
@@ -126,8 +129,6 @@ class test_GE_processSlice(Thread):
         if self.completedSlices[:,self.volCounter].all():
             print('Volume {} arrived'.format(self.volCounter))
             self.volCounter += 1
-
-
 
 
         #
@@ -145,20 +146,34 @@ class test_GE_processSlice(Thread):
         # ### Send the pixel array and header to the scannerSocket
         # self.sendSliceToScannerSocket(sliceHeader, pixel_array)
 
-    def updateCompletedSlices(self, sliceIdx, volIdx):
+    def processFirstSlice(self, dcm_fname):
         """
-        Update the completed slices array
+        Read the dicom header from the supplied slice to get relevant info
+        that pertains to the whole scan series. Build the imageMatrix and
+        completedSlice table to store subsequent slice data as it arrives
         """
-        if self.completedSlices is None:
-            # initialize completedSlices array. nSlicesPerVol has to be set
-            # already. Since no way to no total volume number from DICOM, set
-            # it to an absurdly large value (2000 vols @ 1s TR = 30 min run)
-            self.completedSlices = np.zeros(shape=(self.nSlicesPerVol, 2000),
-                                            dtype=bool)
+        # Read the header dicom tags only
+        dcmHdr = dicom.read_file(dcm_fname, stop_before_pixels=True)
 
-        # update the table with the current slice
-        self.completedSlices[sliceIdx, volIdx] = True
-        print('{}, {}'.format(sliceIdx, volIdx))
+        ### Get series parameters from the dicom tags
+        self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')
+        self.nVols = getattr(dcmHdr, 'NumberOfTemporalPositions')
+
+        # Note: [cols, rows] to match the order of the transposed pixel_array later on
+        self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),
+                                    getattr(dcmHdr, 'Rows')])
+
+
+        ### Build the image matrix and completed slices table
+        self.imageMatrix = np.zeros(shape=(self.sliceDims[0],
+                                        self.sliceDims[1],
+                                        self.nSlicesPerVol,
+                                        self.nVols))
+        self.completedSlices = np.zeros(shape=(self.nSlicesPerVol,
+                                            self.nVols), dtype=bool)
+
+        ### Update the flow control flag
+        self.firstSliceArrived = True
 
 
     def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):

@@ -52,6 +52,8 @@ while True:
 # Start sending data!
 for vol in range(nTmpts):
     for slc in range(nSlicesPerVol):
+        startTime = time.time()
+
         # grab this slice from the dataset
         slice_pixels = np.ascontiguousarray(fakeDataset[:,:,slc,vol])
 
@@ -75,4 +77,5 @@ for vol in range(nTmpts):
         print('Socket Response: {}'.format(socketResponse))
 
         if TR is not None:
-            time.sleep(TR/nSlicesPerVol)
+            elapsedTime = time.time()-startTime
+            time.sleep((TR/nSlicesPerVol)-elapsedTime)
