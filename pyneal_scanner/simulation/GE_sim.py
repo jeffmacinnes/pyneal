@@ -76,6 +76,7 @@ def GE_sim(dicomDir, outputDir, TR):
     # read one slice to get TR and # of slices/vol info
     ds = dicom.read_file(join(dicomDir, sliceFiles[0]))
     slicesPerVol = ds.ImagesInAcquisition
+    totalVols = ds.NumberOfTemporalPositions
 
     # calculate delay between slices
     sliceDelay = TR/slicesPerVol/1000
@@ -83,6 +84,7 @@ def GE_sim(dicomDir, outputDir, TR):
     # print parameters
     print('Total Slices Found: ', len(sliceFiles))
     print('TR: ', TR)
+    print('Vols: ', totalVols)
     print('slices per vol:', slicesPerVol)
     print('delay between slices:', sliceDelay)
 
@@ -105,6 +107,7 @@ def GE_sim(dicomDir, outputDir, TR):
 
         # introduce delay
         time.sleep(sliceDelay)
+    time.sleep(3)
 
 
 def rmOutputDir(outputDir):
