@@ -10,6 +10,7 @@ import sys
 import time
 import re
 import logging
+import json
 from threading import Thread
 from queue import Queue
 
@@ -52,7 +53,7 @@ class test_GE_processSlice(Thread):
         self.volCounter = 0
 
         # parameters we'll build once dicom data starts arriving
-        self.firstSliceArrived = False
+        self.firstSliceHasArrived = False
         self.nSlicesPerVol = None
         self.sliceDims = None
         self.nVols = None
@@ -101,7 +102,7 @@ class test_GE_processSlice(Thread):
         # if this is the first slice to have arrived, read the dcm header
         # to get relevent information about the series, and to construct
         # the imageMatrix and completedSlices table
-        if not self.firstSliceArrived:
+        if not self.firstSliceHasArrived:
             self.processFirstSlice(dcm_fname)
 
         # read in the dicom file
@@ -139,29 +140,22 @@ class test_GE_processSlice(Thread):
         # the remainder. Note: InstanceNumber is also one-based index
         volIdx = int(int(getattr(dcm, 'InstanceNumber')-1)/self.nSlicesPerVol)
 
-        ### Update completed slices
+        ### Place pixel data in imageMatrix
+        # transpose the data from numpy standard [row,col] to [col,row]
+        self.imageMatrix[:, :, sliceIdx, volIdx] = dcm.pixel_array.T
+
+        # update this slice location in completedSlices
         self.completedSlices[sliceIdx, volIdx] = True
 
-        ### TESTING
-        if self.completedSlices[:,self.volCounter].all():
-            print('Volume {} arrived'.format(self.volCounter))
+        ### Check if full volume is here, and process if so
+        if self.completedSlices[:, self.volCounter].all():
+            self.processVolume(self.volCounter)
+
+            # increment volCounter
             self.volCounter += 1
+            if self.volCounter >= self.nVols:
+                self.stop()
 
-
-        #
-        #
-        #
-        # # create a header with metadata info
-        # sliceHeader = {
-        #     'sliceIdx':sliceIdx,
-        #     'volIdx':volIdx,
-        #     'nSlicesPerVol':self.nSlicesPerVol,
-        #     'dtype':str(pixel_array.dtype),
-        #     'shape':pixel_array.shape,
-        #     }
-        #
-        # ### Send the pixel array and header to the scannerSocket
-        # self.sendSliceToScannerSocket(sliceHeader, pixel_array)
 
     def processFirstSlice(self, dcm_fname):
         """
@@ -186,12 +180,12 @@ class test_GE_processSlice(Thread):
         self.imageMatrix = np.zeros(shape=(self.sliceDims[0],
                                         self.sliceDims[1],
                                         self.nSlicesPerVol,
-                                        self.nVols))
+                                        self.nVols), dtype=np.uint16)
         self.completedSlices = np.zeros(shape=(self.nSlicesPerVol,
                                             self.nVols), dtype=bool)
 
         ### Update the flow control flag
-        self.firstSliceArrived = True
+        self.firstSliceHasArrived = True
 
 
     def buildAffine(self):
@@ -242,23 +236,49 @@ class test_GE_processSlice(Thread):
             [0, 0, 0, 1]
             ])
 
-        print(nib.aff2axcodes(self.affine))
-
-
-
-    def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):
+    def processVolume(self, volIdx):
         """
-        Send the dicom slice over the scannerSocket.
-            - 'sliceHeader' is expected to be a dictionary with key:value
-            pairs for relevant slice metadata like 'sliceIdx', and 'volIdx'
-            - 'slicePixelArray' is expected to be a 2D numpy array of pixel
-            data from the slice reoriented to RAS+
+        Extract the 3D numpy array of voxel data for the current volume (set by
+        self.volCounter attribute). Reorder the voxel data so that it is RAS+,
+        build a header JSON object, and then send both the header and the voxel
+        data out over the socket connection to Pyneal
         """
-        self.logger.debug('TO scannerSocket: vol {}, slice {}'.format(sliceHeader['volIdx'], sliceHeader['sliceIdx']))
+        print('Volume {} arrived'.format(volIdx))
+
+        ### Prep the voxel data by extracting this vol from the imageMatrix,
+        # and then converting to a Nifti1 object in order to set the voxel
+        # order to RAS+, then get the voxel data as contiguous numpy array
+        thisVol = self.imageMatrix[:,:,:,volIdx]
+        thisVol_nii = nib.Nifti1Image(thisVol, self.affine)
+        thisVol_RAS = nib.as_closest_canonical(thisVol_nii)     # make RAS+
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
+
+
+        ### Create a header with metadata info
+        volHeader = {
+            'volIdx':volIdx,
+            'dtype':str(thisVol_RAS_data.dtype),
+            'shape':thisVol_RAS_data.shape,
+            'affine':json.dumps(thisVol_RAS.affine.tolist())
+            }
+
+        ### Send the voxel array and header to the scannerSocket
+        self.sendVolToScannerSocket(volHeader, thisVol_RAS_data)
+
+
+    def sendVolToScannerSocket(self, volHeader, voxelArray):
+        """
+        Send the volume data over the scannerSocket.
+            - 'volHeader' is expected to be a dictionary with key:value
+            pairs for relevant metadata like 'volIdx' and 'affine'
+            - 'voxelArray' is expected to be a 3D numpy array of voxel
+            data from the volume reoriented to RAS+
+        """
+        self.logger.debug('TO scannerSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.scannerSocket.send_json(sliceHeader, zmq.SNDMORE) # header as json
-        self.scannerSocket.send(slicePixelArray, flags=0, copy=False, track=False)
+        self.scannerSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.scannerSocket.send(voxelArray, flags=0, copy=False, track=False)
         scannerSocketResponse = self.scannerSocket.recv_string()
 
         # log the success
@@ -332,10 +352,6 @@ class test_GE_monitorSeriesDir(Thread):
         self.alive = False
 
 
-
-
-
-
 def test_GE_launch_rtfMRI(scannerSettings, scannerDirs):
     """
     launch a real-time session in a GE environment. This should be called
@@ -364,15 +380,15 @@ def test_GE_launch_rtfMRI(scannerSettings, scannerDirs):
     from utils.general_utils import create_scannerSocket
     scannerSocket = create_scannerSocket(host, port)
     logger.debug('Created scannerSocket')
-    #
-    # # wait for remote to connect on scannerSocket
-    # logger.info('Waiting for connection on scannerSocket...')
-    # while True:
-    #     scannerSocket.send_string('hello')
-    #     msg = scannerSocket.recv_string()
-    #     if msg == 'hello':
-    #         break
-    # logger.info('scannerSocket connected')
+
+    # wait for remote to connect on scannerSocket
+    logger.info('Waiting for connection on scannerSocket...')
+    while True:
+        scannerSocket.send_string('hello')
+        msg = scannerSocket.recv_string()
+        if msg == 'hello':
+            break
+    logger.info('scannerSocket connected')
 
     ### Wait for a new series directory appear
     logger.info('Waiting for new seriesDir...')
