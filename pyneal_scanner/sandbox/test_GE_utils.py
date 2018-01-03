@@ -50,18 +50,20 @@ class test_GE_processSlice(Thread):
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0             # counter for total number of slices processed
         self.volCounter = 0
-        self.affineExists = False
 
         # parameters we'll build once dicom data starts arriving
         self.firstSliceArrived = False
         self.nSlicesPerVol = None
         self.sliceDims = None
         self.nVols = None
+        self.pixelSpacing = None
 
         self.completedSlices = None     # store booleans of which slices have arrived
         self.imageMatrix = None         # 4D image matrix where new slices stored
         self.affine = None              # var to store RAS+ affine, once created
-
+        self.firstSlice_IOP = None      # first slice ImageOrientationPatient tag
+        self.firstSlice_IPP = None      # first slice ImagePositionPatient tag
+        self.lastSlice_IPP = None       # last slice ImagePositionPatient tag
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -112,6 +114,23 @@ class test_GE_processSlice(Thread):
         # and we want sliceIdx to reflect 0-based indexing
         sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
 
+        ### Check if you can build the affine using the information that is
+        # currently available. We need info from the dicom tags for the first
+        # and last slice from any of the 3D volumes
+        if self.affine is None and sliceIdx in [0, (self.nSlicesPerVol-1)]:
+            if sliceIdx == 0:
+                # store the relevent data from the first slice
+                self.firstSlice_IOP = np.array(getattr(dcm, 'ImageOrientationPatient'))
+                self.firstSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+
+            if sliceIdx == (self.nSlicesPerVol-1):
+                # store the relevent data from the last slice
+                self.lastSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+
+            # See if you have valid values for all required parameters for the affine
+            if all(x is not None for x in [self.firstSlice_IOP, self.firstSlice_IPP, self.lastSlice_IPP, self.pixelSpacing]):
+                self.buildAffine()
+
         ### Get the volume number
         # We can figure out the volume index using the dicom
         # tags "InstanceNumber" (# out of all images), and
@@ -124,8 +143,6 @@ class test_GE_processSlice(Thread):
         self.completedSlices[sliceIdx, volIdx] = True
 
         ### TESTING
-        #print(self.volCounter)
-        #print(self.completedSlices[:,self.volCounter])
         if self.completedSlices[:,self.volCounter].all():
             print('Volume {} arrived'.format(self.volCounter))
             self.volCounter += 1
@@ -158,6 +175,7 @@ class test_GE_processSlice(Thread):
         ### Get series parameters from the dicom tags
         self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')
         self.nVols = getattr(dcmHdr, 'NumberOfTemporalPositions')
+        self.pixelSpacing = getattr(dcmHdr, 'PixelSpacing')
 
         # Note: [cols, rows] to match the order of the transposed pixel_array later on
         self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),
@@ -174,6 +192,58 @@ class test_GE_processSlice(Thread):
 
         ### Update the flow control flag
         self.firstSliceArrived = True
+
+
+    def buildAffine(self):
+        """
+        Build the affine matrix that will transform the data to RAS+.
+
+        This function should only be called once the required data has been
+        extracted from the dicom tags from the relevant slices. The affine matrix
+        is constructed by using the information in the ImageOrientationPatient
+        and ImagePositionPatient tags from the first and last slices in a volume.
+
+        However, note that those tags will tell you how to orient the image to
+        DICOM reference coordinate space, which is LPS+. In order to to get to
+        RAS+ we have to invert the first two axes.
+
+        More info on building this affine at:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        http://nipy.org/nibabel/coordinate_systems.html
+        """
+        ### Get the ImageOrientation values from the first slice,
+        # split the row-axis values (0:3) and col-axis values (3:6)
+        # and then invert the first and second values of each
+        rowAxis_orient = self.firstSlice_IOP[0:3] * np.array([-1, -1, 1])
+        colAxis_orient = self.firstSlice_IOP[3:6] * np.array([-1, -1, 1])
+
+        ### Get the voxel size along Row and Col axis
+        voxSize_row = float(self.pixelSpacing[0])
+        voxSize_col = float(self.pixelSpacing[1])
+
+        ### Figure out the change along the 3rd axis by subtracting the
+        # ImagePosition of the last slice from the ImagePosition of the first,
+        # then dividing by 1/(total number of slices-1), then invert to
+        # make it go from LPS+ to RAS+
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
+
+        ### Invert the first two values of the firstSlice ImagePositionPatient.
+        # This tag represents the translation needed to take the origin of our 3D voxel
+        # array to the origin of the LPS+ reference coordinate system. Since we want
+        # RAS+, need to invert those first two axes
+        voxTranslations = self.firstSlice_IPP * np.array([-1, -1, 1])
+
+        ### Assemble the affine matrix
+        self.affine = np.matrix([
+            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [0, 0, 0, 1]
+            ])
+
+        print(nib.aff2axcodes(self.affine))
+
 
 
     def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):
