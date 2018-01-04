@@ -176,7 +176,6 @@ class Siemens_BuildNifti():
         # initialize attributes
         self.seriesDir = seriesDir
         self.niftiImage = None
-        self.affine = None
 
         # make a list of all of the raw dicom files in this dir
         rawDicoms = [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
@@ -267,86 +266,48 @@ class Siemens_BuildNifti():
         Given a list of dicomFile paths, build a 4d functional image. For
         Siemens scanners, each dicom file is assumed to represent a mosaic
         image comprised of mulitple slices. This tool will split apart the
-        mosaic images, and construct a 4D nifti file. The image dimensions
-        and affine transformation to map from voxels to mm will be determined
-        from the dicom tags
+        mosaic images, and construct a 4D nifti object. The 4D nifti object
+        contain a voxel array ordered like RAS+ as well the affine transformation
+        to map between vox and mm space
         """
-        ### Figure out the overall 4D image dimensions
-        # each mosaic file represents one volume
+        imageMatrix = None
+        affine = None
+
+        # make dicomFiles store the full path
+        dicomFiles = [join(self.seriesDir, f) for f in dicomFiles]
+
+        ### Loop over all dicom mosaic files
         nVols = len(dicomFiles)
+        for mosaic_dcm_fname in dicomFiles:
+            ### Parse the mosaic image into a 3D volume
+            # we use the nibabel mosaic_to_nii() method which does a lot of the
+            # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
+            # the affine
+            dcm = dicom.read_file(mosaic_dcm_fname)     # create dicom object
 
-        # read the dicom tags from one mosaic file to get additional info
-        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]))
-        sliceThickness = getattr(dcm, 'SliceThickness')
-        voxSize = getattr(dcm, 'PixelSpacing')
+            # for mosaic files, the instanceNumber tag will correspond to the
+            # volume number (using a 1-based indexing, so subtract by 1)
+            volIdx = dcm.InstanceNumber - 1
 
-        # private tags in mosaic file
-        sliceDims = dcm[0x0051, 0x100b].value.split('*')  # tag: [AcquisitionMatrixText]
-        sliceDims = list(map(int, sliceDims))       # convert to integers
-        nSlices = dcm[0x0019, 0x100a].value # tag: [NumberOfImagesInMosaic]
+            # convert the dicom object to nii
+            thisVol = dicomreaders.mosaic_to_nii(dcm)
 
-        ### figure out how slices are arranged in mosaic
-        mosaic_pixels = dcm.pixel_array        # numpy array of all mosaic pixels
-        mosaicDims_px = mosaic_pixels.shape    # mosaic dims in pixels
+            # convert to RAS+
+            thisVol_RAS = nib.as_closest_canonical(thisVol)
 
-        # figure out the mosaic dimensions in terms of slices
-        mosaicDims_slices = np.array([int(mosaicDims_px[0]/sliceDims[0]),
-                                        int(mosaicDims_px[1]/sliceDims[1])])
+            # construct the imageMatrix if it hasn't been made yet
+            if imageMatrix is None:
+                imageMatrix = np.zeros(shape=(thisVol_RAS.shape[0],
+                                            thisVol_RAS.shape[1],
+                                            thisVol_RAS.shape[2],
+                                            nVols), dtype=np.uint16)
 
-        ### Build a 4D array to store voxel data
-        imageMatrix = np.zeros(shape=(
-                                sliceDims[0],
-                                sliceDims[1],
-                                nSlices,
-                                nVols),
-                                dtype='int16')
-        print('Nifti image dims: {}'.format(imageMatrix.shape))
+            # construct the affine if it isn't made yet
+            if affine is None:
+                affine = thisVol_RAS.affine
 
-        ### Assemble 4D matrix. Loop over each mosaic, extract slices,
-        # add to imageMatrix
-        for m in dicomFiles:
-
-            # get volume Idx from the file name (note: needs to be 0-based)
-            volIdx = int(Siemens_mosaicVolumeNumberField.search(m).group(0))-1
-
-            # read the mosaic file
-            dcm = dicom.read_file(join(self.seriesDir, m))
-            mosaic_pixels = dcm.pixel_array
-
-            # grab each slice from this mosaic, add to image matrix
-            for slIdx in range(nSlices):
-
-                # figure out where the pixels for this slice start in the mosaic
-                sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(
-                                                    mosaicDims_slices,
-                                                    sliceDims,
-                                                    slIdx)
-
-                # extract this slice from the mosaic
-                thisSlice = mosaic_pixels[sl_rowIdx:sl_rowIdx+sliceDims[0],
-                                            sl_colIdx:sl_colIdx+sliceDims[1]]
-
-                # Siemens Dicom images appear to follow the DICOM standard
-                # of collecting images in an LPS+ coordinate system. Pyneal
-                # (and many other neuroimaging tools) expect the coordinate
-                # system to be RAS+. To convert, we need to flip our data
-                # along the first axis (left/right), and then flip along the
-                # 2nd axis (up/down). This is equivalent to rotating the array
-                # 180 degrees (less steps = better)
-                thisSlice = np.rot90(thisSlice, k=2)
-
-                # Numpy arrays are indexed as [row, col], which in cartesian
-                # coords translates to [y,x]. We want our data to be an array
-                # that is indexed like [x,y,z,t], so we need to transpose
-                # each slice before adding to the full image matrix
-                imageMatrix[:,:,slIdx, volIdx] = thisSlice.T
-
-        ### Create the affine transformation that will map from vox to mm
-        # space. Our reference space (in mm) will have the same origin and
-        # axes as the voxel array. So, our affine transform just needs to be
-        # a scale transform that scales each dimension to the appropriate
-        # voxel size
-        affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+            # Add this data to the image matrix
+            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
