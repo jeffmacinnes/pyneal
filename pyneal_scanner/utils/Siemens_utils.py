@@ -9,6 +9,7 @@ from os.path import join
 import sys
 import time
 import re
+import json
 import logging
 from threading import Thread
 from queue import Queue
@@ -16,6 +17,7 @@ from queue import Queue
 import numpy as np
 import dicom
 import nibabel as nib
+from nibabel.nicom import dicomreaders
 import argparse
 import zmq
 
@@ -525,7 +527,7 @@ class Siemens_monitorSeriesDir(Thread):
                     print(sys.exc_info())
                     sys.exit()
             if len(newMosaics) > 0:
-                self.logger.debug('Put {} new slices on the queue'.format(len(newMosaics)))
+                self.logger.debug('Put {} new mosaic file on the queue'.format(len(newMosaics)))
             self.numMosaicsAdded += len(newMosaics)
 
             # now update the set of mosaics added to the queue
@@ -549,8 +551,8 @@ class Siemens_processMosaic(Thread):
     Class to process each mosaic file in the queue. This class will run in a
     separate thread. While running, it will pull 'tasks' off of the queue and
     process each one. Processing each task involves reading the mosaic file,
-    dividing it up into individual slices, reformatting each slice, and then
-    sending each slice out over the socket connection
+    converting it to a 3D Nifti object, reordering it to RAS+, and then sending
+    the volume out over the scannerSocket
     """
     def __init__(self, dicomQ, scannerSocket, interval=.2):
         # start the threat upon creation
@@ -565,9 +567,6 @@ class Siemens_processMosaic(Thread):
         self.alive = True
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0         # counter for total number of slices processed
-        self.nSlicesPerVol = None       # once set, won't need to be retrieved each time
-        self.mosaicDims_slices = None   # mosaic dims in slices, only needs to be set once
-        self.sliceDims = None           # slice dimensions in pixels, only needs to be set once
 
     def run(self):
         self.logger.debug('Siemens_processMosaic started')
@@ -600,111 +599,63 @@ class Siemens_processMosaic(Thread):
 
     def processMosaicFile(self, mosaic_dcm_fname):
         """
-        Read the dicom mosaic file. Extract each slice out of it,
-        build a header for each slice, and end out over the scanner
-        socket connection
+        Read the dicom mosaic file. Convert to a nifti object that will
+        provide the 3D voxel array for this mosaic. Reorder to RAS+, and
+        then send to the scannerSocket
 
         mosaic_dcm_fname: full path to the mosaic file
         """
-
         ### Figure out the volume index for this mosaic by reading
         # the field from the file name itself
         mosaicFile_root, mosaicFile_name = os.path.split(mosaic_dcm_fname)
         volIdx = int(Siemens_mosaicVolumeNumberField.search(mosaicFile_name).group(0))-1
 
-        # read the dicom file
-        dcm = dicom.read_file(mosaic_dcm_fname)
-        mosaic_pixels = dcm.pixel_array
+        ### Parse the mosaic image into a 3D volume
+        # we use the nibabel mosaic_to_nii() method which does a lot of the
+        # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
+        # the affine
+        dcm = dicom.read_file(mosaic_dcm_fname)     # create dicom object
+        thisVol = dicomreaders.mosaic_to_nii(dcm)   # convert to nifti
 
-        # figure out the fixed values for this scan
-        if self.nSlicesPerVol is None:
-            self.nSlicesPerVol = dcm[0x0019, 0x100a].value  # private tag: [NumberOfImagesInMosaic]
-        if self.sliceDims is None:
-            sliceDims = dcm[0x0051, 0x100b].value.split('*')   # tag: [AcquisitionMatrixText]
-            self.sliceDims = list(map(int, sliceDims))              # convert to integers
-        if self.mosaicDims_slices is None:
-            mosaicDims_px = mosaic_pixels.shape    # mosaic dims in pixels
-            self.mosaicDims_slices = np.array([int(mosaicDims_px[0]/self.sliceDims[0]),
-                                             int(mosaicDims_px[1]/self.sliceDims[1])])
+        # convert to RAS+
+        thisVol_RAS = nib.as_closest_canonical(thisVol)
 
-        ### Loop over each slice in the mosaic:
-        for slIdx in range(self.nSlicesPerVol):
-            #figure out where the pixels for this slice start in the mosaic
-            sl_rowIdx, sl_colIdx = self._determineSlicePixelIndices(slIdx)
+        # get the data as a contiguous array (required for ZMQ)
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
 
-            # extract this slice from the mosaic
-            thisSlice = mosaic_pixels[sl_rowIdx:sl_rowIdx + self.sliceDims[0],
-                                        sl_colIdx:sl_colIdx + self.sliceDims[1]]
+        ### Create a header with metadata info
+        volHeader = {
+            'volIdx':volIdx,
+            'dtype':str(thisVol_RAS_data.dtype),
+            'shape':thisVol_RAS_data.shape,
+            'affine':json.dumps(thisVol_RAS.affine.tolist())
+            }
 
-            # Siemens Dicom images appear to follow the DICOM standard
-            # of collecting images in an LPS+ coordinate system. Pyneal
-            # (and many other neuroimaging tools) expect the coordinate
-            # system to be RAS+. To convert, we need to flip our data
-            # along the first axis (left/right), and then flip along the
-            # 2nd axis (up/down). This is equivalent to rotating the array
-            # 180 degrees (less steps = better)
-            thisSlice = np.ascontiguousarray(
-                        np.rot90(thisSlice, k=2)
-                        )
-
-            # Numpy arrays are indexed as [row, col], which in cartesian
-            # coords translates to [y,x]. We want our data to be an array
-            # that is indexed like [x,y,z,t], so we need to transpose
-            # each slice before adding to the full image matrix
-            thisSlice = thisSlice.T
-
-            ### Format the header
-            sliceHeader = {
-                'sliceIdx': slIdx,
-                'volIdx': volIdx,
-                'nSlicesPerVos': self.nSlicesPerVol,
-                'dtype':str(thisSlice.dtype),
-                'shape':thisSlice.shape
-                }
-
-            ### Send the slice array ad the header to the scanner socket
-            self.sendSliceToScannerSocket(sliceHeader, thisSlice)
+        ### Send the voxel array and header to the scannerSocket
+        self.sendVolToScannerSocket(volHeader, thisVol_RAS_data)
 
 
-    def _determineSlicePixelIndices(self, sliceIdx):
+    def sendVolToScannerSocket(self, volHeader, voxelArray):
         """
-        Figure out the mosaic pixel indices that correspond to a given slice
-        index (0-based)
-
-        sliceIdx: the index value of the slice you want to find
-
-        Returns: rowIdx, colIdx
-            - row and column index of starting pixel for this slice
+        Send the volume data over the scannerSocket.
+            - 'volHeader' is expected to be a dictionary with key:value
+            pairs for relevant metadata like 'volIdx' and 'affine'
+            - 'voxelArray' is expected to be a 3D numpy array of voxel
+            data from the volume reoriented to RAS+
         """
-        # determine where this slice is in the mosaic
-        mWidth = self.mosaicDims_slices[1]
-        mRow= int(np.floor(sliceIdx/mWidth))
-        mCol = int(sliceIdx % mWidth)
-
-        rowIdx = mRow * self.sliceDims[0]
-        colIdx = mCol * self.sliceDims[1]
-
-        return rowIdx, colIdx
-
-
-    def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):
-        """
-        Send the dicom slice over the scannerSocket.
-            - 'sliceHeader' is expected to be a dictionary with key:value
-            pairs for relevant slice metadata like 'sliceIdx', and 'volIdx'
-            - 'slicePixelArray' is expected to be a 2D numpy array of pixel
-            data from the slice reoriented to RAS+
-        """
-        self.logger.debug('TO scannerSocket: vol {}, slice {}'.format(sliceHeader['volIdx'], sliceHeader['sliceIdx']))
+        self.logger.debug('TO scannerSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.scannerSocket.send_json(sliceHeader, zmq.SNDMORE) # header as json
-        self.scannerSocket.send(slicePixelArray, flags=0, copy=False, track=False)
+        self.scannerSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.scannerSocket.send(voxelArray, flags=0, copy=False, track=False)
         scannerSocketResponse = self.scannerSocket.recv_string()
 
         # log the success
         self.logger.debug('FROM scannerSocket: {}'.format(scannerSocketResponse))
 
+        # check if that was the last volume, and if so, stop
+        if 'STOP' in scannerSocketResponse:
+            self.stop()
 
     def stop(self):
         # function to stop the Thread
@@ -718,7 +669,7 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     method will take care of:
         - monitoring the sessionDir for a new series directory to appear (and
         then returing the name of the new series dir)
-        - set up the socket connection to send slice data over
+        - set up the socket connection to send volume data over
         - creating a Queue to store newly arriving DICOM files
         - start a separate thread to monitor the new seriesDir
         - start a separate thread to process DICOMs that are in the Queue
@@ -754,10 +705,10 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     seriesDir = scannerDirs.waitForSeriesDir()
     logger.info('New Series Directory: {}'.format(seriesDir))
 
-    ### Start threads to A) watch for new slices, and B) process
-    # slices as they appear
+    ### Start threads to A) watch for new mosaic files, and B) process
+    # them as they appear
     # initialize the dicom queue to keep store newly arrived
-    # dicom slices, and keep track of which have been processed
+    # dicom mosaic images, and keep track of which have been processed
     dicomQ = Queue()
 
     # create instance of class that will monitor seriesDir. Pass in
@@ -765,12 +716,11 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     scanWatcher = Siemens_monitorSeriesDir(seriesDir, dicomQ)
     scanWatcher.start()
 
-    # create an instance of the class that will grab slice dicoms
+    # create an instance of the class that will grab mosaic dicoms
     # from the queue, reformat the data, and pass over the socket
     # to pyneal. Start the thread going
     mosaicProcessor = Siemens_processMosaic(dicomQ, scannerSocket)
     mosaicProcessor.start()
-
 
 
 

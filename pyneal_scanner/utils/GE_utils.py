@@ -525,7 +525,7 @@ class GE_BuildNifti():
         nib.save(self.niftiImage, output_fName)
 
 
-class test_GE_monitorSeriesDir(Thread):
+class GE_monitorSeriesDir(Thread):
     """
     Class to monitor for new slices images to appear in the seriesDir.
     This class will run indpendently in a separate thread.

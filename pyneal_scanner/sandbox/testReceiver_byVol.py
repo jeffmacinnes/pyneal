@@ -65,7 +65,10 @@ while True:
     imageMatrix[:, :, :, volIdx] = voxelArray
 
     # send slice over socket
-    response = 'Received vol {}'.format(volIdx)
+    if volIdx == (nVols-1):
+        response = 'Received vol {} - STOP'.format(volIdx)
+    else:
+        response = 'Received vol {}'.format(volIdx)
     sock.send_string(response)
     print(response)
 
