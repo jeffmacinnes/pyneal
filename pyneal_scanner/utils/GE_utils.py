@@ -310,8 +310,6 @@ class GE_BuildNifti():
                                 self.nSlicesPerVol),
                                 dtype='int16')
 
-        print('Nifti image dims: {}'.format(imageMatrix.shape))
-
         # With functional data, the dicom tag 'InStackPositionNumber'
         # seems to correspond to the slice index (one-based indexing).
         # But with anatomical data, there are 'InStackPositionNumbers'
@@ -361,6 +359,7 @@ class GE_BuildNifti():
         ### Build a Nifti object, reorder it to RAS+
         anatImage = nib.Nifti1Image(imageMatrix, affine=affine)
         anatImage_RAS = nib.as_closest_canonical(anatImage)     # reoder to RAS+
+        print('Nifti image dims: {}'.format(anatImage_RAS.shape))
 
         return anatImage_RAS
 
@@ -517,12 +516,13 @@ class GE_BuildNifti():
         return self.niftiImage
 
 
-    def write_nifti(self, output_fName):
+    def write_nifti(self, output_path):
         """
         write the nifti file to disk using the abs path
         specified by output_fName
         """
-        nib.save(self.niftiImage, output_fName)
+        nib.save(self.niftiImage, output_path)
+        print('Image saved at: {}', output_path)
 
 
 class GE_monitorSeriesDir(Thread):
