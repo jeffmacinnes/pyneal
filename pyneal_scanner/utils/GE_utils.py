@@ -157,8 +157,6 @@ class GE_DirStructure():
                 # get the info from this series dir
                 dirName = s[0].split('/')[-1]
 
-                # add to self.seriesDirs
-
                 # calculate & format directory size
                 dirSize = sum([os.path.getsize(join(s[0], f)) for f in os.listdir(s[0])])
                 if dirSize < 1000:
@@ -255,7 +253,7 @@ class GE_DirStructure():
 
 class GE_BuildNifti():
     """
-    Build a 3D or 4D Nifti image from all of the dicom slice imagas in a directory.
+    Build a 3D or 4D Nifti image from all of the dicom slice images in a directory.
 
     Input is a path to a series directory containing dicom slices. Image
     parameters, like voxel spacing and dimensions, are obtained automatically
@@ -272,7 +270,13 @@ class GE_BuildNifti():
         # initialize attributes
         self.seriesDir = seriesDir
         self.niftiImage = None
+
         self.affine = None
+        self.pixelSpacing = None        # pixel spacing attribute from dicom tag
+        self.firstSlice_IOP = None      # first slice ImageOrientationPatient tag
+        self.firstSlice_IPP = None      # first slice ImagePositionPatient tag
+        self.lastSlice_IPP = None       # last slice ImagePositionPatient tag
+        self.nSlicesPerVol = None       # number of slices per volume
 
         # make a list of all of the dicoms in this dir
         self.rawDicoms = [f for f in os.listdir(self.seriesDir) if GE_filePattern.match(f)]
@@ -293,8 +297,8 @@ class GE_BuildNifti():
         """
         # read the first dicom in the list to get overall image dimensions
         dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
-        sliceDims = (getattr(dcm, 'Rows'), getattr(dcm, 'Columns'))
-        nSlices = getattr(dcm, 'ImagesInAcquisition')
+        sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
+        self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         sliceThickness = getattr(dcm, 'SliceThickness')
         voxSize = getattr(dcm, 'PixelSpacing')
 
@@ -303,9 +307,9 @@ class GE_BuildNifti():
         imageMatrix = np.zeros(shape=(
                                 sliceDims[0],
                                 sliceDims[1],
-                                nSlices),
-                                dtype='int16'
-                            )
+                                self.nSlicesPerVol),
+                                dtype='int16')
+
         print('Nifti image dims: {}'.format(imageMatrix.shape))
 
         # With functional data, the dicom tag 'InStackPositionNumber'
@@ -327,38 +331,38 @@ class GE_BuildNifti():
             # grab the slices necessary for creating the affine transformation
             if sliceIdx == 0:
                 firstSliceDcm = dcm
-            if sliceIdx == nSlices-1:
+            if sliceIdx == self.nSlicesPerVol-1:
                 lastSliceDcm = dcm
 
-            # extract the pixel data as a numpy array
-            pixel_array = dcm.pixel_array
+            # extract the pixel data as a numpy array. Transpose
+            # so that the axes order go [cols, rows]
+            pixel_array = dcm.pixel_array.T
 
-            # GE DICOM images are collected in an LPS+ coordinate
-            # system. For the purposes of standardizing everything
-            # in pyneal we need to convert to and RAS+ coordinate system.
-            # In other words, need to flip our data array along the
-            # first axis (left/right), and then flip along the 2nd axis
-            # (up/down). This is equivalent to rotating the array 180 degrees
-            # (less steps = better).
-            pixel_array = np.rot90(pixel_array, k=2)
+            # place in the image matrix
+            imageMatrix[:, :, sliceIdx] = pixel_array
 
-            # Next, numpy arrays are indexed as [row, col], which in
-            # cartesian coords translats to [y,x]. We want our data to
-            # be an array that is indexed like [x,y,z], so we need to
-            # transpose each slice before adding to the full dataset
-            imageMatrix[:, :, sliceIdx] = pixel_array.T
 
         ### create the affine transformation to map from vox to mm space
-        # Our reference space (in mm) will have the same origin and
-        # axes as the voxel array. So, our affine transform just needs to
-        # be a scale transform that scales each dimension to the appropriate
-        # voxel size
-        affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+        # in order to do this, we need to get some values from the first and
+        # last slices in the volume.
+        firstSlice = sliceDict[sorted(sliceDict.keys())[0]]
+        lastSlice = sliceDict[sorted(sliceDict.keys())[-1]]
 
-        ### Build a Nifti object
+        dcm_first = dicom.read_file(firstSlice)
+        dcm_last = dicom.read_file(lastSlice)
+        self.pixelSpacing = getattr(dcm_first, 'PixelSpacing')
+        self.firstSlice_IOP = np.array(getattr(dcm_first, 'ImageOrientationPatient'))
+        self.firstSlice_IPP = np.array(getattr(dcm_first, 'ImagePositionPatient'))
+        self.lastSlice_IPP = np.array(getattr(dcm_last, 'ImagePositionPatient'))
+
+        # now we can build the affine
+        affine = self.buildAffine()
+
+        ### Build a Nifti object, reorder it to RAS+
         anatImage = nib.Nifti1Image(imageMatrix, affine=affine)
+        anatImage_RAS = nib.as_closest_canonical(anatImage)     # reoder to RAS+
 
-        return anatImage
+        return anatImage_RAS
 
 
     def buildFunc(self, dicomFiles):
@@ -369,8 +373,8 @@ class GE_BuildNifti():
         """
         # read the first dicom in the list to get overall image dimensions
         dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
-        sliceDims = (getattr(dcm, 'Rows'), getattr(dcm, 'Columns'))
-        nSlices = getattr(dcm, 'ImagesInAcquisition')
+        sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
+        self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         nVols = getattr(dcm, 'NumberOfTemporalPositions')
         sliceThickness = getattr(dcm, 'SliceThickness')
         voxSize = getattr(dcm, 'PixelSpacing')
@@ -380,7 +384,7 @@ class GE_BuildNifti():
         imageMatrix = np.zeros(shape=(
                                 sliceDims[0],
                                 sliceDims[1],
-                                nSlices,
+                                self.nSlicesPerVol,
                                 nVols),
                                 dtype='int16'
                             )
@@ -398,108 +402,89 @@ class GE_BuildNifti():
             # Note: InStackPositionNumber uses one-based indexing
             sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
 
+            # Get the tags needed for the affine transform, if this is
+            # either the first or last slice
+            if sliceIdx == 0 and self.firstSlice_IOP is None:
+                self.pixelSpacing = getattr(dcm, 'PixelSpacing')
+                self.firstSlice_IOP = np.array(getattr(dcm, 'ImageOrientationPatient'))
+                self.firstSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+
+            if sliceIdx == (self.nSlicesPerVol-1) and self.lastSlice_IPP is None:
+                self.lastSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+
             # We can figure out the volume index using the dicom
             # tags "InstanceNumber" (# out of all images), and
             # "ImagesInAcquisition" (# of slices in a single vol).
             # Divide InstanceNumber by ImagesInAcquisition and drop
             # the remainder. Note: InstanceNumber is also one-based index
             instanceIdx = getattr(dcm, 'InstanceNumber')-1
-            volIdx = int(np.floor(instanceIdx/nSlices))
+            volIdx = int(np.floor(instanceIdx/self.nSlicesPerVol))
 
-            # extract the pixel data as a numpy array
-            pixel_array = dcm.pixel_array
-
-            # GE DICOM images are collected in an LPS+ coordinate
-            # system. For the purposes of standardizing everything
-            # in pyneal we need to convert to and RAS+ coordinate system.
-            # In other words, need to flip our data array along the
-            # first axis (left/right), and then flip along the 2nd axis
-            # (up/down). This is equivalent to rotating the array 180 degrees
-            # (less steps = better).
-            pixel_array = np.rot90(pixel_array, k=2)
-
-            # Next, numpy arrays are indexed as [row, col], which in
-            # cartesian coords translats to [y,x]. We want our data to
-            # be an array that is indexed like [x,y,z,t], so we need to
-            # transpose each slice before adding to the full dataset
-            imageMatrix[:, :, sliceIdx, volIdx] = pixel_array.T
+            # We need our data to be an array that is indexed like [x,y,z,t],
+            # so we need to transpose each slice from [row,col] to [col,row]
+            # before adding to the full dataset
+            imageMatrix[:, :, sliceIdx, volIdx] = dcm.pixel_array.T
 
         ### create the affine transformation to map from vox to mm space
-        # Our reference space (in mm) will have the same origin and
-        # axes as the voxel array. So, our affine transform just needs to
-        # be a scale transform that scales each dimension to the appropriate
-        # voxel size
-        affine = np.diag([voxSize[0], voxSize[1], sliceThickness, 1])
+        affine = self.buildAffine()
 
-        ### Build a Nifti object
+        ### Build a Nifti object, reorder it to RAS+
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
+        funcImage_RAS = nib.as_closest_canonical(funcImage)     # reoder to RAS+
 
-        return funcImage
+        return funcImage_RAS
 
 
-    def createAffineOLD(self, firstSlice, lastSlice):
+    def buildAffine(self):
         """
-        build an affine transformation matrix that maps from voxel
-        space to mm space.
+        Build the affine matrix that will transform the data to RAS+.
 
-        For helpful info on how to build this, see:
+        This function should only be called once the required data has been
+        extracted from the dicom tags from the relevant slices. The affine matrix
+        is constructed by using the information in the ImageOrientationPatient
+        and ImagePositionPatient tags from the first and last slices in a volume.
+
+        However, note that those tags will tell you how to orient the image to
+        DICOM reference coordinate space, which is LPS+. In order to to get to
+        RAS+ we have to invert the first two axes.
+
+        More info on building this affine at:
         http://nipy.org/nibabel/dicom/dicom_orientation.html &
         http://nipy.org/nibabel/coordinate_systems.html
         """
+        ### Get the ImageOrientation values from the first slice,
+        # split the row-axis values (0:3) and col-axis values (3:6)
+        # and then invert the first and second values of each
+        rowAxis_orient = self.firstSlice_IOP[0:3] * np.array([-1, -1, 1])
+        colAxis_orient = self.firstSlice_IOP[3:6] * np.array([-1, -1, 1])
 
-        # initialize an empty 4x4 matrix that will serve as our
-        # affine transformation. This will allow us to combine
-        # rotations and translations into the same transform
-        affine = np.zeros(shape=(4,4))
+        ### Get the voxel size along Row and Col axis
+        voxSize_row = float(self.pixelSpacing[0])
+        voxSize_col = float(self.pixelSpacing[1])
 
-        # but we need to make sure the bottom right position is set to 1
-        affine[3,3] = 1
+        ### Figure out the change along the 3rd axis by subtracting the
+        # ImagePosition of the last slice from the ImagePosition of the first,
+        # then dividing by 1/(total number of slices-1), then invert to
+        # make it go from LPS+ to RAS+
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
 
-        # affine[:3, :2] reprsents the rotations needed to position our voxel
-        # array in reference space. We can safely assume these rotations will
-        # be the same for all slices in our 3D volume, so we can just grab the
-        # ImageOrientationPatient tag from the first slice only...
-        imageOrientation = getattr(firstSlice, 'ImageOrientationPatient')
+        ### Invert the first two values of the firstSlice ImagePositionPatient.
+        # This tag represents the translation needed to take the origin of our 3D voxel
+        # array to the origin of the LPS+ reference coordinate system. Since we want
+        # RAS+, need to invert those first two axes
+        voxTranslations = self.firstSlice_IPP * np.array([-1, -1, 1])
 
-        # multiply the imageOrientation values by the voxel size
-        voxSize = getattr(firstSlice, 'PixelSpacing')
-        imageOrientation = np.array(imageOrientation)*voxSize[0]
+        ### Assemble the affine matrix
+        affine = np.matrix([
+            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [0, 0, 0, 1]
+            ])
 
-        # ...and populate the affine matrix
-        affine[:3,0] = imageOrientation[:3]
-        affine[:3,1] = imageOrientation[3:]
-
-        # affine[:3,3] represents the translations along the x,y,z axis,
-        # respectively, that would bring voxel location 0,0,0 to the origin
-        # of the reference space. Thus, we can grab these 3 values from the
-        # ImagePositionPatient tag of the first slice as well
-        # (first slice is z=0, so has voxel 0,0,0):
-        imagePosition = getattr(firstSlice, 'ImagePositionPatient')
-
-        # ...and populate the affine matrix
-        affine[:3,3] = imagePosition
-
-        # affine[:3,2] represents the translations needed to go from the first
-        # slice to the last slice. So we need to know the positon of the last slice
-        # before we can fill in these values. First, we figure out the spatial difference
-        # between the first and last slice.
-        firstSliceImagePos = getattr(firstSlice, 'ImagePositionPatient')
-        lastSliceImagePos = getattr(lastSlice, 'ImagePositionPatient')
-        positionDiff = np.array([
-                            firstSliceImagePos[0] - lastSliceImagePos[0],
-                            firstSliceImagePos[1] - lastSliceImagePos[1],
-                            firstSliceImagePos[2] - lastSliceImagePos[2]
-                        ])
-
-        # divide each element of the difference in position by 1-numSlices
-        numSlices = getattr(firstSlice, 'ImagesInAcquisition')
-        positionDiff = positionDiff/(1-numSlices)
-
-        # ...and populate the affine
-        affine[:3,2] = positionDiff
-
-        # all done, return the affine
         return affine
+
 
 
     def _determineScanType(self, sliceDcm):
@@ -540,7 +525,7 @@ class GE_BuildNifti():
         nib.save(self.niftiImage, output_fName)
 
 
-class GE_monitorSeriesDir(Thread):
+class test_GE_monitorSeriesDir(Thread):
     """
     Class to monitor for new slices images to appear in the seriesDir.
     This class will run indpendently in a separate thread.
@@ -605,10 +590,15 @@ class GE_monitorSeriesDir(Thread):
 class GE_processSlice(Thread):
     """
     Class to process each dicom slice in the dicom queue. This class is
-    designed to run in a separate thread. While running, it will pull 'tasks'
-    off of the dicom queue and process each task. Processing each task will
-    include making sure the data is formatted correctly, and sending the data
-    out over the socket connection
+    designed to run in a separate thread. While running, it will pull slice file
+    names off of the dicomQ and process each slice.
+
+    Processing each slice will include reading the dicom file and extracting
+    the pixel array and any relevant header information. The pixel array from
+    each slice will be stored in an 4d image matrix. Whenever all of the slices
+    from a single volume have arrived, that volume will be reformatted
+    so that its axes correspond to RAS+. The volume, along with a JSON header
+    containing metadata on that volume, will be sent out over the socket connection
     """
     def __init__(self, dicomQ, scannerSocket, interval=.2):
         # start the thread upon creation
@@ -623,7 +613,21 @@ class GE_processSlice(Thread):
         self.alive = True
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0             # counter for total number of slices processed
-        self.nSlicesPerVol = None           # once set, won't need to be retrieved each time
+        self.volCounter = 0
+
+        # parameters we'll build once dicom data starts arriving
+        self.firstSliceHasArrived = False
+        self.nSlicesPerVol = None
+        self.sliceDims = None
+        self.nVols = None
+        self.pixelSpacing = None
+
+        self.completedSlices = None     # store booleans of which slices have arrived
+        self.imageMatrix = None         # 4D image matrix where new slices stored
+        self.affine = None              # var to store RAS+ affine, once created
+        self.firstSlice_IOP = None      # first slice ImageOrientationPatient tag
+        self.firstSlice_IPP = None      # first slice ImagePositionPatient tag
+        self.lastSlice_IPP = None       # last slice ImagePositionPatient tag
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -658,44 +662,40 @@ class GE_processSlice(Thread):
         read the slice dicom. Format the data and header.
         Send data and header out over the socket connection
         """
+        # if this is the first slice to have arrived, read the dcm header
+        # to get relevent information about the series, and to construct
+        # the imageMatrix and completedSlices table
+        if not self.firstSliceHasArrived:
+            self.processFirstSlice(dcm_fname)
+
         # read in the dicom file
         dcm = dicom.read_file(dcm_fname)
 
-        ### Format the slice pixel data
-        # extract the pixel data as a numpy array
-        pixel_array = dcm.pixel_array
-
-        # GE DICOM images are collected in an LPS+ coordinate
-        # system. For the purposes of standardizing everything
-        # in pyneal we need to convert to and RAS+ coordinate system.
-        # In other words, need to flip our data array along the
-        # first axis (left/right), and then flip along the 2nd axis
-        # (up/down). This is equivalent to rotating the array 180 degrees
-        # (less steps = better).
-        pixel_array = np.ascontiguousarray(
-            np.rot90(pixel_array, k=2)
-            )
-
-        # Next, numpy arrays are indexed as [row, col], which in
-        # cartesian coords translats to [y,x]. We want our data to
-        # be an array that is indexed like [x,y,z], so we need to
-        # transpose each slice before adding to the full dataset
-        pixel_array = pixel_array.T
-
-        ### Format the header
+        ### Get the Slice Number
         # The dicom tag 'InStackPositionNumber' will tell
         # what slice number within a volume this dicom is.
         # Note: InStackPositionNumber uses one-based indexing,
         # and we want sliceIdx to reflect 0-based indexing
         sliceIdx = getattr(dcm, 'InStackPositionNumber') - 1
 
-        # The tag 'ImagesInAcquisition' stores the total number of
-        # slices for every volume. Setting this as a class attribute
-        # means it does not have to be retrieved, redundantly, when
-        # processing each slice.
-        if self.nSlicesPerVol is None:
-            self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
+        ### Check if you can build the affine using the information that is
+        # currently available. We need info from the dicom tags for the first
+        # and last slice from any of the 3D volumes
+        if self.affine is None and sliceIdx in [0, (self.nSlicesPerVol-1)]:
+            if sliceIdx == 0:
+                # store the relevent data from the first slice
+                self.firstSlice_IOP = np.array(getattr(dcm, 'ImageOrientationPatient'))
+                self.firstSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
 
+            if sliceIdx == (self.nSlicesPerVol-1):
+                # store the relevent data from the last slice
+                self.lastSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+
+            # See if you have valid values for all required parameters for the affine
+            if all(x is not None for x in [self.firstSlice_IOP, self.firstSlice_IPP, self.lastSlice_IPP, self.pixelSpacing]):
+                self.buildAffine()
+
+        ### Get the volume number
         # We can figure out the volume index using the dicom
         # tags "InstanceNumber" (# out of all images), and
         # the total number of slices.
@@ -703,32 +703,145 @@ class GE_processSlice(Thread):
         # the remainder. Note: InstanceNumber is also one-based index
         volIdx = int(int(getattr(dcm, 'InstanceNumber')-1)/self.nSlicesPerVol)
 
-        # create a header with metadata info
-        sliceHeader = {
-            'sliceIdx':sliceIdx,
+        ### Place pixel data in imageMatrix
+        # transpose the data from numpy standard [row,col] to [col,row]
+        self.imageMatrix[:, :, sliceIdx, volIdx] = dcm.pixel_array.T
+
+        # update this slice location in completedSlices
+        self.completedSlices[sliceIdx, volIdx] = True
+
+        ### Check if full volume is here, and process if so
+        if self.completedSlices[:, self.volCounter].all():
+            self.processVolume(self.volCounter)
+
+            # increment volCounter
+            self.volCounter += 1
+            if self.volCounter >= self.nVols:
+                self.stop()
+
+
+    def processFirstSlice(self, dcm_fname):
+        """
+        Read the dicom header from the supplied slice to get relevant info
+        that pertains to the whole scan series. Build the imageMatrix and
+        completedSlice table to store subsequent slice data as it arrives
+        """
+        # Read the header dicom tags only
+        dcmHdr = dicom.read_file(dcm_fname, stop_before_pixels=True)
+
+        ### Get series parameters from the dicom tags
+        self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')
+        self.nVols = getattr(dcmHdr, 'NumberOfTemporalPositions')
+        self.pixelSpacing = getattr(dcmHdr, 'PixelSpacing')
+
+        # Note: [cols, rows] to match the order of the transposed pixel_array later on
+        self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),
+                                    getattr(dcmHdr, 'Rows')])
+
+
+        ### Build the image matrix and completed slices table
+        self.imageMatrix = np.zeros(shape=(self.sliceDims[0],
+                                        self.sliceDims[1],
+                                        self.nSlicesPerVol,
+                                        self.nVols), dtype=np.uint16)
+        self.completedSlices = np.zeros(shape=(self.nSlicesPerVol,
+                                            self.nVols), dtype=bool)
+
+        ### Update the flow control flag
+        self.firstSliceHasArrived = True
+
+
+    def buildAffine(self):
+        """
+        Build the affine matrix that will transform the data to RAS+.
+
+        This function should only be called once the required data has been
+        extracted from the dicom tags from the relevant slices. The affine matrix
+        is constructed by using the information in the ImageOrientationPatient
+        and ImagePositionPatient tags from the first and last slices in a volume.
+
+        However, note that those tags will tell you how to orient the image to
+        DICOM reference coordinate space, which is LPS+. In order to to get to
+        RAS+ we have to invert the first two axes.
+
+        More info on building this affine at:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        http://nipy.org/nibabel/coordinate_systems.html
+        """
+        ### Get the ImageOrientation values from the first slice,
+        # split the row-axis values (0:3) and col-axis values (3:6)
+        # and then invert the first and second values of each
+        rowAxis_orient = self.firstSlice_IOP[0:3] * np.array([-1, -1, 1])
+        colAxis_orient = self.firstSlice_IOP[3:6] * np.array([-1, -1, 1])
+
+        ### Get the voxel size along Row and Col axis
+        voxSize_row = float(self.pixelSpacing[0])
+        voxSize_col = float(self.pixelSpacing[1])
+
+        ### Figure out the change along the 3rd axis by subtracting the
+        # ImagePosition of the last slice from the ImagePosition of the first,
+        # then dividing by 1/(total number of slices-1), then invert to
+        # make it go from LPS+ to RAS+
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
+
+        ### Invert the first two values of the firstSlice ImagePositionPatient.
+        # This tag represents the translation needed to take the origin of our 3D voxel
+        # array to the origin of the LPS+ reference coordinate system. Since we want
+        # RAS+, need to invert those first two axes
+        voxTranslations = self.firstSlice_IPP * np.array([-1, -1, 1])
+
+        ### Assemble the affine matrix
+        self.affine = np.matrix([
+            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [0, 0, 0, 1]
+            ])
+
+    def processVolume(self, volIdx):
+        """
+        Extract the 3D numpy array of voxel data for the current volume (set by
+        self.volCounter attribute). Reorder the voxel data so that it is RAS+,
+        build a header JSON object, and then send both the header and the voxel
+        data out over the socket connection to Pyneal
+        """
+        print('Volume {} arrived'.format(volIdx))
+
+        ### Prep the voxel data by extracting this vol from the imageMatrix,
+        # and then converting to a Nifti1 object in order to set the voxel
+        # order to RAS+, then get the voxel data as contiguous numpy array
+        thisVol = self.imageMatrix[:,:,:,volIdx]
+        thisVol_nii = nib.Nifti1Image(thisVol, self.affine)
+        thisVol_RAS = nib.as_closest_canonical(thisVol_nii)     # make RAS+
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
+
+
+        ### Create a header with metadata info
+        volHeader = {
             'volIdx':volIdx,
-            'nSlicesPerVol':self.nSlicesPerVol,
-            'dtype':str(pixel_array.dtype),
-            'shape':pixel_array.shape,
+            'dtype':str(thisVol_RAS_data.dtype),
+            'shape':thisVol_RAS_data.shape,
+            'affine':json.dumps(thisVol_RAS.affine.tolist())
             }
 
-        ### Send the pixel array and header to the scannerSocket
-        self.sendSliceToScannerSocket(sliceHeader, pixel_array)
+        ### Send the voxel array and header to the scannerSocket
+        self.sendVolToScannerSocket(volHeader, thisVol_RAS_data)
 
 
-    def sendSliceToScannerSocket(self, sliceHeader, slicePixelArray):
+    def sendVolToScannerSocket(self, volHeader, voxelArray):
         """
-        Send the dicom slice over the scannerSocket.
-            - 'sliceHeader' is expected to be a dictionary with key:value
-            pairs for relevant slice metadata like 'sliceIdx', and 'volIdx'
-            - 'slicePixelArray' is expected to be a 2D numpy array of pixel
-            data from the slice reoriented to RAS+
+        Send the volume data over the scannerSocket.
+            - 'volHeader' is expected to be a dictionary with key:value
+            pairs for relevant metadata like 'volIdx' and 'affine'
+            - 'voxelArray' is expected to be a 3D numpy array of voxel
+            data from the volume reoriented to RAS+
         """
-        self.logger.debug('TO scannerSocket: vol {}, slice {}'.format(sliceHeader['volIdx'], sliceHeader['sliceIdx']))
+        self.logger.debug('TO scannerSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.scannerSocket.send_json(sliceHeader, zmq.SNDMORE) # header as json
-        self.scannerSocket.send(slicePixelArray, flags=0, copy=False, track=False)
+        self.scannerSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.scannerSocket.send(voxelArray, flags=0, copy=False, track=False)
         scannerSocketResponse = self.scannerSocket.recv_string()
 
         # log the success
@@ -747,7 +860,7 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     method will take care of:
         - monitoring the sessionDir for a new series directory to appear (and
         then returing the name of the new series dir)
-        - set up the socket connection to send slice data over
+        - set up the socket connection to send volume data over
         - creating a Queue to store newly arriving DICOM files
         - start a separate thread to monitor the new seriesDir
         - start a separate thread to process DICOMs that are in the Queue
@@ -784,7 +897,7 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     logger.info('New Series Directory: {}'.format(seriesDir))
 
     ### Start threads to A) watch for new slices, and B) process
-    # slices as they appear
+    # volumes as they appear
     # initialize the dicom queue to keep store newly arrived
     # dicom slices, and keep track of which have been processed
     dicomQ = Queue()
