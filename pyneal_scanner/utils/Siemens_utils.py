@@ -364,29 +364,6 @@ class Siemens_BuildNifti():
         return affine
 
 
-    def _determineSlicePixelIndices(self, mosaicDims, sliceDims, sliceIdx):
-        """
-        Figure out the mosaic pixel indices that correspond to a given slice
-        index (0-based)
-
-        mosaicDims: dimensions of the mosaic in terms of number of slices
-        sliceDims: dimensions of the slice in terms of pixels
-        sliceIdx: the index value of the slice you want to find
-
-        Returns: rowIdx, colIdx
-            - row and column index of starting pixel for this slice
-        """
-        # determine where this slice is in the mosaic
-        mWidth = mosaicDims[1]
-        mRow= int(np.floor(sliceIdx/mWidth))
-        mCol = int(sliceIdx % mWidth)
-
-        rowIdx = mRow*sliceDims[0]
-        colIdx = mCol*sliceDims[1]
-
-        return rowIdx, colIdx
-
-
     def _determineScanType(self, dicomFile):
         """
         Figure out what type of scan this is, single 3D volume (anat), or

@@ -151,7 +151,113 @@ class Philips_DirStructure():
 
 
 class Philips_BuildNifti():
-    pass
+    """
+    Build a 3D or 4D Nifti image from all of the par/rec files in a
+    directory.
+
+    Input is a path to a series directory containing par/rec files.
+
+    Output is a Nifti1 formatted 3D (anat) or 4D (func) file with the
+    voxels ordered as RAS+
+    """
+    def __init__(self, seriesDir):
+        """
+        Initialize class:
+            - seriesDir needs to be the full path to a directory containing
+            all of the par/rec files
+        """
+        # initialize attributes
+        self.seriesDir = seriesDir
+        self.niftiImage = None
+
+        # make a list of all of the par files in this dir
+        parFiles = glob.glob(join(self.seriesDir, '*.par'))
+
+        # figure out what type of image this is, 4d or 3d
+        # NEED TO FIGURE OUT HOW TO DO THIS WITH PHILIPS DATA
+        self.scanType = 'func'
+
+        # build nifti image
+        if self.scanType == 'anat':
+            self.niftiImage = self.buildAnat(parFiles)
+        elif self.scanType == 'func':
+            self.niftiImage = self.buildFunc(parFiles)
+
+
+    def buildAnat(self, parFiles):
+        pass
+
+
+    def buildFunc(self, parFiles):
+        """
+        Given a list of parFile paths, build a 4d functional image. For
+        Philips output, there should be a par header file and corresponding
+        rec image file for each volume. This tool will read each header/image
+        pair and construct a 4D nifti object. The 4D nifti object
+        contain a voxel array ordered like RAS+ as well the affine transformation
+        to map between vox and mm space
+        """
+        imageMatrix = None
+        affine = None
+
+        ### Loop over all of the par files
+        nVols = len(parFiles)
+        for par_fname in parFiles:
+
+            # make sure there is a corresponding .rec file
+            if not os.path.isfile(par_fname.replace('.par', '.rec')):
+                print('No REC file found to match par: {}', par_fname)
+
+            ### Build the 3d voxel array for this volume and reorder to RAS+
+            # nibabel will load the par/rec, but there can be multiple images (mag,
+            # phase, etc...) concatenated into the 4th dimension. Loading with the
+            # strict_sort option (I think) will make sure the first image is the data
+            # we want. Extract this data, then reorder the voxel array to RAS+
+            thisVol = nib.load(par_fname, strict_sort=True)
+
+            # get the vol index from the acq_nr field of the header (1-based index)
+            volIdx = int(thisVol.header.general_info['acq_nr']) - 1
+
+            # convert to RAS+
+            thisVol_RAS = nib.as_closest_canonical(thisVol)
+
+            # construct the imageMatrix if it hasn't been made yet
+            if imageMatrix is None:
+                imageMatrix = np.zeros(shape=(thisVol_RAS.shape[0],
+                                            thisVol_RAS.shape[1],
+                                            thisVol_RAS.shape[2],
+                                            nVols), dtype=np.uint16)
+
+            # construct the affine if it isn't made yet
+            if affine is None:
+                affine = thisVol_RAS.affine
+
+            # Add this data to the image matrix
+            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()[:,:,:,0].astype('uint16')
+
+        ### Build a Nifti object
+        funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
+
+        return funcImage
+    
+
+    def get_scanType(self):
+        """ Return the scan type """
+        return self.scanType
+
+
+    def get_niftiImage(self):
+        """ Return the constructed Nifti Image """
+        return self.niftiImage
+
+
+    def write_nifti(self, output_path):
+        """
+        write the nifti file to disk using the abs path
+        specified by output_fName
+        """
+        nib.save(self.niftiImage, output_path)
+        print('Image saved at: {}', output_path)
 
 
 class Philips_monitorSeriesDir(Thread):
@@ -295,7 +401,7 @@ class Philips_processVolume(Thread):
 
         # grab the data for the first volume along the 4th dimension
         # and store as contiguous array (required for ZMQ)
-        thisVol_RAS_data = thisVol_RAS.get_data()[:,:,:,0].astype('uint16')
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data()[:,:,:,0].astype('uint16'))
 
         ### Create a header with metadata info
         volHeader = {

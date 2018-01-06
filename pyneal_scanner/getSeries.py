@@ -80,12 +80,55 @@ def getSeries_GE(scannerSettings, scannerDirs):
         #sendNifti()
 
 
-def getSeries_Phillips(scannerSettings, scannerDirs):
+def getSeries_Philips(scannerSettings, scannerDirs):
     """
     Steps for getting offline data from the scanner that are
     specific to Phillips environments
     """
-    pass
+    from utils.Philips_utils import Philips_BuildNifti
+
+    # prompt user to specifiy a series. Make sure that it is a valid
+    # series before continuing
+    seriesDirs = scannerDirs.get_seriesDirs()
+    while True:
+        selectedSeries = input('Which Series?: ')
+        if selectedSeries in seriesDirs:
+            break
+        else:
+            print('{} is not a valid series choice!'.format(selectedSeries))
+
+    # prompt user to specify an output name, and format to remove any spaces
+    outputPrefix = input('Output Prefix: ')
+    outputPrefix = outputPrefix.replace(' ', '')
+
+    # progress updates
+    print('='*5)
+    print('Building Nifti...')
+    print('\tinput series: {}'.format(selectedSeries))
+    print('\toutput name: {}'.format(outputPrefix))
+
+    # get the full path to the series dir
+    seriesDir = join(scannerDirs.sessionDir, selectedSeries)
+
+    # create an instance of the Siemens_NiftiBuilder
+    niftiBuilder = Philips_BuildNifti(seriesDir)
+    print('Successfully built Nifti image...\n')
+
+    # ask user whether they want to save it locally or send
+    print('Save nifti locally (1), or Send to remote machine (2)')
+    while True:
+        saveOrSend = input('type 1 or 2: ')
+        if saveOrSend in ['1', '2']:
+            break
+        else:
+            print('{} is not a valid choice!'.format(saveOrSend))
+
+    if saveOrSend == '1':
+        output_path = join(pynealScannerDir, 'data', '{}_{}.nii.gz'.format(outputPrefix, selectedSeries))
+        niftiBuilder.write_nifti(output_path)
+
+    elif saveOrSend == '2':
+        pass
 
 
 def getSeries_Siemens(scannerSettings, scannerDirs):
@@ -151,8 +194,8 @@ if __name__ == '__main__':
     scannerMake = scannerSettings.allSettings['scannerMake']
     if scannerMake == 'GE':
         getSeries_GE(scannerSettings, scannerDirs)
-    elif scannerMake == 'Phillips':
-        getSeries_Phillips(scannerSettings, scannerDirs)
+    elif scannerMake == 'Philips':
+        getSeries_Philips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':
         getSeries_Siemens(scannerSettings, scannerDirs)
     else:
