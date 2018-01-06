@@ -485,7 +485,6 @@ class GE_BuildNifti():
         return affine
 
 
-
     def _determineScanType(self, sliceDcm):
         """
         Figure out what type of scan this is, single 3D volume (anat), or
@@ -628,6 +627,7 @@ class GE_processSlice(Thread):
         self.firstSlice_IOP = None      # first slice ImageOrientationPatient tag
         self.firstSlice_IPP = None      # first slice ImagePositionPatient tag
         self.lastSlice_IPP = None       # last slice ImagePositionPatient tag
+
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -799,6 +799,7 @@ class GE_processSlice(Thread):
             [0, 0, 0, 1]
             ])
 
+
     def processVolume(self, volIdx):
         """
         Extract the 3D numpy array of voxel data for the current volume (set by
@@ -870,7 +871,7 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     logger = logging.getLogger(__name__)
 
     #### SET UP SCANNERSOCKET (this is what we'll use to
-    #### send data (e.g. header, slice pixel data) to remote connections)
+    #### send data (e.g. header, volume voxel data) to remote connections)
     # figure out host and port number to use
     host = scannerSettings.get_scannerSocketHost()
     port = scannerSettings.get_scannerSocketPort()

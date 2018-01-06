@@ -50,7 +50,11 @@ def pynealScanner_Phillips(scannerSettings, scannerDirs):
     """
     Tools for processing a real-time scan in a Phillips environment
     """
-    pass
+    from utils.Philips_utils import Philips_launch_rtfMRI
+
+    # launch a real-time session
+    Philips_launch_rtfMRI(scannerSettings, scannerDirs)
+
 
 
 def pynealScanner_Siemens(scannerSettings, scannerDirs):
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     scannerMake = scannerSettings.allSettings['scannerMake']
     if scannerMake == 'GE':
         pynealScanner_GE(scannerSettings, scannerDirs)
-    elif scannerMake == 'Phillips':
+    elif scannerMake == 'Philips':
         pynealScanner_Phillips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':
         pynealScanner_Siemens(scannerSettings, scannerDirs)

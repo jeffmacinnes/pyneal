@@ -182,8 +182,9 @@ def initializeSession():
         from utils.GE_utils import GE_DirStructure
         scannerDirs = GE_DirStructure(scannerSettings)
 
-    elif scannerMake == 'Phillips':
-        print('no ScannerDirs for Phillips scanners yet...')
+    elif scannerMake == 'Philips':
+        from utils.Philips_utils import Philips_DirStructure
+        scannerDirs = Philips_DirStructure(scannerSettings)
 
     elif scannerMake == 'Siemens':
         from utils.Siemens_utils import Siemens_DirStructure

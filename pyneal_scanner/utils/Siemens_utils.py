@@ -136,6 +136,7 @@ class Siemens_DirStructure():
         # return the found series directory
         return seriesDir
 
+
     def get_seriesDirs(self):
         """
         build a list that contains the directory names of all of the series
@@ -152,8 +153,6 @@ class Siemens_DirStructure():
             self.seriesDirs = None
 
         return self.seriesDirs
-
-
 
 
 class Siemens_BuildNifti():
@@ -235,7 +234,6 @@ class Siemens_BuildNifti():
 
             # place in the image matrix
             imageMatrix[:, :, sliceIdx] = pixel_array
-
 
         ### create the affine transformation to map from vox to mm space
         # in order to do this, we need to get some values from the first and
@@ -449,6 +447,7 @@ class Siemens_monitorSeriesDir(Thread):
         self.numMosaicsAdded = 0            # counter to keep track of # mosaics
         self.queued_mosaic_files = set()    # empty set to store names of queued mosaic
 
+
     def run(self):
         # function that runs while the Thread is still alive
         while self.alive:
@@ -509,6 +508,7 @@ class Siemens_processMosaic(Thread):
         self.alive = True
         self.scannerSocket = scannerSocket
         self.totalProcessed = 0         # counter for total number of slices processed
+
 
     def run(self):
         self.logger.debug('Siemens_processMosaic started')
@@ -621,7 +621,7 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     logger = logging.getLogger(__name__)
 
     #### SET UP SCANNERSOCKET (this is what we'll use to
-    #### send data (e.g. header, slice pixel data) to remote connections)
+    #### send data (e.g. header, volume voxel data) to remote connections)
     # figure out host and port number to use
     host = scannerSettings.get_scannerSocketHost()
     port = scannerSettings.get_scannerSocketPort()
@@ -663,15 +663,3 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     # to pyneal. Start the thread going
     mosaicProcessor = Siemens_processMosaic(dicomQ, scannerSocket)
     mosaicProcessor.start()
-
-
-
-if __name__ == '__main__':
-    testSeriesDir = '../../../sandbox/scansForSimulation/Siemens_UNC/series0017'
-
-    #dicomQ = Queue()
-    #scanWatcher = Siemens_monitorSeriesDir(testSeriesDir, dicomQ)
-
-    outputFile = '../data/siemensOutput2.nii.gz'
-    testSiemens = Siemens_BuildNifti(testSeriesDir)
-    testSiemens.write_nifti(outputFile)
