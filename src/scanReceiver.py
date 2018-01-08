@@ -18,29 +18,30 @@ and numpy arrays.
 
 ** Expectations for data formatting:
 Once a scan has begun, this tool expects data to arrive over the socket
-connection one slice at a time (though not necessarily in the proper
-chronologic order).
+connection one volume at a time.
 
-There should be two parts to each slice transmission:
+There should be two parts to each volume transmission:
     1. First, a JSON header containing the following dict keys:
-        - sliceIdx: within-volume index of the slice (0-based)
-        - volIdx: volume index of the volume this slice belongs to (0-based)
-        - sliceDtype: datatype of the slice pixel data (e.g. int16)
-        - sliceShape: slice pixel dimensions (e.g. (64, 64))
-    2. Next, the slice pixel data, as a string buffer.
+        - volIdx: within-volume index of the volume (0-based)
+        - dtype: datatype of the voxel array (e.g. int16)
+        - shape: voxel array dimensions  (e.g. (64, 64, 18))
+        - affine: affine matrix to transform the voxel data from vox to mm space
+    2. Next, the voxel array, as a string buffer that can be converted into a
+        numpy array.
 
 Once both of those peices of data have arrived, this tool will send back a
 confirmation string message.
 
-** Slice Orientation:
-This tools presumes that arriving slices have been reoriented to RAS+
-This is a critical premise for downstream analyses, so MAKE SURE the
-slices are oriented in that way on the pynealScanner side before sending.
+** Volume Orientation:
+Pyneal works on the assumption that incoming volumes will have the 3D
+voxel array ordered like RAS+, and that the accompanying affine will provide
+a transform from voxel space RAS+ to mm space RAS+. In order to any mask-based
+analysis in Pyneal to work, we need to make sure that the incoming data and the
+mask data are reprsented in the same way. The pyneal_scanner utilities have all
+been configured to ensure that each volume that is transmitted is in RAS+ space.
 
-In addition, the numpy arrays are presumed to be indexed like [X,Y]. This is
-the opposite of how numpy would default to storing image data (default is
-[rows, cols], which is [y,x] in cartesian coords). So, make sure this
-assumption holds as well
+Along those same lines, the affine that gets transmitted in the header for each
+volume should be the same for all volumes in the series.
 """
 # python2/3 compatibility
 from __future__ import print_function
@@ -59,8 +60,8 @@ import zmq
 
 class ScanReceiver(Thread):
     """
-    Class to listen in for incoming scan data. As new slices
-    arrive, the header is decoded, and the slice is added to
+    Class to listen in for incoming scan data. As new volumes
+    arrive, the header is decoded, and the volume is added to
     the appropriate place in the 4D data matrix
 
     input args:
@@ -73,21 +74,24 @@ class ScanReceiver(Thread):
         Thread.__init__(self)
 
         # set up logger
-        #self.logger = logging.getLogger(__name__)
         self.logger = logging.getLogger('PynealLog')
 
         # class config vars
-        self.numTimepts = numTimepts        # total number of vols (or timepts) expected
-        self.alive = True           # thread status
-        self.imageMatrix = None     # matrix that will hold the incoming data
-        self.completedSlices = None # nSlices x nVols matrix that will store bools
-                                    # indicating whether each slice has arrived
+        self.scanStarted = False
+        self.numTimepts = numTimepts    # total number of vols (or timepts) expected
+        self.alive = True               # thread status
+        self.imageMatrix = None         # matrix that will hold the incoming data
+        self.affine = None
+
+        # array to keep track of completedVols
+        self.completedVols = np.zeros(self.numTimepts, dtype=bool)
 
         # set up socket to communicate with scanner
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
         self.scannerSocket.bind('tcp://{}:{}'.format(host, port))
         self.logger.debug('scanReceiver server bound to host: {}, port: {}'.format(host, port))
+
 
     def run(self):
         # Once this thread is up and running, confirm that the scanner socket
@@ -102,60 +106,60 @@ class ScanReceiver(Thread):
         while self.alive:
             # wait for json header to appear. The header is assumed to
             # have key:value pairs for:
-            # sliceIdx - slice index (0-based)
             # volIdx - volume index (0-based)
-            # nSlicesPerVol - total slices per vol
             # dtype - dtype of slice pixel data
             # shape - dims of slice pixel data
-            sliceHeader = self.scannerSocket.recv_json(flags=0)
+            # affine - affine to transform vol to RAS+ mm space
+            volHeader = self.scannerSocket.recv_json(flags=0)
 
-            # if this is the first slice, initialize the matrix
-            # and the completedVols table
-            if self.imageMatrix is None:
-                self.scanStarted = True
-                self.createDataMatrix(sliceHeader)
+            # if this is the first vol, initialize the matrix and store the affine
+            if not self.scanStarted:
+                self.createImageMatrix(volHeader)
+                self.affine = volHeader['affine']
+
+                self.scanStarted = True     # toggle the scanStarted flag
 
             # now listen for the image data as a string buffer
-            pixel_array = self.scannerSocket.recv(flags=0, copy=False, track=False)
+            voxelArray = self.scannerSocket.recv(flags=0, copy=False, track=False)
 
-            # format the pixel array according to params from the slice header
-            pixel_array = np.frombuffer(pixel_array, dtype=sliceHeader['dtype'])
-            pixel_array = pixel_array.reshape(sliceHeader['shape'])
+            # format the voxel array according to params from the vol header
+            voxelArray = np.frombuffer(voxelArray, dtype=volHeader['dtype'])
+            voxelArray = voxelArray.reshape(volHeader['shape'])
 
-            # add the slice to the appropriate location in the image matrix
-            sliceIdx = sliceHeader['sliceIdx']
+            # add the volume to the appropriate location in the image matrix
             volIdx = sliceHeader['volIdx']
-            self.imageMatrix[:,:, sliceIdx, volIdx]
+            self.imageMatrix[:,:, :, volIdx]
 
             # update the completed slices table
-            self.completedSlices[sliceIdx, volIdx] = True
+            self.completedSlices[volIdx] = True
 
             # send response back to Pyneal-Scanner
-            response = 'Received vol {}, slice {}'.format(volIdx, sliceIdx)
+            response = 'Received vol {}'.format(volIdx)
             self.scannerSocket.send_string(response)
             self.logger.info(response)
 
 
-    def createDataMatrix(self, sliceHeader):
+    def creatImageMatrix(self, volHeader):
         """
-        Once the first slice appears, this function should be called
-        to build the empty matrix to store incoming slice data, using
-        info from the slice header. Also, build the table that will
-        store T/F values for whether each slice has appeared
+        Once the first volume appears, this function should be called
+        to build the empty matrix to store incoming vol data, using
+        info from the vol header.
         """
-        # create the empty imageMatrix (note: numTimepts is NOT in the slice header)
+        # create the empty imageMatrix
         self.imageMatrix = np.zeros(shape=(
-                                sliceHeader['shape'][0],
-                                sliceHeader['shape'][1],
-                                sliceHeader['nSlicesPerVol'],
-                                self.numTimepts))
-
-        # create the table for indicated arrived slices
-        self.completedSlices = np.zeros(shape=(
-                                sliceHeader['nSlicesPerVol'],
-                                self.numTimepts), dtype=bool)
+                                volHeader['shape'][0],
+                                volHeader['shape'][1],
+                                volHeader['shape'][2],
+                                self.numTimepts), dtype=volHeader['dtype'])
 
         self.logger.debug('Image Matrix dims: {}'.format(self.imageMatrix.shape))
+
+
+    def get_affine(self):
+        """
+        Return the affine for this series
+        """
+        return self.affine
 
 
     def get_vol(self, volIdx):
@@ -163,15 +167,22 @@ class ScanReceiver(Thread):
         Return the requested vol, if it is here.
         Note: volIdx is 0-based
         """
-        pass
+        if self.comletedVols[volIdx]:
+            return self.imageMatrix[:, :, :, volIdx]
+        else:
+            return None
 
 
-    def get_slice(self, volIdx, sliceIdx):
+     def get_slice(self, volIdx, sliceIdx):
         """
         Return the requested slice, if it is here.
         Note: volIdx, and sliceIdx are 0-based
         """
-        pass
+        if self.comletedVols[volIdx]:
+            return self.imageMatrix[:, :, sliceIdx, volIdx]
+        else:
+            return None
+
 
     def stop(self):
         # function to stop the Thread
