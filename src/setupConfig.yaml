@@ -1,6 +1,6 @@
-analysisChoice: Median
+analysisChoice: Average
 maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/testMask_64-64-18.nii.gz
-maskIsWeighted: true
+maskIsWeighted: false
 numTimepts: 5
 outputPort: 5556
 scannerPort: 5555

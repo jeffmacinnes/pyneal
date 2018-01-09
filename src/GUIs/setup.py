@@ -169,7 +169,7 @@ class MainContainer(BoxLayout):
                 self.analysisInfo = 'Compute the {} of voxels within mask'.format(self.GUI_settings['analysisChoice'])
         elif self.GUI_settings['analysisChoice'] == 'Custom':
             self.analysisInfo = 'Custom Analysis: {}'.format(split(self.GUI_settings.analysisChoice)[1])
-            
+
 
     def check_GUI_settings(self):
         """
@@ -240,9 +240,11 @@ class MainContainer(BoxLayout):
                             size_hint=(0.9,0.9))
         self._popup.open()
 
+
     def cancelFileChooser(self):
         # close the file chooser dialog
         self._popup.dismiss()
+
 
     ### Custom functions for different load button behaviors ------------------
     def loadSettings(self, path, selection):
@@ -278,6 +280,7 @@ class MainContainer(BoxLayout):
             # close dialog
             self._popup.dismiss()
 
+
     ### Show Notification Pop-up ##############################################
     def show_ErrorNotification(self, msg):
         self._notification = Popup(
@@ -294,6 +297,7 @@ class SetupApp(App):
     """
     title = 'Pyneal Setup'
     pass
+
 
 # Register the various components of the GUI
 Factory.register('MainContainer', cls=MainContainer)
@@ -314,6 +318,7 @@ def launchPynealSetupGUI(settingsFile):
 
     # launch the app
     SetupApp().run()
+
 
 # For testing purposes, you can call this GUI directly from the
 # command line

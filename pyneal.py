@@ -89,7 +89,8 @@ def launchPyneal():
         preprocVol = preprocessor.runPreprocessing(rawVol, volIdx)
 
         ### Analyze this volume
-        analyzedVol = analyzer.runAnalysis(preprocVol, volIdx)
+        result = analyzer.runAnalysis(preprocVol, volIdx)
+        print(result)
 
 
     # shutdown thread

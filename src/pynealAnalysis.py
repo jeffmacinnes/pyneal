@@ -42,7 +42,7 @@ class Analyzer:
             self.weightMask = False
             self.mask = mask_img.get_data() > 0
 
-        ### Set the analysis function based on the settings
+        ### Set the appropriate analysis function based on the settings
         if settings['analysisChoice'] == 'Average':
             self.analysisFunc = self.averageFromMask
         elif settings['analysisChoice'] == 'Median':
@@ -55,13 +55,39 @@ class Analyzer:
         """
         Run preprocessing on the supplied volume
         """
+
+        output = self.analysisFunc(vol)
         self.logger.debug('analyzed vol: {}'.format(volIdx))
-        return vol
+        return output
 
 
     def averageFromMask(self, vol):
-        pass
+        """
+        Compute the average voxel activation within the mask.
+        Note: np.average has weights option, np.mean doesn't
+        """
+        if self.weightMask:
+            return np.average(vol[self.mask], weights=self.weights[self.mask])
+        else:
+            return np.mean(vol[self.mask])
 
 
     def medianFromMask(self, vol):
-        pass
+        """
+        Compute the median voxel activation within the mask
+        Note: weighted median algorithm from: https://pypi.python.org/pypi/weightedstats/0.2
+        """
+        if self.weightMask:
+            data = vol[self.mask]
+            sorted_data, sorted_weights = map(np.array, zip(*sorted(zip(data, self.weights[self.mask]))))
+            midpoint = 0.5 * sum(sorted_weights)
+            if any(self.weights[self.mask] > midpoint):
+                return (data[weights == np.max(weights)])[0]
+            cumulative_weight = np.cumsum(sorted_weights)
+            below_midpoint_index = np.where(cumulative_weight <= midpoint)[0][-1]
+            if cumulative_weight[below_midpoint_index] == midpoint:
+                return np.mean(sorted_data[below_midpoint_index:below_midpoint_index+2])
+            return sorted_data[below_midpoint_index+1]
+        else:
+            # take the median of the voxels in the mask
+            return np.median(vol[self.mask])
