@@ -6,6 +6,7 @@ MainContainer:
 <SectionHeading>:
     padding_y: 10.0
     Label:
+        pos: [50+10, self.pos[1]]
         size: self.texture_size
         id: sectionLabel
         text: root.labelText
@@ -14,25 +15,25 @@ MainContainer:
         bold: True
         valign: 'middle'
         halign: 'left'
+        text_size: self.size
         color: (1,1,1,1)
         canvas.before:
             Color:
                 rgba: .96,.15,.35,1
             Line:
-                points: self.x+20, self.center_y, (self.width*2)-20, self.center_y
+                points: 25, self.center_y, self.width, self.center_y
                 width: 3.0
                 cap: 'square'
             Color:
                 rgba: .96,.15,.35,1
             Rectangle:
-                pos: [(self.width-self.texture_size[0])/2, self.pos[1]]
-                size: [self.texture_size[0]+25, self.height]
-    # additional wiget placeholder just to handle the spacing issues
-    Widget:
+                pos: [50, self.pos[1]]
+                size: [300, self.height]
 
 <NumberInputField>:
     multiline: False
     write_tab: False
+    size_hint_y: .8
 
 <MainContainer>:
     padding: root.width * .02, root.height * .02
@@ -120,12 +121,12 @@ MainContainer:
                     on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
             BoxLayout:
                 CheckBox:
-                    id: maskBinarizeChoice
+                    id: maskIsWeighted
                     size_hint_x: .25
-                    state: 'down' if root.GUI_settings.maskBinarizeChoice else 'normal'
-                    on_active: root.setMaskBinarizeChoice()
+                    state: 'down' if root.GUI_settings.maskIsWeighted else 'normal'
+                    on_active: root.setMaskIsWeighted()
                 Label:
-                    text: 'Binarize Mask?'
+                    text: 'Weighted Mask?'
                     color: root.textColor
 
 
@@ -154,49 +155,58 @@ MainContainer:
                     on_text: root.GUI_settings.numTimepts = numTimepts.text
 
 
-    ### Stats Box ------------------
+    ### Analysis Box ------------------
     BoxLayout:
         size_hint_y: 3
         BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
-                labelText: 'Stats'
+                labelText: 'Analysis'
             # buttons
             BoxLayout:
-                padding: [0, 20, 0, 0]
+                #padding: [0, 20, 0, 0]
+                padding: [45, 20]
                 ToggleButton:
-                    id: statsChoice_average
+                    id: analysisChoice_average
                     text: 'Average'
-                    group: 'statsChoice'
-                    state: 'down' if root.GUI_settings.statsChoice == 'Average' else 'normal'
-                    on_release: root.setStatsChoice('Average')
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice == 'Average' else 'normal'
+                    on_release: root.setAnalysisChoice('Average')
                 ToggleButton:
-                    id: statsChoice_median
+                    id: analysisChoice_median
                     text: 'Median'
-                    group: 'statsChoice'
-                    state: 'down' if root.GUI_settings.statsChoice == 'Median' else 'normal'
-                    on_release: root.setStatsChoice('Median')
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice == 'Median' else 'normal'
+                    on_release: root.setAnalysisChoice('Median')
                 ToggleButton:
-                    id: statsChoice_custom
+                    id: analysisChoice_custom
                     text: 'Custom'
-                    group: 'statsChoice'
-                    state: 'down' if root.GUI_settings.statsChoice not in ['Average', 'Median'] else 'normal'
-                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomStats)
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice not in ['Average', 'Median'] else 'normal'
+                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomAnalysis)
             Label:
-                text: '' if root.GUI_settings.statsChoice in ['Average', 'Median'] else ('Custom stats: ' + split(root.GUI_settings.statsChoice)[1])
+                size_hint_y: .6
+                text: root.analysisInfo
                 color: root.textColor
 
     ### Submit Box ------------------
     BoxLayout:
-        size_hint_y: 2
+        size_hint_y: 1.5
         BoxLayout:
             orientation: 'vertical'
+            Label:
+                canvas.before:
+                    Color:
+                        rgba: .96,.15,.35,1
+                    Line:
+                        points: 25, self.center_y, self.width, self.center_y
+                        width: 3.0
+                        cap: 'square'
+
             # box label
-            SectionHeading:
-                labelText: ''
             BoxLayout:
-                padding: [150, 10]
+                padding: [150, 0]
                 spacing: 10
                 Button:
                     text: 'Submit'

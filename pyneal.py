@@ -47,9 +47,9 @@ def launchPyneal():
     logger = createLogger(logFname)
 
     ### Read Settings ------------------------------------
-    settingsFile = join(pynealDir,'src/GUIs/setupConfig.yaml')
+    settingsFile = join(pynealDir,'src/setupConfig.yaml')
     # Launch GUI to let user update the settings file
-    # setupGUI.launchPynealSetupGUI(settingsFile)
+    setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:

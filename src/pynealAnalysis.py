@@ -34,7 +34,7 @@ class Analyzer:
 
         ### Format the mask. If the settings specify that the the mask should
         # be weighted, create separate vars for the weights and mask
-        if settings['maskBinarizeChoice'] == False:
+        if settings['maskIsWeighted'] == True:
             self.weightMask = True
             self.weights = mask_img.get_data().copy()
             self.mask = mask_img.get_data() > 0

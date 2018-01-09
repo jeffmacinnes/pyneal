@@ -45,6 +45,7 @@ class SectionHeading(BoxLayout):
     textWidth = NumericProperty()
     labelText = StringProperty('test')
 
+
 class NumberInputField(TextInput):
     # restrict the number fields to 0-9 input only
     pat = re.compile('[^0-9]')
@@ -75,9 +76,12 @@ class MainContainer(BoxLayout):
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
     textColor = ListProperty([0,0,0,1])
+    analysisInfo = StringProperty('')
 
     def __init__(self, **kwargs):
         self.GUI_settings = self.readSettings(setupConfigFile)
+
+        self.setAnalysisInfo()
 
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
@@ -96,9 +100,9 @@ class MainContainer(BoxLayout):
             'scannerPort': [999, int],
             'outputPort': [999, int],
             'maskFile': ['None', str],
-            'maskBinarizeChoice': [True, bool],
+            'maskIsWeighted': [True, bool],
             'numTimepts': [999, int],
-            'statsChoice': ['Average', str]
+            'analysisChoice': ['Average', str]
             }
 
         # initialize dictionary that will eventually hold the new settings
@@ -143,13 +147,29 @@ class MainContainer(BoxLayout):
         return newSettings
 
 
-    def setMaskBinarizeChoice(self):
-        print(self.ids.maskBinarizeChoice.active)
-        self.GUI_settings['maskBinarizeChoice'] = self.ids.maskBinarizeChoice.active
+    def setMaskIsWeighted(self):
+        print(self.ids.maskIsWeighted.active)
+        self.GUI_settings['maskIsWeighted'] = self.ids.maskIsWeighted.active
+        self.setAnalysisInfo()
 
 
-    def setStatsChoice(self, choice):
-        self.GUI_settings['statsChoice'] = choice
+    def setAnalysisChoice(self, choice):
+        self.GUI_settings['analysisChoice'] = choice
+        self.setAnalysisInfo()
+
+
+    def setAnalysisInfo(self):
+        """
+        Update the info on the analysis section
+        """
+        if self.GUI_settings['analysisChoice'] in ['Average', 'Median']:
+            if self.GUI_settings['maskIsWeighted']:
+                self.analysisInfo = 'Compute the Weighted {} of voxels within mask'.format(self.GUI_settings['analysisChoice'])
+            else:
+                self.analysisInfo = 'Compute the {} of voxels within mask'.format(self.GUI_settings['analysisChoice'])
+        elif self.GUI_settings['analysisChoice'] == 'Custom':
+            self.analysisInfo = 'Custom Analysis: {}'.format(split(self.GUI_settings.analysisChoice)[1])
+            
 
     def check_GUI_settings(self):
         """
@@ -176,6 +196,7 @@ class MainContainer(BoxLayout):
             errorCheckPassed = True
         return errorCheckPassed
 
+
     def submitGUI(self):
         """
         method for the GUI submit button. Get all setting, confirm they
@@ -199,6 +220,7 @@ class MainContainer(BoxLayout):
             # write the settings as the new config yaml file
             with open(setupConfigFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
+
 
     ### File Chooser Dialog Methods ###########################################
     def show_loadFileDialog(self, path='~/', fileFilter=[], loadFunc=None):
@@ -245,12 +267,13 @@ class MainContainer(BoxLayout):
         self._popup.dismiss()
 
 
-    def loadCustomStats(self, path, selection):
-        # called by load button on custom stats selection dialog
+    def loadCustomAnalysis(self, path, selection):
+        # called by load button on custom analysis selection dialog
         if len(selection) > 0:
             # Store custom stat file in the GUI settings dict
             customStatFile = selection[0]
-            self.GUI_settings['statsChoice'] = customStatFile
+            self.GUI_settings['analysisChoice'] = customStatFile
+            self.setAnalysisInfo()
 
             # close dialog
             self._popup.dismiss()
@@ -296,7 +319,7 @@ def launchPynealSetupGUI(settingsFile):
 # command line
 if __name__ == '__main__':
     # specify the settings file to read
-    settingsFile = 'setupConfig.yaml'
+    settingsFile = '../setupConfig.yaml'
 
     # launch setup GUI
     launchPynealSetupGUI(settingsFile)
