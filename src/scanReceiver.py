@@ -129,7 +129,7 @@ class ScanReceiver(Thread):
 
             # add the volume to the appropriate location in the image matrix
             volIdx = volHeader['volIdx']
-            self.imageMatrix[:,:, :, volIdx]
+            self.imageMatrix[:,:, :, volIdx] = voxelArray
 
             # update the completed volumes table
             self.completedVols[volIdx] = True

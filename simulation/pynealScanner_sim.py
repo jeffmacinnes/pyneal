@@ -28,10 +28,13 @@ TR = 1           # set TR in s (or None for as fast as possible)
 ### ----------------------
 
 # build dataset of random integers, formatted at dtype='int16'
-fakeDataset = np.random.random((sliceShape[0],
+fakeDataset = np.random.randint(low=1000,
+                    high=3000,
+                    size=(sliceShape[0],
                     sliceShape[1],
                     nSlicesPerVol,
-                    nTmpts)).astype('int16')
+                    nTmpts),
+                    dtype='uint16' )
 affine = np.eye(4)
 
 # Set up host and port for the socket
@@ -61,6 +64,7 @@ for vol in range(nTmpts):
 
     # grab this volume from the dataset
     thisVol = np.ascontiguousarray(fakeDataset[:,:,:,vol])
+    print(np.mean(thisVol))
 
     # build header
     volHeader = {
