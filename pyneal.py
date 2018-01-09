@@ -20,10 +20,11 @@ from os.path import join
 import time
 
 import yaml
-import nibabel as nb
+import nibabel as nib
 
 from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
+from src.preprocessing import Preprocessor
 import src.GUIs.setup as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
@@ -46,8 +47,8 @@ def launchPyneal():
 
     ### Read Settings ------------------------------------
     settingsFile = join(pynealDir,'src/GUIs/setupConfig.yaml')
-    # Launch GUI to let User update the settings file
-    setupGUI.launchPynealSetupGUI(settingsFile)
+    # Launch GUI to let user update the settings file
+    # setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
@@ -56,30 +57,38 @@ def launchPyneal():
         logger.debug('Setting: {}: {}'.format(k, settings[k]))
 
     # Load the mask
-    mask_img = nb.load(settings['maskFile'])
+    mask_img = nib.load(settings['maskFile'])
     print(mask_img.shape)
 
     ### Launch Threads -------------------------------------
-    # Scan Receiver Thread, listens for incoming slice data, builds matrix
+    print(settings)
+    # Scan Receiver Thread, listens for incoming volume data, builds matrix
     scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
                                 port=settings['scannerPort'])
     scanReceiver.daemon = True
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
 
+    ### Create processing objects --------------------------
+    preprocessor = Preprocessor(settings, mask_img)
+    #analyzer = Analysis(settings, mask_img)
+
     ### Wait For Scan To Start -----------------------------
-    # The completedSlices table will stay 'None' until first slice arrives
-    while scanReceiver.completedSlices is None: time.sleep(.5)
+    while not scanReceiver.scanStarted: time.sleep(.5)
     logger.debug('Scan started')
 
+    ### Process scan  -------------------------------------
     # Loop over all expected volumes
     for volIdx in range(settings['numTimepts']):
-        # check if all slices for this volume have arrived yet
-        while True:
-            if all(scanReceiver.completedSlices[:,volIdx]):
-                logger.info('vol {} has arrived'.format(volIdx))
-                break
-            time.sleep(.1)
+
+        # make sure this volume has arrived before continuing
+        while not scanReceiver.completedVols[volIdx]: time.sleep(.1)
+
+        ### Retrieve the raw volume, and preprocess. Preprocessing
+        # will occur according to the parameters specified in 'settings'
+        rawVol = scanReceiver.get_vol(volIdx)
+        preprocVol = preprocessor.applyPreprocessing(rawVol)
+
 
     # shutdown thread
     scanReceiver.stop()

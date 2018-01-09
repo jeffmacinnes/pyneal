@@ -1,0 +1,6 @@
+
+Django dashboard tutorial:
+http://www.dreisbach.us/articles/building-dashboards-with-django-and-d3/
+
+3D image transformation in Python:
+http://nghiaho.com/?page_id=671

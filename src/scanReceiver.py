@@ -2,9 +2,9 @@
 Class to listen for incoming data from the scanner.
 
 This tool is designed to be run in a separate thread, where it will:
-    - establish a socket connection to pynealScanner (which will be sending slice
+    - establish a socket connection to pynealScanner (which will be sending volume
 data from the scanner)
-    - listen for incoming slice data (preceded by a header)
+    - listen for incoming volume data (preceded by a header)
     - format the incoming data, and assign it to the proper location in a
     4D matrix for the entire san
 In additiona, it also includes various methods for accessing the progress of an on-going scan, and returning data that has successfully arrived, etc.
@@ -97,6 +97,7 @@ class ScanReceiver(Thread):
         # Once this thread is up and running, confirm that the scanner socket
         # is alive and working before proceeding.
         while True:
+            print('connecting to pyneal_scanner')
             self.scannerSocket.send_string('open')
             msg = self.scannerSocket.recv_string()
             break
@@ -107,8 +108,8 @@ class ScanReceiver(Thread):
             # wait for json header to appear. The header is assumed to
             # have key:value pairs for:
             # volIdx - volume index (0-based)
-            # dtype - dtype of slice pixel data
-            # shape - dims of slice pixel data
+            # dtype - dtype of volume voxel array
+            # shape - dims of volume voxel array
             # affine - affine to transform vol to RAS+ mm space
             volHeader = self.scannerSocket.recv_json(flags=0)
 
@@ -127,11 +128,11 @@ class ScanReceiver(Thread):
             voxelArray = voxelArray.reshape(volHeader['shape'])
 
             # add the volume to the appropriate location in the image matrix
-            volIdx = sliceHeader['volIdx']
+            volIdx = volHeader['volIdx']
             self.imageMatrix[:,:, :, volIdx]
 
-            # update the completed slices table
-            self.completedSlices[volIdx] = True
+            # update the completed volumes table
+            self.completedVols[volIdx] = True
 
             # send response back to Pyneal-Scanner
             response = 'Received vol {}'.format(volIdx)
@@ -139,7 +140,7 @@ class ScanReceiver(Thread):
             self.logger.info(response)
 
 
-    def creatImageMatrix(self, volHeader):
+    def createImageMatrix(self, volHeader):
         """
         Once the first volume appears, this function should be called
         to build the empty matrix to store incoming vol data, using
@@ -167,18 +168,18 @@ class ScanReceiver(Thread):
         Return the requested vol, if it is here.
         Note: volIdx is 0-based
         """
-        if self.comletedVols[volIdx]:
+        if self.completedVols[volIdx]:
             return self.imageMatrix[:, :, :, volIdx]
         else:
             return None
 
 
-     def get_slice(self, volIdx, sliceIdx):
+    def get_slice(self, volIdx, sliceIdx):
         """
         Return the requested slice, if it is here.
         Note: volIdx, and sliceIdx are 0-based
         """
-        if self.comletedVols[volIdx]:
+        if self.completedVols[volIdx]:
             return self.imageMatrix[:, :, sliceIdx, volIdx]
         else:
             return None

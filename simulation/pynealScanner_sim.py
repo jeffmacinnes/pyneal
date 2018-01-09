@@ -6,14 +6,16 @@ Set the scan parameters below to indicate the dimensions of your
 simulated data (i.e. slice dimensions, number of slices per volume,
 number of timepts)
 
-Each slice will be composed of randomly generated values
+Each volume will be composed of randomly generated values
 """
 # python 2/3 compatibility
 from __future__ import print_function
 from __future__ import division
+from builtins import input
 
 import os
 import time
+import json
 
 import zmq
 import numpy as np
@@ -30,6 +32,7 @@ fakeDataset = np.random.random((sliceShape[0],
                     sliceShape[1],
                     nSlicesPerVol,
                     nTmpts)).astype('int16')
+affine = np.eye(4)
 
 # Set up host and port for the socket
 port = 5555
@@ -49,33 +52,35 @@ while True:
         socket.send_string(msg)
         break
 
+# Press Enter to start sending data
+input('Press ENTER to begin the "scan" ')
+
 # Start sending data!
 for vol in range(nTmpts):
-    for slc in range(nSlicesPerVol):
-        startTime = time.time()
+    startTime = time.time()
 
-        # grab this slice from the dataset
-        slice_pixels = np.ascontiguousarray(fakeDataset[:,:,slc,vol])
+    # grab this volume from the dataset
+    thisVol = np.ascontiguousarray(fakeDataset[:,:,:,vol])
 
-        # build header
-        sliceHeader = {
-                'dtype':str(slice_pixels.dtype),
-                'shape':slice_pixels.shape,
-                'volIdx': vol,
-                'sliceIdx':slc,
-                'nSlicesPerVol':nSlicesPerVol
-                }
+    # build header
+    volHeader = {
+            'volIdx': vol,
+            'dtype':str(thisVol.dtype),
+            'shape':thisVol.shape,
+            'affine': json.dumps(affine.tolist())
+            }
 
-        # send header as json
-        socket.send_json(sliceHeader, zmq.SNDMORE)
+    # send header as json
+    socket.send_json(volHeader, zmq.SNDMORE)
 
-        # now send the pixel array for this slice
-        socket.send(slice_pixels, flags=0, copy=False, track=False)
+    # now send the voxel array for this volume
+    socket.send(thisVol, flags=0, copy=False, track=False)
+    print('Sent vol: {}'.format())
 
-        # list for response
-        socketResponse = socket.recv_string()
-        print('Socket Response: {}'.format(socketResponse))
+    # list for response
+    socketResponse = socket.recv_string()
+    print('Socket Response: {}'.format(socketResponse))
 
-        if TR is not None:
-            elapsedTime = time.time()-startTime
-            time.sleep((TR/nSlicesPerVol)-elapsedTime)
+    if TR is not None:
+        elapsedTime = time.time()-startTime
+        time.sleep(TR-elapsedTime)
