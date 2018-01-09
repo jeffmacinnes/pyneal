@@ -9,6 +9,7 @@ import os
 import sys
 from os.path import join
 import time
+import logging
 
 import yaml
 import nibabel as nib
@@ -26,12 +27,16 @@ class Preprocessor:
         settings: user settings dictionary
         mask_img: Nibabel image of the mask specified in the settings file
         """
+        # set up logger
+        self.logger = logging.getLogger('PynealLog')
+
         self.mask = mask_img
         self.settings = settings
 
 
-    def applyPreprocessing(self, vol):
+    def runPreprocessing(self, vol, volIdx):
         """
         Run preprocessing on the supplied volume
         """
+        self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol

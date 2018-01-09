@@ -3,4 +3,4 @@ maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/testMask_64-64-1
 numTimepts: 5
 outputPort: 5556
 scannerPort: 5555
-statsChoice: Average
+analysisChoice: Average

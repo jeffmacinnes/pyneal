@@ -24,7 +24,8 @@ import nibabel as nib
 
 from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
-from src.preprocessing import Preprocessor
+from src.pynealPreprocessing import Preprocessor
+from src.pynealAnalysis import Analyzer
 import src.GUIs.setup as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
@@ -58,10 +59,8 @@ def launchPyneal():
 
     # Load the mask
     mask_img = nib.load(settings['maskFile'])
-    print(mask_img.shape)
 
     ### Launch Threads -------------------------------------
-    print(settings)
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
     scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
                                 port=settings['scannerPort'])
@@ -71,7 +70,7 @@ def launchPyneal():
 
     ### Create processing objects --------------------------
     preprocessor = Preprocessor(settings, mask_img)
-    #analyzer = Analysis(settings, mask_img)
+    analyzer = Analyzer(settings, mask_img)
 
     ### Wait For Scan To Start -----------------------------
     while not scanReceiver.scanStarted: time.sleep(.5)
@@ -87,7 +86,10 @@ def launchPyneal():
         ### Retrieve the raw volume, and preprocess. Preprocessing
         # will occur according to the parameters specified in 'settings'
         rawVol = scanReceiver.get_vol(volIdx)
-        preprocVol = preprocessor.applyPreprocessing(rawVol)
+        preprocVol = preprocessor.runPreprocessing(rawVol, volIdx)
+
+        ### Analyze this volume
+        analyzedVol = analyzer.runAnalysis(preprocVol, volIdx)
 
 
     # shutdown thread

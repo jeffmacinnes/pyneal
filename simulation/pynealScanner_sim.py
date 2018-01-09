@@ -75,7 +75,7 @@ for vol in range(nTmpts):
 
     # now send the voxel array for this volume
     socket.send(thisVol, flags=0, copy=False, track=False)
-    print('Sent vol: {}'.format())
+    print('Sent vol: {}'.format(vol))
 
     # list for response
     socketResponse = socket.recv_string()
