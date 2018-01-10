@@ -21,6 +21,7 @@ import time
 
 import yaml
 import nibabel as nib
+import numpy as np
 
 from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
@@ -77,6 +78,7 @@ def launchPyneal():
     logger.debug('Scan started')
 
     ### Process scan  -------------------------------------
+    results = []
     # Loop over all expected volumes
     for volIdx in range(settings['numTimepts']):
 
@@ -90,11 +92,15 @@ def launchPyneal():
 
         ### Analyze this volume
         result = analyzer.runAnalysis(preprocVol, volIdx)
+        results.append(result)
         print(result)
 
+    # Testing:
+    np.savetxt('testOutput.txt', np.array(results), fmt='%.3f')
 
     # shutdown thread
     scanReceiver.stop()
+
 
 
 ### ----------------------------------------------

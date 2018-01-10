@@ -98,8 +98,9 @@ class ScanReceiver(Thread):
         # is alive and working before proceeding.
         while True:
             print('connecting to pyneal_scanner')
-            self.scannerSocket.send_string('open')
+            #self.scannerSocket.send_string('open')
             msg = self.scannerSocket.recv_string()
+            self.scannerSocket.send_string(msg)
             break
         self.logger.debug('Scanner socket connected to Pyneal-Scanner')
 

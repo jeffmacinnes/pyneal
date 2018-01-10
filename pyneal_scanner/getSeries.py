@@ -53,7 +53,7 @@ def getSeries_GE(scannerSettings, scannerDirs):
     print('='*5)
     print('Building Nifti...')
     print('\tinput series: {}'.format(selectedSeries))
-    print('\toutput name: {}'.format(outputPrefix))
+    print('\toutput prefix: {}'.format(outputPrefix))
 
     # get the full path to the series dir
     seriesDir = join(scannerDirs.sessionDir, selectedSeries)

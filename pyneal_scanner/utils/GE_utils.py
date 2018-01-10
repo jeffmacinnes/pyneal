@@ -10,6 +10,7 @@ import sys
 import time
 import re
 import logging
+import json
 from threading import Thread
 from queue import Queue
 
@@ -521,7 +522,7 @@ class GE_BuildNifti():
         specified by output_fName
         """
         nib.save(self.niftiImage, output_path)
-        print('Image saved at: {}', output_path)
+        print('Image saved at: {}'.format(output_path))
 
 
 class GE_monitorSeriesDir(Thread):
