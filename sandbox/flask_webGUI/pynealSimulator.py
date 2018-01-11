@@ -1,21 +1,42 @@
 import zmq
 import sys
 import time
+import os
+import subprocess
+import sys
+import numpy as np
 
-port = 8888
+webServerPort = 8888
 
 # set up publish port
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
-socket.bind('tcp://127.0.0.1:{}'.format(port))
+socket.bind('tcp://127.0.0.1:{}'.format(webServerPort))
 
-sliceNum = 0
+
+### Launch webserver
+webserver = subprocess.Popen([sys.executable, 'app.py', str(webServerPort)])
+print('launch')
+
+counter = 0
 while True:
-    #topic = 'sliceNum'
-    message = {'sliceNumber': str(sliceNum)}
+    # send sliceNumber message
+    message = {'msgTopic':'sliceNum', 'data':str(np.random.randint(100))}
+    print('sent to webserver {}'.format(message))
+    socket.send_json(message)
+
+    # send motion message
+    message = {'msgTopic':'motion', 'data':str(np.random.randint(100))}
     print('sent to webserver {}'.format(message))
     socket.send_json(message)
 
     # increment sliceNumber
-    sliceNum += 1
-    time.sleep(.1)
+    time.sleep(1)
+    counter += 1
+
+    if counter >= 10:
+        break
+
+
+webserver.kill()
+print('killed')

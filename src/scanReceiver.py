@@ -97,7 +97,7 @@ class ScanReceiver(Thread):
         # Once this thread is up and running, confirm that the scanner socket
         # is alive and working before proceeding.
         while True:
-            print('Wiating for connection from pyneal_scanner')
+            print('Waiting for connection from pyneal_scanner')
             msg = self.scannerSocket.recv_string()
             print('Received message: ', msg)
             self.scannerSocket.send_string(msg)

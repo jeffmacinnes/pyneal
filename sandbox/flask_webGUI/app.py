@@ -11,22 +11,25 @@ from threading import Thread
 
 import zmq
 import time
+import sys
 
 app = Flask(__name__)
 socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'secret!'
 thread = Thread()
 
+allData = {'sliceNum': [],
+            'motion': []}
 
 class BackgroundTask(Thread):
-    def __init__(self):
+    def __init__(self, webServerPort):
         # start the thread upon creation
         Thread.__init__(self)
 
         context = zmq.Context()
         self.pynealSocket = context.socket(zmq.SUB)
         self.pynealSocket.setsockopt_string(zmq.SUBSCRIBE, '')
-        self.pynealSocket.connect("tcp://127.0.0.1:8888")
+        self.pynealSocket.connect("tcp://127.0.0.1:{}".format(webServerPort))
 
     def run(self):
         self.sendDataToClient()
@@ -36,8 +39,16 @@ class BackgroundTask(Thread):
             msg = self.pynealSocket.recv_json()
             print('Received from pyneal: {}'.format(msg))
 
-            print('sending: ', msg)
-            socketio.emit('newMessage', msg)
+            # parse message
+            if msg['msgTopic'] == 'sliceNum':
+                allData['sliceNum'].append(msg['data'])
+                print('sliceNum: {}'.format(msg['data']))
+            elif msg['msgTopic'] == 'motion':
+                allData['motion'].append(msg['data'])
+                print('motion: {}'.format(msg['data']))
+
+            print('sending to browser: ', allData)
+            socketio.emit('newMessage', allData)
             time.sleep(.1)
 
 
@@ -50,15 +61,21 @@ def pynealWatcher():
 @socketio.on('connect')
 def handle_client_connect_event():
     print('browser connected')
+    socketio.emit('newMessage', allData)
     global thread
-    task = BackgroundTask()
-    task.start()
 
 
 if __name__ == "__main__":
-    port = 5000
+    webServerPort = sys.argv[1]
 
     # open browser
-    #os.system('open http://localhost:{}'.format(port))
+    #os.system('open http://127.0.0.1:{}'.format(port))
 
-    socketio.run(app)
+    # start the background task
+    task = BackgroundTask(webServerPort)
+    task.daemon = True
+    task.start()
+
+    # launch the webserver
+    server2browser_port = 5000
+    socketio.run(app, port=server2browser_port)
