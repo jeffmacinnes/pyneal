@@ -611,11 +611,12 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     logger.debug('Created scannerSocket')
 
     # wait for remote to connect on scannerSocket
-    logger.info('Waiting for connection on scannerSocket...')
+    logger.info('Connecting to scannerSocket...')
     while True:
-        scannerSocket.send_string('hello')
-        msg = scannerSocket.recv_string()
-        if msg == 'hello':
+        msg = 'hello from pyneal_scanner '
+        scannerSocket.send_string(msg)
+        msgResponse = scannerSocket.recv_string()
+        if msgResponse == msg:
             break
     logger.info('scannerSocket connected')
 
