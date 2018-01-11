@@ -36,19 +36,23 @@ class BackgroundTask(Thread):
 
     def sendDataToClient(self):
         while True:
-            msg = self.pynealSocket.recv_json()
-            print('Received from pyneal: {}'.format(msg))
+            try:
+                msg = self.pynealSocket.recv_json(flags=zmq.NOBLOCK)
+                print('Received from pyneal: {}'.format(msg))
 
-            # parse message
-            if msg['msgTopic'] == 'sliceNum':
-                allData['sliceNum'].append(msg['data'])
-                print('sliceNum: {}'.format(msg['data']))
-            elif msg['msgTopic'] == 'motion':
-                allData['motion'].append(msg['data'])
-                print('motion: {}'.format(msg['data']))
+                # parse message
+                if msg['msgTopic'] == 'sliceNum':
+                    allData['sliceNum'].append(msg['data'])
+                    print('sliceNum: {}'.format(msg['data']))
+                elif msg['msgTopic'] == 'motion':
+                    allData['motion'].append(msg['data'])
+                    print('motion: {}'.format(msg['data']))
 
-            print('sending to browser: ', allData)
-            socketio.emit('newMessage', allData)
+                print('sending to browser: ', allData)
+                socketio.emit('newMessage', allData)
+            except zmq.Again as e:
+                # no messages yet
+                pass
             time.sleep(.1)
 
 

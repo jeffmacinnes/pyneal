@@ -13,10 +13,11 @@ context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind('tcp://127.0.0.1:{}'.format(webServerPort))
 
-
 ### Launch webserver
-webserver = subprocess.Popen([sys.executable, 'app.py', str(webServerPort)])
+pythonPath = sys.executable
+webserver = subprocess.Popen([pythonPath, 'app.py', str(webServerPort)])
 print('launch')
+time.sleep(5)
 
 counter = 0
 while True:
