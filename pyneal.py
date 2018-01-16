@@ -27,7 +27,7 @@ from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
 from src.pynealPreprocessing import Preprocessor
 from src.pynealAnalysis import Analyzer
-import src.GUIs.setup as setupGUI
+import src.GUIs.pynealSetup.setup as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
 pynealDir = os.path.abspath(os.path.dirname(__file__))
@@ -47,10 +47,15 @@ def launchPyneal():
     logFname = join(pynealDir, 'logs/pynealLog.log')
     logger = createLogger(logFname)
 
+
     ### Read Settings ------------------------------------
+    # Read the settings file, and launch the setup GUI to give the user
+    # a chance to update the settings. Hitting 'submit' within the GUI
+    # will update the setupConfig file with the new settings
     settingsFile = join(pynealDir,'src/setupConfig.yaml')
+
     # Launch GUI to let user update the settings file
-    #setupGUI.launchPynealSetupGUI(settingsFile)
+    setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
@@ -58,8 +63,8 @@ def launchPyneal():
     for k in settings:
         logger.debug('Setting: {}: {}'.format(k, settings[k]))
 
-    # Load the mask
-    mask_img = nib.load(settings['maskFile'])
+
+
 
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
@@ -69,13 +74,22 @@ def launchPyneal():
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
 
+
     ### Create processing objects --------------------------
+    # Load the mask
+    mask_img = nib.load(settings['maskFile'])
+
+    # Class to handle all preprocessing
     preprocessor = Preprocessor(settings, mask_img)
+
+    # Class to handle all analysis
     analyzer = Analyzer(settings, mask_img)
+
 
     ### Wait For Scan To Start -----------------------------
     while not scanReceiver.scanStarted: time.sleep(.5)
     logger.debug('Scan started')
+
 
     ### Process scan  -------------------------------------
     # Loop over all expected volumes
