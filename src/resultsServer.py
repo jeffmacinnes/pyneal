@@ -55,7 +55,7 @@ class ResultsServer(Thread):
 
         # configuration parameters
         self.alive = True
-        self.resultsDict = {}       # empty dictionary to store incoming results
+        self.results = {}       # store results in dict {'vol#':{results}}
         self.host = host
         self.port = port
         self.maxClients = 1
@@ -68,21 +68,35 @@ class ResultsServer(Thread):
         self.logger.debug('Results Server bound to {}:{}'.format(self.host, self.port))
         self.logger.info('Results Server alive and listening....')
 
-        # atexit function
+        # atexit function, shut down server
         atexit.register(self.killServer)
 
     def run(self):
+        """
+        Run server, listening for requests and returning responses to clients
+        """
         while self.alive:
-            # listen for new connections, redirect clients to new socket
+            ### Listen for new connections, redirect clients to new socket
             connection, address = self.resultsSocket.accept()
             print('client connected!')
 
-            # get the request
-            requestMsg = connection.recv(512).decode()      # receive message from client
-            print(requestMsg)
-            self.logger.debug('Received request: {}'.format(requestMsg))
+            ### Get the requested volume (should be a 4-char string representing
+            # volume number, e.g. '0001')
+            recvMsg = connection.recv(4).decode()
+            self.logger.debug('Received request: {}'.format(recvMsg))
 
-            # look up request
+            # reformat the requested volume to remove any leading 0s
+            requestedVol = str(int(recvMsg))
+
+            ### Look up the results for the requested volume
+            volResults = self.requestLookup(requestedVol)
+
+
+            ### Send the results to the client
+
+                self.sendResults(connection, volResults)
+            else:
+                self.sendResults(connection, 'None')
             result = {'response':'no'}
             connection.send(json.dumps(result).encode())
 
@@ -91,11 +105,34 @@ class ResultsServer(Thread):
             # close client connection
             connection.close()
 
+
+    def updateResults(self, vol, volResults):
+        """
+        Add the supplied result to the results dictionary.
+            - vol: the volume number associated with this result
+            - volResults: dictionary containing all of the results for this volume
+        """
+        self.results[str(vol)] = volResults
+        self.logger.debug('vol {} - {} added to resultsServer'.format(vol, volResults))
+
+
+    def requestLookup(self, vol):
+        """
+        Check to see if there are results for the requested volume. Will return a
+        dictionary of results for this volume. At a minimum, the dictionary will
+        contain an entry with the key 'foundResults' and the value is True or
+        False based on whether there are any results for this volume.
+        """
+        if str(vol) in self.results.keys():
+            theseResults = self.results[str(vol)]
+            theseResults['foundResults'] = True
+        else:
+            theseResults = {'foundResults':False}
+        return theseResults
+
+
     def killServer(self):
         self.alive = False
-
-
-
 
 
 
@@ -106,4 +143,4 @@ if __name__ == '__main__':
     resultsServer = ResultsServer(port=port)
     #resultsServer.daemon = True
     resultsServer.start()
-    print('ere')
+    print('Results Server alive and listening...')
