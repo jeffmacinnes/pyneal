@@ -14,18 +14,23 @@ however in this case the results server needs to be able to talk to clients that
 are connecting using 'normal' socket libraries that are incompatible with ZMQ.
 Thus, the results server is a traditional TCP socket server.
 
-Message format:
-Incoming requests from clients should take the form: XXXXXX
+** Message formats *********************
+Incoming requests from clients should be 4-character strings representing the
+requested volume number (zero padding to make 4-characters). E.g. '0001'
 
-Responses from the server will be JSON strings like:
+Responses from the server will be JSON strings:
     If the results from the requested volume exist:
-        {'foundResults': True, 'data': [val1, val2, ... ] }
+        e.g. {'foundResults': True, 'average':2432}
     If they don't:
         {'foundResults': False}
-
+At a minimum, the response will contain the 'foundResults' entry. If foundResults
+is true, the remaining entries are all of the key:value pairs that were output during
+the analysis stage for this volume
 
 
 """
+
+
 # python 2/3 compatibility
 from __future__ import print_function
 
@@ -71,6 +76,7 @@ class ResultsServer(Thread):
         # atexit function, shut down server
         atexit.register(self.killServer)
 
+
     def run(self):
         """
         Run server, listening for requests and returning responses to clients
@@ -91,12 +97,9 @@ class ResultsServer(Thread):
             ### Look up the results for the requested volume
             volResults = self.requestLookup(requestedVol)
 
-
             ### Send the results to the client
+            self.sendResults(connection, volResults)
 
-                self.sendResults(connection, volResults)
-            else:
-                self.sendResults(connection, 'None')
             result = {'response':'no'}
             connection.send(json.dumps(result).encode())
 
