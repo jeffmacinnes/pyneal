@@ -13,9 +13,21 @@ request = json.dumps({'volume':25})
 request = '0004'
 clientSocket.send(request.encode())
 
-# decode response
-serverResp = clientSocket.recv(1024)
+# read header
+hdr = ''
+while True:
+    nextChar = clientSocket.recv(1).decode()
+    print(nextChar)
+    if nextChar == '\n':
+        break
+    else:
+        hdr += nextChar
+print(hdr)
+msgLen = int(hdr)
+print('message length: {}'.format(msgLen))
+
+# now read the message
+serverResp = clientSocket.recv(msgLen)
 serverResp = json.loads(serverResp.decode())
 print('client received:')
-print(type(serverResp))
 print(serverResp)
