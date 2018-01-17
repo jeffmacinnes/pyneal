@@ -29,8 +29,6 @@ the analysis stage for this volume
 
 
 """
-
-
 # python 2/3 compatibility
 from __future__ import print_function
 
@@ -84,7 +82,7 @@ class ResultsServer(Thread):
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
             connection, address = self.resultsSocket.accept()
-            print('client connected!')
+            self.logger.debug('Results server received connection from: {}'.format(address))
 
             ### Get the requested volume (should be a 4-char string representing
             # volume number, e.g. '0001')
@@ -125,7 +123,7 @@ class ResultsServer(Thread):
             theseResults = self.results[str(vol)]
             theseResults['foundResults'] = True
         else:
-            theseResults = {'foundResults':False}
+            theseResults = {'foundResults': False}
         return theseResults
 
 
@@ -140,7 +138,6 @@ class ResultsServer(Thread):
 
         # build then send header with info about msg length
         hdr = '{:d}\n'.format(len(formattedMsg))
-        print(hdr, end=', ')
         connection.send(hdr.encode())
 
         # send results as formatted message
@@ -150,7 +147,6 @@ class ResultsServer(Thread):
 
     def killServer(self):
         self.alive = False
-
 
 
 

@@ -1,33 +1,39 @@
 import socket
 import json
 
-port = 5556
 
-# connect to server
+# socket configs
+port = 5556         # port number to connect to Pyneal over
+host = '127.0.0.1'  # ip of where Pyneal is running
+
+
+# connect to the results server of Pyneal
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientSocket.connect(('127.0.0.1', port))
+clientSocket.connect((host, port))
 
 
-# send request
-request = json.dumps({'volume':25})
+# send request for volume number. Request must by 4-char string representing
+# the volume number requested
 request = '0004'
 clientSocket.send(request.encode())
 
-# read header
+# When the results server recieved the request, it will send back a variable
+# length response. But first, it will send a header indicating how long the response
+# is. This is so the socket knows how many bytes to read
 hdr = ''
 while True:
     nextChar = clientSocket.recv(1).decode()
-    print(nextChar)
     if nextChar == '\n':
         break
     else:
         hdr += nextChar
-print(hdr)
 msgLen = int(hdr)
 print('message length: {}'.format(msgLen))
 
-# now read the message
+# now read the full response from the server
 serverResp = clientSocket.recv(msgLen)
+
+# format at JSON
 serverResp = json.loads(serverResp.decode())
 print('client received:')
 print(serverResp)
