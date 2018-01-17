@@ -1,6 +1,10 @@
 """
 Set of utilities for real-time analysis with Pyneal. These tools will apply the
 specified analysis steps to incoming volume data during a real-time scan
+
+Note: The output from every analysis function needs to be a dictionary that stores
+the results for that volume. As long as that criterion is met, all key names and
+formatting are completely up to the particular analysis function
 """
 # python 2/3 compatibility
 from __future__ import print_function
@@ -55,7 +59,6 @@ class Analyzer:
         """
         Run preprocessing on the supplied volume
         """
-
         output = self.analysisFunc(vol)
         self.logger.debug('analyzed vol: {}'.format(volIdx))
         return output
@@ -65,17 +68,21 @@ class Analyzer:
         """
         Compute the average voxel activation within the mask.
         Note: np.average has weights option, np.mean doesn't
+
+        outputs: {'weightedAverage': ####} or {'average': ####}
         """
         if self.weightMask:
-            return np.average(vol[self.mask], weights=self.weights[self.mask])
+            return {'weightedAverage': np.average(vol[self.mask], weights=self.weights[self.mask])}
         else:
-            return np.mean(vol[self.mask])
+            return {'avearge': np.mean(vol[self.mask])}
 
 
     def medianFromMask(self, vol):
         """
         Compute the median voxel activation within the mask
         Note: weighted median algorithm from: https://pypi.python.org/pypi/weightedstats/0.2
+
+        outputs: {'weightedMedian': ####} or {'median': ####}
         """
         if self.weightMask:
             data = vol[self.mask]
@@ -87,7 +94,7 @@ class Analyzer:
             below_midpoint_index = np.where(cumulative_weight <= midpoint)[0][-1]
             if cumulative_weight[below_midpoint_index] == midpoint:
                 return np.mean(sorted_data[below_midpoint_index:below_midpoint_index+2])
-            return sorted_data[below_midpoint_index+1]
+            return {'weightedMedian': sorted_data[below_midpoint_index+1]}
         else:
             # take the median of the voxels in the mask
-            return np.median(vol[self.mask])
+            return {'median': np.median(vol[self.mask])}

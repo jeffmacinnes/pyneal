@@ -29,11 +29,19 @@ not (False). If 'foundResults' is True, there will also be additional entries
 containing the results for that volume. How those results are formatted and named
 depends on the analysis option chosen. For instance, for basic ROI averaging,
 the results may look like 'average':1423, indicating the ROI had an average value
-of 1423 on this volume. 
+of 1423 on this volume.
+
+To use this tool:
+    python endUser_sim.py volNumber
+        e.g. python endUser_sim.py 24
+
+    where 'volNumber' is the volume number you want to request data from. If
+    volume number is excluded it'll request volume 0
 """
 
 import socket
 import json
+import sys
 
 # socket configs
 port = 5556         # port number to connect to Pyneal over
@@ -45,7 +53,10 @@ clientSocket.connect((host, port))
 
 # send request for volume number. Request must by 4-char string representing
 # the volume number requested
-request = '0004'
+if len(sys.argv) > 1:
+    request = str(sys.argv[1]).zfill(4)
+else:
+    request = '0000'
 clientSocket.send(request.encode())
 
 # When the results server recieved the request, it will send back a variable

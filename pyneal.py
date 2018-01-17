@@ -101,21 +101,25 @@ def launchPyneal():
     # Loop over all expected volumes
     for volIdx in range(settings['numTimepts']):
 
-        # make sure this volume has arrived before continuing
+        ### make sure this volume has arrived before continuing
         while not scanReceiver.completedVols[volIdx]: time.sleep(.1)
+
 
         ### Retrieve the raw volume, and preprocess. Preprocessing
         # will occur according to the parameters specified in 'settings'
         rawVol = scanReceiver.get_vol(volIdx)
         preprocVol = preprocessor.runPreprocessing(rawVol, volIdx)
 
+
         ### Analyze this volume
         result = analyzer.runAnalysis(preprocVol, volIdx)
-        results.append(result)
 
-    # shutdown thread
+        # send result to the resultsServer
+        resultsServer.updateResults(volIdx, result)
+
+
+    ### Figure out how to clean everything up nicely at the end
     scanReceiver.stop()
-
 
 
 ### ----------------------------------------------
