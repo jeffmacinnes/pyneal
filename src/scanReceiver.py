@@ -90,7 +90,7 @@ class ScanReceiver(Thread):
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
         self.scannerSocket.bind('tcp://{}:{}'.format(host, port))
-        self.logger.debug('scanReceiver server bound to host: {}, port: {}'.format(host, port))
+        self.logger.debug('scanReceiver server bound to {}:{}'.format(host, port))
 
 
     def run(self):

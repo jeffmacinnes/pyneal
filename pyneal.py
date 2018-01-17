@@ -23,10 +23,11 @@ import yaml
 import nibabel as nib
 import numpy as np
 
-from src.scanReceiver import ScanReceiver
 from src.pynealLogger import createLogger
+from src.scanReceiver import ScanReceiver
 from src.pynealPreprocessing import Preprocessor
 from src.pynealAnalysis import Analyzer
+from src.resultsServer import ResultsServer
 import src.GUIs.pynealSetup.setup as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
@@ -64,8 +65,6 @@ def launchPyneal():
         logger.debug('Setting: {}: {}'.format(k, settings[k]))
 
 
-
-
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
     scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
@@ -73,6 +72,13 @@ def launchPyneal():
     scanReceiver.daemon = True
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
+
+    # Results Server Thread, listens for requests from end-user (e.g. task
+    # presentation), and sends back results
+    resultsServer = ResultsServer(port=settings['outputPort'])
+    resultsServer.daemon = True
+    resultsServer.start()
+    logger.debug('Starting Results Server')
 
 
     ### Create processing objects --------------------------

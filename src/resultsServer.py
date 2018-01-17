@@ -58,7 +58,7 @@ class ResultsServer(Thread):
 
         # configuration parameters
         self.alive = True
-        self.results = {}       # store results in dict {'vol#':{results}}
+        self.results = {}       # store results in dict like {'vol#':{results}}
         self.host = host
         self.port = port
         self.maxClients = 1
