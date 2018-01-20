@@ -17,17 +17,17 @@ class TestModule(Thread):
     same shared socket
     """
 
-    def __init__(self, socket, name='className'):
+    def __init__(self, port='5555', name='className'):
         # start the Thread
         Thread.__init__(self)
 
-        print('Launching webserver')
-
         # give this class a name
         self.name = name
+        print('Launching module:{}'.format(self.name))
 
         # get a local reference to the socket object
-        self.socket = socket
+        self.socket = context.socket(zmq.REQ)
+        self.socket.connect('tcp://127.0.0.1:{}'.format(port))
 
         self.alive = True
 
@@ -88,24 +88,21 @@ if __name__ == '__main__':
 
     # set up webserver socket
     context = zmq.Context.instance()
-    webServerSocket = context.socket(zmq.PAIR)
+    webServerSocket = context.socket(zmq.REP)
     webServerSocket.bind('tcp://127.0.0.1:{}'.format(port))
     print('webserver alive and listening')
 
     # set up socket for clients to use
-    clientSocket = context.socket(zmq.PAIR)
-    clientSocket.connect('tcp://127.0.0.1:{}'.format(port))
-
 
     # Launch instances of classes
     webServer = WebServer(webServerSocket)
     webServer.daemon = True
     webServer.start()
 
-    jeffModule = TestModule(clientSocket, name='jeffModule')
-    jeffModule.daemon = False
+    jeffModule = TestModule(port=port, name='jeffModule')
+    jeffModule.daemon = True
     jeffModule.start()
 
-    luukaModule = TestModule(clientSocket, name='luukaModule')
+    luukaModule = TestModule(port=port, name='luukaModule')
     luukaModule.daemon = False
     luukaModule.start()
