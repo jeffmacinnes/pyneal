@@ -43,7 +43,7 @@ class TestModule(Thread):
 
             # get replay
             serverResp = self.socket.recv_string()
-            print('socket: {} got response from server: {}'.format(self.name, serverResp)
+            print('socket: {} got response from server: {}'.format(self.name, serverResp))
 
             # increment counter:
             self.counter += 1
@@ -89,12 +89,12 @@ if __name__ == '__main__':
     # set up webserver socket
     context = zmq.Context.instance()
     webServerSocket = context.socket(zmq.PAIR)
-    webServerSocket.bind('tcp://*:{}'.format(port))
+    webServerSocket.bind('tcp://127.0.0.1:{}'.format(port))
     print('webserver alive and listening')
 
     # set up socket for clients to use
     clientSocket = context.socket(zmq.PAIR)
-    clientSocket.connect('tcp://*:{}'.format(port))
+    clientSocket.connect('tcp://127.0.0.1:{}'.format(port))
 
 
     # Launch instances of classes
@@ -102,6 +102,10 @@ if __name__ == '__main__':
     webServer.daemon = True
     webServer.start()
 
-    myModule = TestModule(clientSocket, name='jeffModule')
-    myModule.daemon = True
-    myModeule.start()
+    jeffModule = TestModule(clientSocket, name='jeffModule')
+    jeffModule.daemon = False
+    jeffModule.start()
+
+    luukaModule = TestModule(clientSocket, name='luukaModule')
+    luukaModule.daemon = False
+    luukaModule.start()
