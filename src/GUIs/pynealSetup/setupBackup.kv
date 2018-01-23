@@ -47,7 +47,8 @@ MainContainer:
 
     orientation: 'vertical'
     ### Logo Box ------------------------
-    FloatLayout:
+    BoxLayout:
+        size_hint_y: 2
         Label:
             size_hint_x: 1.5
             text: 'Pyneal Logo'
@@ -57,16 +58,16 @@ MainContainer:
             on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
 
     ### Communication Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 2.5
-        FloatLayout:
+        BoxLayout:
             spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Communication'
             # scanner port
-            FloatLayout:
+            BoxLayout:
                 padding: [20, 10]
                 spacing: 20
                 Label:
@@ -81,7 +82,7 @@ MainContainer:
                     text: str(root.GUI_settings.pynealScannerPort)
                     on_text: root.GUI_settings.pynealScannerPort = pynealScannerPort.text
             # output port
-            FloatLayout:
+            BoxLayout:
                 padding: [20, 10]
                 spacing: 20
                 Label:
@@ -98,15 +99,15 @@ MainContainer:
 
 
     ### Mask Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 2.5
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 # box label
                 labelText: 'Mask'
-            FloatLayout:
+            BoxLayout:
                 # mask info
                 Label:
                     size_hint_x: 1.5
@@ -118,7 +119,7 @@ MainContainer:
                 Button:
                     text: 'Load Mask'
                     on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
-            FloatLayout:
+            BoxLayout:
                 CheckBox:
                     id: maskIsWeighted
                     size_hint_x: .25
@@ -130,15 +131,15 @@ MainContainer:
 
 
     ### Preprocessing Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 2
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Preprocessing'
             # num timepts
-            FloatLayout:
+            BoxLayout:
                 padding: [20, 10]
                 spacing: 20
                 Label:
@@ -155,15 +156,15 @@ MainContainer:
 
 
     ### Analysis Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 2.5
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Analysis'
             # buttons
-            FloatLayout:
+            BoxLayout:
                 #padding: [0, 20, 0, 0]
                 padding: [45, 20]
                 ToggleButton:
@@ -190,9 +191,9 @@ MainContainer:
                 color: root.textColor
 
     ### Output Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 2
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
@@ -216,9 +217,9 @@ MainContainer:
 
 
     ### Submit Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 1.5
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             Label:
                 canvas.before:
@@ -230,7 +231,7 @@ MainContainer:
                         cap: 'square'
 
             # box label
-            FloatLayout:
+            BoxLayout:
                 padding: [150, 0]
                 spacing: 10
                 Button:
@@ -240,7 +241,7 @@ MainContainer:
 
 ### Generic Load File Dialog Window #################################
 <LoadFileDialog>:
-    FloatLayout:
+    BoxLayout:
         font_size: '10sp'
         size: root.size
         pos: root.pos
@@ -251,7 +252,7 @@ MainContainer:
             filters: root.fileFilter
             font_name: 'Roboto-Bold'
 
-        FloatLayout:
+        BoxLayout:
             size_hint_y: None
             height: 50
             Button:
@@ -265,7 +266,7 @@ MainContainer:
 
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:
-    FloatLayout:
+    BoxLayout:
         Label:
             text_size: self.size
             valign: 'top'

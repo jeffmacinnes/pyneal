@@ -81,6 +81,20 @@ def launchPyneal():
     logger.debug('Starting Results Server')
 
 
+    ### Launch Real-time Scan Monitor GUI
+    settings['monitorScan'] == True
+    if settings['monitorScan']:
+        # import the scanMonitor
+        pass
+
+        # Set up the socket to communicate with the flask server hosting scanMonitor
+        context = zmq.Context.instance()
+        scanMonitorSocket = context.socket(zmq.REP)
+        scanMonitorPort = scanMonitorSocket.bind_to_random_port('tcp://127.0.0.1',
+                                                        min_port=8000, max_port=8100)
+
+
+
     ### Create processing objects --------------------------
     # Load the mask
     mask_img = nib.load(settings['maskFile'])

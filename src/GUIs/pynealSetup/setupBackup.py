@@ -69,7 +69,7 @@ class ErrorNotification(BoxLayout):
     errorMsg = StringProperty('')
 
 
-class MainContainer(FloatLayout):
+class MainContainer(BoxLayout):
     """
     Root level widget for the setup GUI
     """

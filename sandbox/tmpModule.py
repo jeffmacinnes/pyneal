@@ -31,3 +31,5 @@ class WebServer(Thread):
 
 def callThisFunction(socket):
     webServer = WebServer(socket)
+    webServer.daemon = True
+    webServer.start()

@@ -2,5 +2,5 @@ analysisChoice: Average
 maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/tests/transforms/NAc_FUNC_mask.nii.gz
 maskIsWeighted: false
 numTimepts: 60
-outputPort: 5556
-scannerPort: 5555
+resultsServerPort: 5556
+pynealScannerPort: 5555
