@@ -89,8 +89,8 @@ if __name__ == '__main__':
     # set up webserver socket
     context = zmq.Context.instance()
     webServerSocket = context.socket(zmq.REP)
-    webServerSocket.bind('tcp://127.0.0.1:{}'.format(port))
-    print('webserver alive and listening')
+    port = webServerSocket.bind_to_random_port('tcp://127.0.0.1', min_port=6001, max_port=6010)
+    print(port)
 
     # set up socket for clients to use
 
