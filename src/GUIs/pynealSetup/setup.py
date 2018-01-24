@@ -54,8 +54,16 @@ class NumberInputField(TextInput):
         s = re.sub(pat, '', substring)
         return super().insert_text(s, from_undo=from_undo)
 
+
 class FilePathInputField(TextInput):
     pass
+
+
+class SelectPathDialog(BoxLayout):
+    """ glass for popup allowing user to select file path"""
+    currentPath = StringProperty()
+    loadFunc = ObjectProperty(None)
+    doneFunc = ObjectProperty(None)
 
 
 class LoadFileDialog(BoxLayout):
@@ -260,19 +268,34 @@ class MainContainer(BoxLayout):
         self._popup.dismiss()
 
 
-    def loadMask(self, path, selection):
-        # called by load button on mask selection dialog
-        if len(selection) > 0:
-            # Store maskFile in the GUI settings dict
-            maskFile = selection[0]
-            self.GUI_settings['maskFile'] = maskFile
+    # def loadMask(self, path, selection):
+    #     # called by load button on mask selection dialog
+    #     if len(selection) > 0:
+    #         # Store maskFile in the GUI settings dict
+    #         maskFile = selection[0]
+    #         self.GUI_settings['maskFile'] = maskFile
+    #
+    #     # close dialog
+    #     self._popup.dismiss()
+    # Choosing a mask
+    def selectPath(self):
+        print('here it is!')
 
-        # close dialog
-        self._popup.dismiss()
+    def setMaskPath(self, path):
+        print(path)
+        self.GUI_settings.maskFile = path
+        self._maskPopup.dismiss()
 
+    def showMaskFile(self, currentMaskPath='tmpPath'):
+        content = SelectPathDialog(currentPath=currentMaskPath,
+                                    loadFunc=self.selectPath,
+                                    doneFunc=self.setMaskPath)
 
-    def showMaskFile(self):
-        print('pressed')
+        self._maskPopup = Popup(title="Mask Path:",
+                                content=content,
+                                size_hint=(1, None),
+                                height=250)
+        self._maskPopup.open()
 
 
     def loadCustomAnalysis(self, path, selection):
@@ -309,6 +332,8 @@ class SetupApp(App):
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadFileDialog', cls=LoadFileDialog)
 Factory.register('ErrorNotification', cls=ErrorNotification)
+Factory.register('SelectePathDialog', cls=SelectPathDialog)
+
 
 def launchPynealSetupGUI(settingsFile):
     """

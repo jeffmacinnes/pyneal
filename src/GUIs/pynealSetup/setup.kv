@@ -30,13 +30,17 @@ MainContainer:
                 pos: [50, self.center_y-30]
                 size: [300, 60]
 
+
 <NumberInputField>:
     multiline: False
     write_tab: False
 
+
 <FilePathInputField>:
     multiline: False
     write_tab: False
+
+
 
 <MainContainer>:
     padding: root.width * .02, root.height * .02
@@ -138,7 +142,8 @@ MainContainer:
                 # load mask button
                 Button:
                     text: 'Choose'
-                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
+                    on_release: root.showMaskFile(currentMaskPath=root.GUI_settings.maskFile)
+                    # on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
             BoxLayout:
                 CheckBox:
                     id: maskIsWeighted
@@ -286,6 +291,33 @@ MainContainer:
                 text: "Cancel"
                 on_release: root.cancelFileChooser()
 
+
+### Generic Select Path Dialog Window #################################
+<SelectPathDialog>:
+    orientation: "vertical"
+    BoxLayout:
+        orientaton: "vertical"
+        BoxLayout:
+            FilePathInputField:
+                id: inputPath
+                size_hint_x: 2.5
+                text: root.currentPath
+                on_text:root.currentPath = inputPath.text
+                font_size: 28
+                padding: [15,15]
+            Button:
+                size_hint: (None, None)
+                size: (65,65)
+                spacing: 15
+                padding: (15,15)
+                background_normal: './images/openFileBrowser.png'
+                allow_stretch: False
+                on_release: root.loadFunc()
+    BoxLayout:
+        padding: [60,10]
+        Button:
+            text: "Done"
+            on_release: root.doneFunc(root.currentPath)
 
 
 ### Error Notification Pop-up Window #################################
