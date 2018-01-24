@@ -33,7 +33,10 @@ MainContainer:
 <NumberInputField>:
     multiline: False
     write_tab: False
-    size: (100,30)
+
+<FilePathInputField>:
+    multiline: False
+    write_tab: False
 
 <MainContainer>:
     padding: root.width * .02, root.height * .02
@@ -47,7 +50,9 @@ MainContainer:
 
     orientation: 'vertical'
     ### Logo Box ------------------------
-    FloatLayout:
+    BoxLayout:
+        size_hint: (1, None)
+        height: 210
         Label:
             size_hint_x: 1.5
             text: 'Pyneal Logo'
@@ -57,20 +62,22 @@ MainContainer:
             on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
 
     ### Communication Box ------------------
-    FloatLayout:
-        size_hint_y: 2.5
-        FloatLayout:
+    BoxLayout:
+        size_hint: (1,None)
+        height: 200
+        BoxLayout:
             spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Communication'
             # scanner port
-            FloatLayout:
-                padding: [20, 10]
-                spacing: 20
+            BoxLayout:
+                padding: [20, 5]
+                spacing: 10
                 Label:
                     size_hint_x: 1.5
+                    padding: [30, 0]
                     text_size: self.size
                     text: 'Pyneal-Scanner Port:'
                     color: root.textColor
@@ -81,11 +88,12 @@ MainContainer:
                     text: str(root.GUI_settings.pynealScannerPort)
                     on_text: root.GUI_settings.pynealScannerPort = pynealScannerPort.text
             # output port
-            FloatLayout:
-                padding: [20, 10]
-                spacing: 20
+            BoxLayout:
+                padding: [20, 5]
+                spacing: 10
                 Label:
                     size_hint_x: 1.5
+                    padding: [30, 0]
                     text_size: self.size
                     text: 'Results Server Port:'
                     color: root.textColor
@@ -98,27 +106,40 @@ MainContainer:
 
 
     ### Mask Box ------------------
-    FloatLayout:
-        size_hint_y: 2.5
-        FloatLayout:
+    BoxLayout:
+        size_hint: (1, None)
+        height: 240
+        BoxLayout:
+            spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
-                # box label
                 labelText: 'Mask'
-            FloatLayout:
+            BoxLayout:
+                spacing: 10
+                padding: [30, 5]
                 # mask info
+                # FilePathInputField:
+                #     size_hint_x: 2
+                #     padding: [20, 15]
+                #     font_size: 24
+                #     id: maskFile
+                #     text: str(root.GUI_settings.maskFile)
                 Label:
-                    size_hint_x: 1.5
+                    size_hint_x: 2
+                    padding: [20, 15]
+                    text_size: (500, None)
+                    shorten: True
+                    shorten_from: 'left'
                     id: maskFile
                     text: root.GUI_settings.maskFile
-                    font_size: 16
+                    font_size: 24
                     color: root.textColor
                 # load mask button
                 Button:
-                    text: 'Load Mask'
+                    text: 'Choose'
                     on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
-            FloatLayout:
+            BoxLayout:
                 CheckBox:
                     id: maskIsWeighted
                     size_hint_x: .25
@@ -130,40 +151,44 @@ MainContainer:
 
 
     ### Preprocessing Box ------------------
-    FloatLayout:
-        size_hint_y: 2
-        FloatLayout:
+    BoxLayout:
+        size_hint: (1, None)
+        height: 130
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Preprocessing'
             # num timepts
-            FloatLayout:
-                padding: [20, 10]
-                spacing: 20
+            BoxLayout:
+                padding: [20, 5]
+                spacing: 10
                 Label:
+                    size_hint_x: 2.5
+                    padding: [30, 0]
                     text_size: self.size
                     text: '# of timepts:'
                     color: root.textColor
                     halign: 'right'
                     valign: 'middle'
                 NumberInputField:
-                    size: (100, 400)
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
                     on_text: root.GUI_settings.numTimepts = numTimepts.text
 
 
+
     ### Analysis Box ------------------
-    FloatLayout:
-        size_hint_y: 2.5
-        FloatLayout:
+    BoxLayout:
+        size_hint: (1, None)
+        height: 260
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Analysis'
             # buttons
-            FloatLayout:
+            BoxLayout:
                 #padding: [0, 20, 0, 0]
                 padding: [45, 20]
                 ToggleButton:
@@ -190,35 +215,35 @@ MainContainer:
                 color: root.textColor
 
     ### Output Box ------------------
-    FloatLayout:
-        size_hint_y: 2
-        FloatLayout:
+    BoxLayout:
+        size_hint: (1, None)
+        height: 200
+        BoxLayout:
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Output'
             # num timepts
-            FLoatLayout:
+            BoxLayout:
                 padding: [20, 10]
                 spacing: 20
                 Label:
-                    size_hint: (None, None)
+                    size_hint_x: 1.5
                     text_size: self.size
                     text: '# of timepts:'
                     color: root.textColor
                     halign: 'right'
                     valign: 'middle'
                 NumberInputField:
-                    size_hint: (None, None)
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
                     on_text: root.GUI_settings.numTimepts = numTimepts.text
 
 
     ### Submit Box ------------------
-    FloatLayout:
+    BoxLayout:
         size_hint_y: 1.5
-        FloatLayout:
+        BoxLayout:
             orientation: 'vertical'
             Label:
                 canvas.before:
@@ -230,7 +255,7 @@ MainContainer:
                         cap: 'square'
 
             # box label
-            FloatLayout:
+            BoxLayout:
                 padding: [150, 0]
                 spacing: 10
                 Button:
@@ -240,7 +265,7 @@ MainContainer:
 
 ### Generic Load File Dialog Window #################################
 <LoadFileDialog>:
-    FloatLayout:
+    BoxLayout:
         font_size: '10sp'
         size: root.size
         pos: root.pos
@@ -251,7 +276,7 @@ MainContainer:
             filters: root.fileFilter
             font_name: 'Roboto-Bold'
 
-        FloatLayout:
+        BoxLayout:
             size_hint_y: None
             height: 50
             Button:
@@ -265,7 +290,7 @@ MainContainer:
 
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:
-    FloatLayout:
+    BoxLayout:
         Label:
             text_size: self.size
             valign: 'top'

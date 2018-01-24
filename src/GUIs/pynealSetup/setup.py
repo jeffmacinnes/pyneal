@@ -28,7 +28,6 @@ from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
@@ -55,6 +54,9 @@ class NumberInputField(TextInput):
         s = re.sub(pat, '', substring)
         return super().insert_text(s, from_undo=from_undo)
 
+class FilePathInputField(TextInput):
+    pass
+
 
 class LoadFileDialog(BoxLayout):
     """ generic class to present file chooser popup """
@@ -69,7 +71,7 @@ class ErrorNotification(BoxLayout):
     errorMsg = StringProperty('')
 
 
-class MainContainer(FloatLayout):
+class MainContainer(BoxLayout):
     """
     Root level widget for the setup GUI
     """
@@ -149,7 +151,6 @@ class MainContainer(FloatLayout):
 
 
     def setMaskIsWeighted(self):
-        print(self.ids.maskIsWeighted.active)
         self.GUI_settings['maskIsWeighted'] = self.ids.maskIsWeighted.active
         self.setAnalysisInfo()
 
@@ -270,6 +271,10 @@ class MainContainer(FloatLayout):
         self._popup.dismiss()
 
 
+    def showMaskFile(self):
+        print('pressed')
+
+
     def loadCustomAnalysis(self, path, selection):
         # called by load button on custom analysis selection dialog
         if len(selection) > 0:
@@ -325,7 +330,7 @@ def launchPynealSetupGUI(settingsFile):
 # command line
 if __name__ == '__main__':
     # specify the settings file to read
-    settingsFile = '../setupConfig.yaml'
+    settingsFile = '../../setupConfig.yaml'
 
     # launch setup GUI
     launchPynealSetupGUI(settingsFile)
