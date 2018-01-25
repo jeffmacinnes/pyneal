@@ -18,6 +18,7 @@ setupConfig.yaml file. This is a way for users to keep unique settings files for
 different experiements.
 """
 import os
+from os.path import join
 import sys
 import re
 
@@ -59,11 +60,58 @@ class FilePathInputField(TextInput):
     pass
 
 
-class SelectPathDialog(BoxLayout):
-    """ glass for popup allowing user to select file path"""
+class ModifyPathDialog(BoxLayout):
+    """
+    class for popup allowing user to modify a file path. This popup contains a
+    text input field showing the current path, which can be modified by hand.
+    Alternatively, the user can click the folder icon to open up a file browser
+    to select a new file/dir using that method
+    """
+    # var to store the current path (string)
     currentPath = StringProperty()
-    loadFunc = ObjectProperty(None)
+
+    # function to attach to the done button
     doneFunc = ObjectProperty(None)
+
+
+    def updateCurrentPath(self, path, selection):
+        # if a file was selected, return full path to the file
+        if len(selection) > 0:
+            self.currentPath = join(path, selection[0])
+        # if it was a dir instead, just return the path to the dir
+        else:
+            self.currentPath = path
+
+        # close the parent popup
+        self._popup.dismiss()
+
+
+    def launchFileBrowser(self, path='~/', fileFilter=[]):
+        """
+        generic function to present a popup window with a file browser. Customize this with the parameters you pass in
+            - path: path where the file browswer will start
+            - fileFilter: list of file types to filter; e.g. ['*.txt']
+            - loadFunc: function that will be called when 'load' button pressed
+        """
+        # check to make sure the current path points to a real location
+        if os.path.exists(self.currentPath):
+            startingPath = self.currentPath
+        else:
+            startingPath = '~/'
+
+        # method to pop open a file browser
+        content = LoadFileDialog(loadFunc=self.updateCurrentPath,
+                                    cancelFileChooser=self.cancelFileChooser,
+                                    path=startingPath,
+                                    fileFilter=fileFilter)
+        self._popup = Popup(title="Select", content=content,
+                            size_hint=(0.9,0.9))
+        self._popup.open()
+
+
+    def cancelFileChooser(self):
+        # close the file chooser dialog
+        self._popup.dismiss()
 
 
 class LoadFileDialog(BoxLayout):
@@ -268,27 +316,18 @@ class MainContainer(BoxLayout):
         self._popup.dismiss()
 
 
-    # def loadMask(self, path, selection):
-    #     # called by load button on mask selection dialog
-    #     if len(selection) > 0:
-    #         # Store maskFile in the GUI settings dict
-    #         maskFile = selection[0]
-    #         self.GUI_settings['maskFile'] = maskFile
-    #
-    #     # close dialog
-    #     self._popup.dismiss()
-    # Choosing a mask
-    def selectPath(self):
-        print('here it is!')
-
     def setMaskPath(self, path):
-        print(path)
+        # update the GUI settings with new mask path and close modifyMaskPath dialog
         self.GUI_settings.maskFile = path
         self._maskPopup.dismiss()
 
-    def showMaskFile(self, currentMaskPath='tmpPath'):
-        content = SelectPathDialog(currentPath=currentMaskPath,
-                                    loadFunc=self.selectPath,
+
+    def modifyMaskPath(self, currentMaskPath=''):
+        """
+        Open up a dialog window to allow the user to modify the path to the
+        mask file
+        """
+        content = ModifyPathDialog(currentPath=currentMaskPath,
                                     doneFunc=self.setMaskPath)
 
         self._maskPopup = Popup(title="Mask Path:",
@@ -332,7 +371,7 @@ class SetupApp(App):
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadFileDialog', cls=LoadFileDialog)
 Factory.register('ErrorNotification', cls=ErrorNotification)
-Factory.register('SelectePathDialog', cls=SelectPathDialog)
+Factory.register('ModifyPathDialog', cls=ModifyPathDialog)
 
 
 def launchPynealSetupGUI(settingsFile):

@@ -130,29 +130,35 @@ MainContainer:
                 #     id: maskFile
                 #     text: str(root.GUI_settings.maskFile)
                 Label:
-                    size_hint_x: 2
+                    size_hint_x: 2.5
                     padding: [20, 15]
                     text_size: (500, None)
                     shorten: True
                     shorten_from: 'left'
                     id: maskFile
                     text: root.GUI_settings.maskFile
-                    font_size: 24
+                    font_size: 28
                     color: root.textColor
                 # load mask button
                 Button:
-                    text: 'Choose'
-                    on_release: root.showMaskFile(currentMaskPath=root.GUI_settings.maskFile)
-                    # on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
+                    text: 'Change'
+                    on_release: root.modifyMaskPath(currentMaskPath=root.GUI_settings.maskFile)
+
             BoxLayout:
+                BoxLayout:
+                    size_hint_x: 1.5
                 CheckBox:
+                    size_hint_x: .5
+                    text_size: self.size
+                    halign: 'right'
                     id: maskIsWeighted
-                    size_hint_x: .25
                     state: 'down' if root.GUI_settings.maskIsWeighted else 'normal'
                     on_active: root.setMaskIsWeighted()
                 Label:
                     text: 'Weighted Mask?'
+                    text_size: self.size
                     color: root.textColor
+                    halign: 'left'
 
 
     ### Preprocessing Box ------------------
@@ -293,7 +299,7 @@ MainContainer:
 
 
 ### Generic Select Path Dialog Window #################################
-<SelectPathDialog>:
+<ModifyPathDialog>:
     orientation: "vertical"
     BoxLayout:
         orientaton: "vertical"
@@ -312,13 +318,16 @@ MainContainer:
                 padding: (15,15)
                 background_normal: './images/openFileBrowser.png'
                 allow_stretch: False
-                on_release: root.loadFunc()
+                on_release: root.launchFileBrowser()
+
     BoxLayout:
         padding: [60,10]
         Button:
             text: "Done"
             on_release: root.doneFunc(root.currentPath)
 
+
+                    # on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
 
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:
