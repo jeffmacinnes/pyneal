@@ -231,7 +231,7 @@ class MainContainer(BoxLayout):
             self.analysisInfo = 'Custom Analysis: {}'.format(split(self.GUI_settings.analysisChoice)[1])
 
 
-    def setLaunchDashboardChoice(self, choice):
+    def setLaunchDashboardChoice(self):
         self.GUI_settings['launchDashboard'] = self.ids.launchDashboardCheckbox.active
 
 
@@ -288,6 +288,9 @@ class MainContainer(BoxLayout):
             # write the settings as the new config yaml file
             with open(setupConfigFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
+
+        # Close the GUI
+        App.get_running_app().stop()
 
 
     ### File Chooser Dialog Methods ###########################################

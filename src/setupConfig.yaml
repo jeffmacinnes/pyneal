@@ -1,5 +1,5 @@
 analysisChoice: Average
-launchDashboard: true
+launchDashboard: false
 maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/tests/transforms/averageFunc.nii.gz
 maskIsWeighted: false
 numTimepts: 60

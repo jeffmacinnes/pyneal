@@ -250,7 +250,7 @@ MainContainer:
                     halign: 'right'
                     id: launchDashboardCheckbox
                     state: 'down' if root.GUI_settings.launchDashboard else 'normal'
-                    on_active: root.setlaunchDashboard()
+                    on_active: root.setLaunchDashboardChoice()
                 Label:
                     text: 'Launch Dashboard?'
                     color: root.textColor
