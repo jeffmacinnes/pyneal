@@ -161,7 +161,9 @@ class MainContainer(BoxLayout):
             'maskFile': ['None', str],
             'maskIsWeighted': [True, bool],
             'numTimepts': [999, int],
-            'analysisChoice': ['Average', str]
+            'analysisChoice': ['Average', str],
+            'outputPath': ['', str],
+            'launchDashboard': [True, bool]
             }
 
         # initialize dictionary that will eventually hold the new settings
@@ -229,6 +231,10 @@ class MainContainer(BoxLayout):
             self.analysisInfo = 'Custom Analysis: {}'.format(split(self.GUI_settings.analysisChoice)[1])
 
 
+    def setLaunchDashboardChoice(self, choice):
+        self.GUI_settings['launchDashboard'] = self.ids.launchDashboardCheckbox.active
+
+
     def check_GUI_settings(self):
         """
         Examine the GUI_settings dict to make sure everything is valid
@@ -245,6 +251,10 @@ class MainContainer(BoxLayout):
         # check if maskFile is a valid path
         if not os.path.isfile(self.GUI_settings['maskFile']):
             errorMsg.append('{} is not a valid mask file'.format(self.GUI_settings['maskFile']))
+
+        # check if output path is a valid path
+        if not os.path.isdir(self.GUI_settings['outputPath']):
+            errorMsg.append('{} is not a valid output path'.format(self.GUI_settings['outputPath']))
 
         # show the error notification, if any
         if len(errorMsg) > 0:
@@ -316,9 +326,10 @@ class MainContainer(BoxLayout):
         self._popup.dismiss()
 
 
+    # Update Mask Path
     def setMaskPath(self, path):
         # update the GUI settings with new mask path and close modifyMaskPath dialog
-        self.GUI_settings.maskFile = path
+        self.GUI_settings['maskFile'] = path
         self._maskPopup.dismiss()
 
 
@@ -337,6 +348,29 @@ class MainContainer(BoxLayout):
         self._maskPopup.open()
 
 
+    # Update Output Path
+    def setOutputPath(self, path):
+        # update the GUI settings with new mask path and close modifyMaskPath dialog
+        self.GUI_settings['outputPath'] = path
+        self._outputPopup.dismiss()
+
+
+    def modifyOutputPath(self, currentOutputPath=''):
+        """
+        Open up a dialog window to allow the user to modify the path to the
+        output directory file
+        """
+        content = ModifyPathDialog(currentPath=currentOutputPath,
+                                    doneFunc=self.setOutputPath)
+
+        self._outputPopup = Popup(title="Output Path:",
+                                content=content,
+                                size_hint=(1, None),
+                                height=250)
+        self._outputPopup.open()
+
+
+    # Load custom analysis file
     def loadCustomAnalysis(self, path, selection):
         # called by load button on custom analysis selection dialog
         if len(selection) > 0:

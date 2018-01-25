@@ -122,13 +122,6 @@ MainContainer:
             BoxLayout:
                 spacing: 10
                 padding: [30, 5]
-                # mask info
-                # FilePathInputField:
-                #     size_hint_x: 2
-                #     padding: [20, 15]
-                #     font_size: 24
-                #     id: maskFile
-                #     text: str(root.GUI_settings.maskFile)
                 Label:
                     size_hint_x: 2.5
                     padding: [20, 15]
@@ -139,26 +132,24 @@ MainContainer:
                     text: root.GUI_settings.maskFile
                     font_size: 28
                     color: root.textColor
-                # load mask button
+                # change mask button
                 Button:
                     text: 'Change'
                     on_release: root.modifyMaskPath(currentMaskPath=root.GUI_settings.maskFile)
-
             BoxLayout:
                 BoxLayout:
                     size_hint_x: 1.5
                 CheckBox:
-                    size_hint_x: .5
-                    text_size: self.size
                     halign: 'right'
                     id: maskIsWeighted
                     state: 'down' if root.GUI_settings.maskIsWeighted else 'normal'
                     on_active: root.setMaskIsWeighted()
                 Label:
                     text: 'Weighted Mask?'
-                    text_size: self.size
                     color: root.textColor
                     halign: 'left'
+                BoxLayout:
+                    size_hint_x: 1.5
 
 
     ### Preprocessing Box ------------------
@@ -186,7 +177,6 @@ MainContainer:
                     id: numTimepts
                     text: str(root.GUI_settings.numTimepts)
                     on_text: root.GUI_settings.numTimepts = numTimepts.text
-
 
 
     ### Analysis Box ------------------
@@ -225,31 +215,48 @@ MainContainer:
                 text: root.analysisInfo
                 color: root.textColor
 
+
     ### Output Box ------------------
     BoxLayout:
         size_hint: (1, None)
-        height: 200
+        height: 240
         BoxLayout:
+            spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Output'
-            # num timepts
             BoxLayout:
-                padding: [20, 10]
-                spacing: 20
+                spacing: 10
+                padding: [30, 5]
                 Label:
-                    size_hint_x: 1.5
-                    text_size: self.size
-                    text: '# of timepts:'
+                    size_hint_x: 2.5
+                    padding: [20, 15]
+                    text_size: (500, None)
+                    shorten: True
+                    shorten_from: 'left'
+                    id: maskFile
+                    text: root.GUI_settings.outputPath
+                    font_size: 28
                     color: root.textColor
+                # change output path button
+                Button:
+                    text: 'Change'
+                    on_release: root.modifyOutputPath(currentOutputPath=root.GUI_settings.outputPath)
+            BoxLayout:
+                BoxLayout:
+                    size_hint_x: 1.23
+                CheckBox:
                     halign: 'right'
-                    valign: 'middle'
-                NumberInputField:
-                    id: numTimepts
-                    text: str(root.GUI_settings.numTimepts)
-                    on_text: root.GUI_settings.numTimepts = numTimepts.text
-
+                    id: launchDashboardCheckbox
+                    state: 'down' if root.GUI_settings.launchDashboard else 'normal'
+                    on_active: root.setlaunchDashboard()
+                Label:
+                    text: 'Launch Dashboard?'
+                    color: root.textColor
+                    halign: 'left'
+                BoxLayout:
+                    size_hint_x: 1.23
 
     ### Submit Box ------------------
     BoxLayout:
