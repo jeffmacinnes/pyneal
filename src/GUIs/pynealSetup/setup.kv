@@ -1,6 +1,5 @@
 #kivy 1.10.0
 #:import split os.path.split
-
 MainContainer:
 
 <SectionHeading>:
@@ -19,13 +18,15 @@ MainContainer:
         color: (1,1,1,1)
         canvas.before:
             Color:
-                rgba: .96,.15,.35,1
+                #rgba: .96,.15,.35,1
+                rgba: .78, .25, .33, 1
             Line:
                 points: 25, self.center_y, self.width, self.center_y
                 width: 3.0
                 cap: 'square'
             Color:
-                rgba: .96,.15,.35,1
+                rgba: .78, .25, .33, 1
+                #rgba: .96,.15,.35,1
             Rectangle:
                 pos: [50, self.center_y-30]
                 size: [300, 60]
@@ -39,7 +40,6 @@ MainContainer:
 <FilePathInputField>:
     multiline: False
     write_tab: False
-
 
 
 <MainContainer>:
@@ -57,13 +57,20 @@ MainContainer:
     BoxLayout:
         size_hint: (1, None)
         height: 210
-        Label:
+        Image:
             size_hint_x: 1.5
-            text: 'Pyneal Logo'
-            color: root.textColor
-        Button:
-            text: 'Load Settings'
-            on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
+            source: './images/logo.png'
+        BoxLayout:
+            orientation: 'vertical'
+            Image:
+                source: './images/logoText.png'
+                size_hint_y: 1.5
+            Button:
+                size_hint: (1, None)
+                text: 'Load Settings'
+                size: [100,60]
+                on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
+
 
     ### Communication Box ------------------
     BoxLayout:
@@ -258,6 +265,7 @@ MainContainer:
                 BoxLayout:
                     size_hint_x: 1.23
 
+
     ### Submit Box ------------------
     BoxLayout:
         size_hint_y: 1.5
@@ -326,15 +334,12 @@ MainContainer:
                 background_normal: './images/openFileBrowser.png'
                 allow_stretch: False
                 on_release: root.launchFileBrowser()
-
     BoxLayout:
         padding: [60,10]
         Button:
             text: "Done"
             on_release: root.doneFunc(root.currentPath)
 
-
-                    # on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.nii.gz'], loadFunc=root.loadMask)
 
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:
