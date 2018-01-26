@@ -18,6 +18,7 @@ import os
 import sys
 from os.path import join
 import time
+import subprocess
 
 import yaml
 import nibabel as nib
@@ -56,7 +57,7 @@ def launchPyneal():
     settingsFile = join(pynealDir,'src/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
-    setupGUI.launchPynealSetupGUI(settingsFile)
+    #setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
@@ -68,31 +69,39 @@ def launchPyneal():
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
     scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
-                                port=settings['scannerPort'])
+                                port=settings['pynealScannerPort'])
     scanReceiver.daemon = True
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
 
     # Results Server Thread, listens for requests from end-user (e.g. task
     # presentation), and sends back results
-    resultsServer = ResultsServer(port=settings['outputPort'])
+    resultsServer = ResultsServer(port=settings['resultsServerPort'])
     resultsServer.daemon = True
     resultsServer.start()
     logger.debug('Starting Results Server')
 
 
     ### Launch Real-time Scan Monitor GUI
-    settings['monitorScan'] == True
-    if settings['monitorScan']:
-        # import the scanMonitor
-        pass
+    if settings['launchDashboard']:
+        # launch the dashboard app as it's own separate process. Once called, it
+        # will set up a zmq socket to listen for inter-process messages and return
+        # the specific port number used
+        pythonExec = sys.executable     # grab the path to the local python executable
+        dashboardPortNum = subprocess.Popen([pythonExec,
+                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py')],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE).communicate()[0]
+        # format the ipc port num
+        dashboardPortNum = int(dashboardPortNum.decode())
 
-        # Set up the socket to communicate with the flask server hosting scanMonitor
-        context = zmq.Context.instance()
-        scanMonitorSocket = context.socket(zmq.REP)
-        scanMonitorPort = scanMonitorSocket.bind_to_random_port('tcp://127.0.0.1',
-                                                        min_port=8000, max_port=8100)
+        logger.debug('Dashboard listening for interprocess messages on port {}'.format(dashboardPortNum))
 
+
+
+        # Set up the socket to communicate with the flask server hosting the
+        # dashboard. Instead of hardcoding another port, we let it pick the
+        # first open port it can find within a range
 
 
     ### Create processing objects --------------------------

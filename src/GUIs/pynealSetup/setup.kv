@@ -59,12 +59,12 @@ MainContainer:
         height: 210
         Image:
             size_hint_x: 1.5
-            source: './images/logo.png'
+            source: root.setupGUI_dir + '/images/pynealLogo.png'
         BoxLayout:
             orientation: 'vertical'
             Image:
-                source: './images/logoText.png'
                 size_hint_y: 1.5
+                source:  root.setupGUI_dir + '/images/pynealText.png'
             Button:
                 size_hint: (1, None)
                 text: 'Load Settings'

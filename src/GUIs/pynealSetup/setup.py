@@ -134,6 +134,8 @@ class MainContainer(BoxLayout):
     # create a kivy DictProperty that will store a dictionary with all of the
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
+    setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
+    print(setupGUI_dir)
     textColor = ListProperty([0,0,0,1])
     analysisInfo = StringProperty('')
 
