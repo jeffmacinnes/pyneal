@@ -19,10 +19,12 @@ import sys
 from os.path import join
 import time
 import subprocess
+import atexit
 
 import yaml
 import nibabel as nib
 import numpy as np
+import zmq
 
 from src.pynealLogger import createLogger
 from src.scanReceiver import ScanReceiver
@@ -84,24 +86,31 @@ def launchPyneal():
 
     ### Launch Real-time Scan Monitor GUI
     if settings['launchDashboard']:
-        # launch the dashboard app as it's own separate process. Once called, it
-        # will set up a zmq socket to listen for inter-process messages and return
-        # the specific port number used
+        ### launch the dashboard app as it's own separate process. Once called, it
+        # will set up a zmq socket to listen for inter-process messages on the
+        # 'dashboardPort', and will host the dashboard website on the
+        # 'dashboardClientPort'
         pythonExec = sys.executable     # grab the path to the local python executable
-        dashboardPortNum = subprocess.Popen([pythonExec,
-                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py')],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE).communicate()[0]
-        # format the ipc port num
-        dashboardPortNum = int(dashboardPortNum.decode())
+        p = subprocess.Popen([
+                        pythonExec,
+                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py'), str(settings['dashboardPort']),
+                        str(settings['dashboardClientPort'])
+                        ])
+        # make sure subprocess gets killed at close
+        atexit.register(cleanup, p)
 
-        logger.debug('Dashboard listening for interprocess messages on port {}'.format(dashboardPortNum))
+        # Set up the socket to communicate with the dashboard server
+        context = zmq.Context.instance()
+        dashboardSocket = context.socket(zmq.REQ)
+        dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
-
-
-        # Set up the socket to communicate with the flask server hosting the
-        # dashboard. Instead of hardcoding another port, we let it pick the
-        # first open port it can find within a range
+        for i in range(25):
+            msg = {'topic': 'volNum', 'data': str(i)}
+            dashboardSocket.send_json(msg)
+            print('sent: {}'.format(msg))
+            response = dashboardSocket.recv_string()
+            print('response: {}'.format(response))
+            time.sleep(.5)
 
 
     ### Create processing objects --------------------------
@@ -143,6 +152,11 @@ def launchPyneal():
 
     ### Figure out how to clean everything up nicely at the end
     scanReceiver.stop()
+
+
+def cleanup(pid):
+    pid.terminate()
+    print('killing process')
 
 
 ### ----------------------------------------------

@@ -6,3 +6,5 @@ numTimepts: 60
 outputPath: /Users/jeff/gDrive/jeffCloud/real-time/sandbox
 pynealScannerPort: 5555
 resultsServerPort: 5556
+dashboardPort: 5557
+dashboardClientPort: 5558
