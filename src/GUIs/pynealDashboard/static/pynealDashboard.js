@@ -1,6 +1,5 @@
 
 var port = '5558'
-console.log('test')
 console.log(location.port)
 
 // --------- READ INCOMING SOCKET MESSAGES ----
@@ -11,6 +10,7 @@ socket.on('connect', function() {
     console.log("browser connected")
 });
 
+// handle incoming messages about current volNum
 socket.on('volNum', function(msg) {
     console.log(msg)
 });
