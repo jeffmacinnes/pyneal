@@ -98,7 +98,7 @@ class GE_DirStructure():
                 pDir = os.path.split(newest_pDir)[-1]
 
             except:
-                print('Error: Could not find any p### dirs in {}'.format(self.baseDir))
+                print('Error: Could not find any p### dirs in {} \n\n'.format(self.baseDir))
 
             # Find the most recent e### dir
             try:
@@ -116,12 +116,12 @@ class GE_DirStructure():
                 eDir = os.path.split(newest_eDir)[-1]
 
             except:
-                print('Error: Could not find an e### dirs in {}'.format(newest_pDir))
+                print('Error: Could not find an e### dirs in {} \n\n'.format(newest_pDir))
 
             # set the session dir as the full path including the eDir
             sessionDir = newest_eDir
         except:
-            print('Error: Failed to find a sessionDir')
+            print('Error: Failed to find a sessionDir \n\n')
             sessionDir = None
             pDir = None
             eDir = None

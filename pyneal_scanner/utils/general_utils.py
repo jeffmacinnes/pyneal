@@ -76,14 +76,12 @@ class ScannerSettings():
         """
         Return the make of the scanner (e.g. GE)
         """
-        # check if scannerMake already exists allSettings dict
-        if 'scannerMake' in self.allSettings:
-            self.scannerMake = self.allSettings['scannerMake']
-        else:
-            self.scannerMake = self.set_config('scannerMake',
+        # add scannerMake, if not already in allSettings
+        if 'scannerMake' not in self.allSettings:
+            self.set_config('scannerMake',
                 instructions="type: GE, Phillips, or Siemens")
 
-        # return response
+        # return setting
         return self.allSettings['scannerMake']
 
 
@@ -92,22 +90,20 @@ class ScannerSettings():
         Return the base directory where new data is written for each scan
         """
         # check if scannerBaseDir already exists allSettings dict
-        if 'scannerBaseDir' in self.allSettings:
-            self.scannerBaseDir = self.allSettings['scannerBaseDir']
-        else:
-            self.scannerBaseDir = self.set_config('scannerBaseDir',
-                instructions="type: GE, Phillips, or Siemens")
+        if 'scannerBaseDir' not in self.allSettings:
+            self.set_config('scannerBaseDir',
+                instructions="type: Path to the base directory for new scans")
 
         # make sure the base dir exists
         while True:
-            if not os.path.isdir(self.scannerBaseDir):
-                print('Problem: {} is not an existing directory'.format(self.scannerBaseDir))
-                self.scannerBaseDir = self.set_config('scannerBaseDir',
-                    instructions="type: GE, Phillips, or Siemens")
+            if not os.path.isdir(self.allSettings['scannerBaseDir']):
+                print('Problem: {} is not an existing directory'.format(self.allSettings['scannerBaseDir']))
+                self.set_config('scannerBaseDir',
+                    instructions="type: Path to the base directory for new scans")
             else:
                 break
 
-        # return response
+        # return setting
         return self.allSettings['scannerBaseDir']
 
 
@@ -116,11 +112,9 @@ class ScannerSettings():
         Return the host IP for the real-time analysis computer
         """
         # check if pynealSocketHost already exists in the allSettings dict
-        if 'pynealSocketHost' in self.allSettings:
-            self.pynealSocketHost = self.allSettings['pynealSocketHost']
-        else:
+        if 'pynealSocketHost' not in self.allSettings:
             self.set_config('pynealSocketHost',
-                instructions="IP address of machine running real-time analysis")
+                instructions="IP address of computer running real-time analysis")
 
         # return response
         return self.allSettings['pynealSocketHost']
@@ -131,11 +125,9 @@ class ScannerSettings():
         Return the port number that the real-time analysis machine is listening on
         """
         # check if pynealSocketPort already exists in the allSettings dict
-        if 'pynealSocketPort' in self.allSettings:
-            self.pynealSocketPort = self.allSettings['pynealSocketPort']
-        else:
+        if 'pynealSocketPort' not in self.allSettings:
             self.set_config('pynealSocketPort',
-                instructions='Port # for communicating with real-time analysis machine')
+                instructions='Port # for communicating with real-time analysis computer')
 
         # return response
         return self.allSettings['pynealSocketPort']
