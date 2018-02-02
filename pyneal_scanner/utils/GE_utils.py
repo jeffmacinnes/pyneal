@@ -599,8 +599,9 @@ class GE_processSlice(Thread):
     from a single volume have arrived, that volume will be reformatted
     so that its axes correspond to RAS+. The volume, along with a JSON header
     containing metadata on that volume, will be sent out over the socket connection
+    to Pyneal
     """
-    def __init__(self, dicomQ, scannerSocket, interval=.2):
+    def __init__(self, dicomQ, pynealSocket, interval=.2):
         # start the thread upon creation
         Thread.__init__(self)
 
@@ -611,7 +612,7 @@ class GE_processSlice(Thread):
         self.dicomQ = dicomQ
         self.interval = interval
         self.alive = True
-        self.scannerSocket = scannerSocket
+        self.pynealSocket = pynealSocket
         self.totalProcessed = 0             # counter for total number of slices processed
         self.volCounter = 0
 
@@ -748,6 +749,8 @@ class GE_processSlice(Thread):
         self.completedSlices = np.zeros(shape=(self.nSlicesPerVol,
                                             self.nVols), dtype=bool)
 
+        self.logger.debug('Incoming 4D series dimensions: {}'.format(self.imageMatrix.shape))
+
         ### Update the flow control flag
         self.firstSliceHasArrived = True
 
@@ -808,7 +811,8 @@ class GE_processSlice(Thread):
         build a header JSON object, and then send both the header and the voxel
         data out over the socket connection to Pyneal
         """
-        print('Volume {} arrived'.format(volIdx))
+        self.logger.info('Volume {} processing'.format(volIdx))
+
 
         ### Prep the voxel data by extracting this vol from the imageMatrix,
         # and then converting to a Nifti1 object in order to set the voxel
@@ -827,27 +831,27 @@ class GE_processSlice(Thread):
             'affine':json.dumps(thisVol_RAS.affine.tolist())
             }
 
-        ### Send the voxel array and header to the scannerSocket
-        self.sendVolToScannerSocket(volHeader, thisVol_RAS_data)
+        ### Send the voxel array and header to the pynealSocket
+        self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
 
 
-    def sendVolToScannerSocket(self, volHeader, voxelArray):
+    def sendVolToPynealSocket(self, volHeader, voxelArray):
         """
-        Send the volume data over the scannerSocket.
+        Send the volume data over the pynealSocket.
             - 'volHeader' is expected to be a dictionary with key:value
             pairs for relevant metadata like 'volIdx' and 'affine'
             - 'voxelArray' is expected to be a 3D numpy array of voxel
             data from the volume reoriented to RAS+
         """
-        self.logger.debug('TO scannerSocket: vol {}'.format(volHeader['volIdx']))
+        self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.scannerSocket.send_json(volHeader, zmq.SNDMORE) # header as json
-        self.scannerSocket.send(voxelArray, flags=0, copy=False, track=False)
-        scannerSocketResponse = self.scannerSocket.recv_string()
+        self.pynealSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.pynealSocket.send(voxelArray, flags=0, copy=False, track=False)
+        pynealSocketResponse = self.pynealSocket.recv_string()
 
         # log the success
-        self.logger.debug('FROM scannerSocket: {}'.format(scannerSocketResponse))
+        self.logger.debug('FROM pynealSocket: {}'.format(pynealSocketResponse))
 
 
     def stop(self):
@@ -871,28 +875,28 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     # been created and customized by pynealScanner.py
     logger = logging.getLogger(__name__)
 
-    #### SET UP SCANNERSOCKET (this is what we'll use to
+    #### SET UP PYNEAL SOCKET (this is what we'll use to
     #### send data (e.g. header, volume voxel data) to remote connections)
     # figure out host and port number to use
-    host = scannerSettings.get_scannerSocketHost()
-    port = scannerSettings.get_scannerSocketPort()
-    logger.debug('Scanner Socket Host: {}'.format(host))
-    logger.debug('Scanner Socket Port: {}'.format(port))
+    host = scannerSettings.get_pynealSocketHost()
+    port = scannerSettings.get_pynealSocketPort()
+    logger.debug('Pyneal Host: {}'.format(host))
+    logger.debug('Pyneal Socket Port: {}'.format(port))
 
     # create a socket connection
-    from .general_utils import create_scannerSocket
-    scannerSocket = create_scannerSocket(host, port)
-    logger.debug('Created scannerSocket')
+    from .general_utils import create_pynealSocket
+    pynealSocket = create_pynealSocket(host, port)
+    logger.debug('Created pynealSocket')
 
-    # wait for remote to connect on scannerSocket
-    logger.info('Connecting to scannerSocket...')
+    # wait for remote to connect on pynealSocket
+    logger.info('Connecting to pynealSocket...')
     while True:
-        msg = 'hello from pyneal_scanner '
-        scannerSocket.send_string(msg)
-        msgResponse = scannerSocket.recv_string()
+        msg = 'hello from pyneal_scanner'
+        pynealSocket.send_string(msg)
+        msgResponse = pynealSocket.recv_string()
         if msgResponse == msg:
             break
-    logger.info('scannerSocket connected')
+    logger.info('pynealSocket connected')
 
     ### Wait for a new series directory appear
     logger.info('Waiting for new seriesDir...')
@@ -913,5 +917,5 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     # create an instance of the class that will grab slice dicoms
     # from the queue, reformat the data, and pass over the socket
     # to pyneal. Start the thread going
-    sliceProcessor = GE_processSlice(dicomQ, scannerSocket)
+    sliceProcessor = GE_processSlice(dicomQ, pynealSocket)
     sliceProcessor.start()

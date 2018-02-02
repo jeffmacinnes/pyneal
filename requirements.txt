@@ -1,0 +1,14 @@
+###############################
+## Pyneal Dependencies
+## call this file to install all dependencies
+## 		> pip install -r requirements.txt
+###############################
+
+pyyaml==3.12
+nibabel==2.1.0
+numpy==1.13.1
+pyzmq==16.0.2
+kivy==1.10.1.dev0
+flask==0.12.2
+flask_socketio==2.9.2
+eventlet==0.21.0

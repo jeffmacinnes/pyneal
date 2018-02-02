@@ -35,6 +35,7 @@ class ScannerSettings():
         # initialize var to store dict of all of the config parameters
         self.allSettings = None
         self.config_file = join(settingsDir, config_fname)
+        self.expectedFields = ['scannerBaseDir', 'scannerMake', 'pynealSocketHost', 'pynealSocketPort']
 
         # when class is initiated, attempts to find a scanner config file
         # in the specified settingsDir
@@ -43,21 +44,21 @@ class ScannerSettings():
             with open(self.config_file, 'r') as ymlFile:
                 self.allSettings = yaml.load(ymlFile)
         else:
-            # or create the configuration file
+            # or create the configuration file, write empty fields
             with open(self.config_file, 'w') as ymlFile:
-                pass
+                for field in self.expectedFields:
+                    ymlFile.write(field + ':')
 
         # if the yaml config file exists, but is empty, it'll return None.
         # this will make sure self.allSettings is a dict before progressing
         if self.allSettings is None:
             self.allSettings = {}
 
-        # Get the scanner make from the dictionary, and
-        # if its not there, prompt user for it
-        ### CONSIDER HAVING THIS LOOP OVER ALL REQUIRED SETTINGS
-        ### TO CHECK IF THEY EXIST
-        if 'scannerMake' not in self.allSettings:
-            self.get_scannerMake()
+        # Ensure all settings are present before continuing
+        self.get_scannerMake()
+        self.get_scannerBaseDir()
+        self.get_pynealSocketHost()
+        self.get_pynealSocketPort()
 
 
     def print_allSettings(self):
@@ -86,34 +87,58 @@ class ScannerSettings():
         return self.allSettings['scannerMake']
 
 
-    def get_scannerSocketHost(self):
+    def get_scannerBaseDir(self):
         """
-        Return the host IP for the socket the scanner should communicate over
+        Return the base directory where new data is written for each scan
         """
-        # check if scannerSocketHost already exists in the allSettings dict
-        if 'scannerSocketHost' in self.allSettings:
-            self.scannerSocketHost = self.allSettings['scannerSocketHost']
+        # check if scannerBaseDir already exists allSettings dict
+        if 'scannerBaseDir' in self.allSettings:
+            self.scannerBaseDir = self.allSettings['scannerBaseDir']
         else:
-            self.set_config('scannerSocketHost',
+            self.scannerBaseDir = self.set_config('scannerBaseDir',
+                instructions="type: GE, Phillips, or Siemens")
+
+        # make sure the base dir exists
+        while True:
+            if not os.path.isdir(self.scannerBaseDir):
+                print('Problem: {} is not an existing directory'.format(self.scannerBaseDir))
+                self.scannerBaseDir = self.set_config('scannerBaseDir',
+                    instructions="type: GE, Phillips, or Siemens")
+            else:
+                break
+
+        # return response
+        return self.allSettings['scannerBaseDir']
+
+
+    def get_pynealSocketHost(self):
+        """
+        Return the host IP for the real-time analysis computer
+        """
+        # check if pynealSocketHost already exists in the allSettings dict
+        if 'pynealSocketHost' in self.allSettings:
+            self.pynealSocketHost = self.allSettings['pynealSocketHost']
+        else:
+            self.set_config('pynealSocketHost',
                 instructions="IP address of machine running real-time analysis")
 
         # return response
-        return self.allSettings['scannerSocketHost']
+        return self.allSettings['pynealSocketHost']
 
 
-    def get_scannerSocketPort(self):
+    def get_pynealSocketPort(self):
         """
-        Return the port number for the socket the scanner should communicate over
+        Return the port number that the real-time analysis machine is listening on
         """
-        # check if scannerSocketPort already exists in the allSettings dict
-        if 'scannerSocketPort' in self.allSettings:
-            self.scannerSocketPort = self.allSettings['scannerSocketPort']
+        # check if pynealSocketPort already exists in the allSettings dict
+        if 'pynealSocketPort' in self.allSettings:
+            self.pynealSocketPort = self.allSettings['pynealSocketPort']
         else:
-            self.set_config('scannerSocketPort',
+            self.set_config('pynealSocketPort',
                 instructions='Port # for communicating with real-time analysis machine')
 
         # return response
-        return self.allSettings['scannerSocketPort']
+        return self.allSettings['pynealSocketPort']
 
 
     def get_allSettings(self):
@@ -123,7 +148,7 @@ class ScannerSettings():
         return self.allSettings
 
 
-    def set_config(self, dictKey, instructions=None):
+    def set_config(self, field, instructions=None):
         """
         prompt user for the specified config parameter. [optional] instructions will
         be printed to the screen to show users how to format input.
@@ -132,7 +157,7 @@ class ScannerSettings():
         allSettings dictionary, as well as written to the yaml config file
         """
         # print instructions to user
-        print('Please enter the {}'.format(dictKey))
+        print('Please enter the {}'.format(field))
         if instructions is not None:
             print('({}):'.format(instructions))
 
@@ -140,10 +165,11 @@ class ScannerSettings():
         userResponse = input()
 
         # store the userResponse in allSettings
-        self.allSettings[dictKey] = userResponse
+        self.allSettings[field] = userResponse
 
         # save the file
         self.writeSettingsFile()
+
 
     def writeSettingsFile(self):
         # write the new value to the config file
@@ -201,7 +227,7 @@ def initializeSession():
     return scannerSettings, scannerDirs
 
 
-def create_scannerSocket(host, port):
+def create_pynealSocket(host, port):
     """
     create a zero-mq socket to use for communication between
     pyneal_scanner and a remote source where Pyneal is running.

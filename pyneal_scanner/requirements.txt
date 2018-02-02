@@ -1,0 +1,11 @@
+###############################
+## Pyneal Scanner Dependencies
+## call this file to install all dependencies
+## 		> pip install -r requirements.txt
+###############################
+
+numpy==1.13.1
+pydicom==0.9.9
+nibabel==2.1.0
+pyzmq==16.0.2
+pyyaml==3.12

@@ -6,9 +6,10 @@ scan.
 
 import sys
 import os
-import zmq
 import time
 from threading import Thread
+
+import zmq
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, send, emit

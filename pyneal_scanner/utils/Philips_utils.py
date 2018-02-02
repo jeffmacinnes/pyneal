@@ -328,9 +328,9 @@ class Philips_processVolume(Thread):
     process each one. Processing each task involves reading the par header file
     and the corresponding rec binary file, extracting the voxel data and relevant
     header information, reordering it to RAS+, and then sending the volume and
-    header out over the scannerSocket
+    header out over the pynealSocket
     """
-    def __init__(self, parQ, scannerSocket, interval=.2):
+    def __init__(self, parQ, pynealSocket, interval=.2):
         # start the threat upon creation
         Thread.__init__(self)
 
@@ -341,7 +341,7 @@ class Philips_processVolume(Thread):
         self.parQ = parQ
         self.interval = interval        # interval between polling queue for new files
         self.alive = True
-        self.scannerSocket = scannerSocket
+        self.pynealSocket = pynealSocket
         self.totalProcessed = 0         # counter for total number of slices processed
 
 
@@ -378,7 +378,7 @@ class Philips_processVolume(Thread):
         """
         Read the par header file and correspondind rec image file. Read in as
         a nifti object that will provide the 3D voxel array for this volume.
-        Reorder to RAS+, and then send to the scannerSocket
+        Reorder to RAS+, and then send to the pynealSocket
 
         par_fname: full path to the par file
         """
@@ -395,6 +395,7 @@ class Philips_processVolume(Thread):
 
         # get the volume index from the acq_nr field of the header (1-based index)
         volIdx = int(thisVol.header.general_info['acq_nr']) - 1
+        self.logger.info('Volume {} processing'.format(volIdx))
 
         # convert to RAS+
         thisVol_RAS = nib.as_closest_canonical(thisVol)
@@ -411,30 +412,30 @@ class Philips_processVolume(Thread):
             'affine': json.dumps(thisVol_RAS.affine.tolist())
         }
 
-        ### Send the voxel array and header to the scannerSocket
-        self.sendVolToScannerSocket(volHeader, thisVol_RAS_data)
+        ### Send the voxel array and header to the pynealSocket
+        self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
 
 
-    def sendVolToScannerSocket(self, volHeader, voxelArray):
+    def sendVolToPynealSocket(self, volHeader, voxelArray):
         """
-        Send the volume data over the scannerSocket.
+        Send the volume data over the pynealSocket.
             - 'volHeader' is expected to be a dictionary with key:value
             pairs for relevant metadata like 'volIdx' and 'affine'
             - 'voxelArray' is expected to be a 3D numpy array of voxel
             data from the volume reoriented to RAS+
         """
-        self.logger.debug('TO scannerSocket: vol {}'.format(volHeader['volIdx']))
+        self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.scannerSocket.send_json(volHeader, zmq.SNDMORE) # header as json
-        self.scannerSocket.send(voxelArray, flags=0, copy=False, track=False)
-        scannerSocketResponse = self.scannerSocket.recv_string()
+        self.pynealSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.pynealSocket.send(voxelArray, flags=0, copy=False, track=False)
+        pynealSocketResponse = self.pynealSocket.recv_string()
 
         # log the success
-        self.logger.debug('FROM scannerSocket: {}'.format(scannerSocketResponse))
+        self.logger.debug('FROM pynealSocket: {}'.format(pynealSocketResponse))
 
         # check if that was the last volume, and if so, stop
-        if 'STOP' in scannerSocketResponse:
+        if 'STOP' in pynealSocketResponse:
             self.stop()
 
     def stop(self):
@@ -458,28 +459,28 @@ def Philips_launch_rtfMRI(scannerSettings, scannerDirs):
     # been created and customized by pynealScanner.py
     logger = logging.getLogger(__name__)
 
-    #### SET UP SCANNERSOCKET (this is what we'll use to
+    #### SET UP PYNEAL SOCKET (this is what we'll use to
     #### send data (e.g. header, slice pixel data) to remote connections)
     # figure out host and port number to use
-    host = scannerSettings.get_scannerSocketHost()
-    port = scannerSettings.get_scannerSocketPort()
+    host = scannerSettings.get_pynealSocketHost()
+    port = scannerSettings.get_pynealSocketPort()
     logger.debug('Scanner Socket Host: {}'.format(host))
     logger.debug('Scanner Socket Port: {}'.format(port))
 
     # create a socket connection
-    from .general_utils import create_scannerSocket
-    scannerSocket = create_scannerSocket(host, port)
-    logger.debug('Created scannerSocket')
+    from .general_utils import create_pynealSocket
+    pynealSocket = create_pynealSocket(host, port)
+    logger.debug('Created pynealSocket')
 
-    # wait for remote to connect on scannerSocket
-    logger.info('Connecting to scannerSocket...')
+    # wait for remote to connect on pynealSocket
+    logger.info('Connecting to pynealSocket...')
     while True:
         msg = 'hello from pyneal_scanner '
-        scannerSocket.send_string(msg)
-        msgResponse = scannerSocket.recv_string()
+        pynealSocket.send_string(msg)
+        msgResponse = pynealSocket.recv_string()
         if msgResponse == msg:
             break
-    logger.info('scannerSocket connected')
+    logger.info('pynealSocket connected')
 
     ### Wait for a new series directory appear
     logger.info('Waiting for new seriesDir...')
@@ -500,5 +501,5 @@ def Philips_launch_rtfMRI(scannerSettings, scannerDirs):
     # create an instance of the class that will grab par/rec files
     # from the queue, reformat the data, and pass over the socket
     # to pyneal. Start the thread going
-    volumeProcessor = Philips_processVolume(parQ, scannerSocket)
+    volumeProcessor = Philips_processVolume(parQ, pynealSocket)
     volumeProcessor.start()

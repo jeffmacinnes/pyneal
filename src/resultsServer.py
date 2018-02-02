@@ -37,10 +37,10 @@ import sys
 import logging
 import json
 import atexit
+import socket
 from threading import Thread
 
 import numpy as np
-import socket
 
 class ResultsServer(Thread):
     """
