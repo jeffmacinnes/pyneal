@@ -6,6 +6,7 @@
 
 pyyaml==3.12
 nibabel==2.1.0
+nipy==0.4.1
 numpy==1.13.1
 pyzmq==16.0.2
 kivy==1.10.1.dev0

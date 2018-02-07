@@ -59,7 +59,7 @@ def launchPyneal():
     settingsFile = join(pynealDir,'src/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
-    setupGUI.launchPynealSetupGUI(settingsFile)
+    #setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
@@ -128,6 +128,9 @@ def launchPyneal():
     while not scanReceiver.scanStarted: time.sleep(.5)
     logger.debug('Scan started')
 
+    ### Set up remaining configuration settings after first volume arrives
+    while not scanReceiver.completedVols[0]: time.sleep(.1)
+    preprocessor.set_affine(scanReceiver.get_affine())
 
     ### Process scan  -------------------------------------
     # Loop over all expected volumes
@@ -136,12 +139,11 @@ def launchPyneal():
         ### make sure this volume has arrived before continuing
         while not scanReceiver.completedVols[volIdx]: time.sleep(.1)
 
-
-        ### Retrieve the raw volume, and preprocess. Preprocessing
-        # will occur according to the parameters specified in 'settings'
+        ### Retrieve the raw volume
         rawVol = scanReceiver.get_vol(volIdx)
-        preprocVol = preprocessor.runPreprocessing(rawVol, volIdx)
 
+        ### Preprocess the raw volume
+        preprocVol = preprocessor.runPreprocessing(rawVol, volIdx)
 
         ### Analyze this volume
         result = analyzer.runAnalysis(preprocVol, volIdx)

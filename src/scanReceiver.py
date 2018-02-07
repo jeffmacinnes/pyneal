@@ -52,6 +52,7 @@ from threading import Thread
 import logging
 
 import numpy as np
+import json
 import zmq
 
 # SET UP ZMQ PUBLISH SOCKET FOR SENDING MESSASGES OUT ABOUT VOLUMES
@@ -117,7 +118,7 @@ class ScanReceiver(Thread):
             # if this is the first vol, initialize the matrix and store the affine
             if not self.scanStarted:
                 self.createImageMatrix(volHeader)
-                self.affine = volHeader['affine']
+                self.affine = np.array(json.loads(volHeader['affine']))
 
                 self.scanStarted = True     # toggle the scanStarted flag
 
