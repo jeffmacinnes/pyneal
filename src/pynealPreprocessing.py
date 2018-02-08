@@ -12,6 +12,8 @@ import time
 import logging
 from threading import Thread
 from queue import Queue
+import io
+import contextlib
 
 import yaml
 import numpy as np
@@ -44,6 +46,12 @@ class Preprocessor:
         # self.motionProcessor.start()
         # self.logger.debug('Starting motion processor')
 
+        # create the socket to send data to dashboard (if specified)
+        if self.settings['launchDashboard']:
+            context = zmq.Context.instance()
+            self.dashboardSocket = context.socket(zmq.REQ)
+            self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(self.settings['dashboardPort']))
+
 
     def set_affine(self, affine):
         """
@@ -58,9 +66,13 @@ class Preprocessor:
         """
         ### calculate the motion parameters on this volume
         # NOTE: estimateMotion needs the input vol to be a nibabel nifti obj
-        self.motionProcessor.estimateMotion(nib.Nifti1Image(vol, self.affine),
-                                            volIdx)
+        with nostdout():
+            motionParams = self.motionProcessor.estimateMotion(
+                                nib.Nifti1Image(vol,self.affine),
+                                volIdx
+                                )
 
+        print(motionParams)
         self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol
 
@@ -73,13 +85,13 @@ class MotionProcessor():
     Motion estimation algorithm based on:
     https://github.com/cni/rtfmri/blob/master/rtfmri/analyzers.py
     """
-    def __init__(self, logger=None, interval=.1):
+    def __init__(self, logger=None, skipVols=4):
         # start the thread upon creation
         #Thread.__init__(self)
 
         #self.motionQ = motionQ
         self.logger = logger
-        self.interval = interval
+        self.skipVols = skipVols
 
         self.refVol = None
 
@@ -88,19 +100,29 @@ class MotionProcessor():
 
 
     def estimateMotion(self, niiVol, volIdx):
-        if volIdx < 2:
-            print('Vol {} - no motion calculated'.format(volIdx))
-        elif volIdx == 2:
+        if volIdx < self.skipVols:
+            motionParams = {'translation':np.zeros(3),
+                            'rotation': np.zeros(3)}
+        elif volIdx == self.skipVols:
             self.refVol = niiVol
-            print('Vol {} - reference volume set'.format(volIdx))
-        elif volIdx > 2:
-            start = time.time()
-            print('calculating motion on vol {}'.format(volIdx))
+            motionParams = {'translation':np.zeros(3),
+                            'rotation': np.zeros(3)}
+        elif volIdx > self.skipVols:
             reg = HistogramRegistration(niiVol, self.refVol, interp='tri')
-            T = reg.optimize(self.previousEstimate, optimizer='powell', ftol=0.1, maxfun=10)
-            print('Translations: {}'.format(T.translation))
-            print('Rotations: {}'.format(T.rotation))
-            print('took: {}'.format(time.time()-start))
+            T = reg.optimize(self.previousEstimate, ftol=0.1, maxfun=30)
+
+            motionParams = {'translation':T.translation,
+                            'rotation': T.rotation}
 
             # update the estimate
             self.previousEstimate = T
+
+        return motionParams
+
+# suppress stdOut from verbose functions
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    yield
+    sys.stdout = save_stdout
