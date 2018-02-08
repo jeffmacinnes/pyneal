@@ -16,6 +16,12 @@ socket.on('volNum', function(msg) {
 });
 
 
+// handle incoming messages about current motion params
+socket.on('motion', function(msg) {
+    console.log(msg)
+}
+)
+
 // ---------- PAGE FUNCTIONS -----------
 
 // circleRadius = 8

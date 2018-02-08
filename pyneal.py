@@ -93,8 +93,9 @@ def launchPyneal():
         pythonExec = sys.executable     # grab the path to the local python executable
         p = subprocess.Popen([
                         pythonExec,
-                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py'), str(settings['dashboardPort']),
-                        str(settings['dashboardClientPort'])
+                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py'),
+                                str(settings['dashboardPort']),
+                                str(settings['dashboardClientPort'])
                         ])
         # make sure subprocess gets killed at close
         atexit.register(cleanup, p)
@@ -104,13 +105,16 @@ def launchPyneal():
         dashboardSocket = context.socket(zmq.REQ)
         dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
-        for i in range(25):
-            msg = {'topic': 'volNum', 'data': str(i)}
-            dashboardSocket.send_json(msg)
-            print('sent: {}'.format(msg))
-            response = dashboardSocket.recv_string()
-            print('response: {}'.format(response))
-            time.sleep(.5)
+        # Open dashboard in browser
+        #os.system('open http://127.0.0.1:{}'.format(settings['dashboardClientPort']))
+
+        # for i in range(25):
+        #     msg = {'topic': 'volNum', 'data': str(i)}
+        #     dashboardSocket.send_json(msg)
+        #     print('sent: {}'.format(msg))
+        #     response = dashboardSocket.recv_string()
+        #     print('response: {}'.format(response))
+        #     time.sleep(.5)
 
 
     ### Create processing objects --------------------------

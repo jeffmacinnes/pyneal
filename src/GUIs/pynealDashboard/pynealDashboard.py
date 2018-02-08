@@ -46,7 +46,7 @@ class DashboardIPCServer(Thread):
             try:
                 # listen for incoming JSON messages from pyneal
                 msg = self.ipc_socket.recv_json(flags=zmq.NOBLOCK)
-                self.ipc_socket.send_string('got: {}'.format(msg))
+                self.ipc_socket.send_string('got message')
 
                 # process this particular message
                 self.processMsg(msg)
@@ -56,18 +56,28 @@ class DashboardIPCServer(Thread):
             time.sleep(.05)
 
     def processMsg(self, msg):
-        # process the incoming message to figure out what kind of data it
-        # contains. Each message is assumed to be a dictionary with 2 keys:
-        #   'topic': indicates what kind of data this message contains
-        #   'data': the actual data of the message
-        # E.g.
-        #       msg = {'topic':'volNum',
-        #               'data':25}
-        # messages are processed differently according to their topic
+        """
+        process the incoming message to figure out what kind of data it
+        contains. Each message is assumed to be a dictionary with 2 keys:
+          'topic': indicates what kind of data this message contains
+          'content': the actual content of the message; can be anything
+                        from a simple integer to a dictionary of multiple vals.
+                        A given topic should always have similarly formatted
+                        content to ensure it gets handled appropriately on this
+                        end
+        E.g.
+              msg = {'topic':'volNum',
+                      'content':25}
+
+        messages are processed differently according to their topic, so make
+        sure the content is appropriate to the topics
+        """
 
         if msg['topic'] == 'volNum':
-            socketio.emit('volNum', msg['data'])
-        else:
+            socketio.emit('volNum', msg['content'])
+        elif msg['topic'] == 'motion':
+            print(msg['content'])
+            socketio.emit('motion', msg['content'])
             pass
 
 

@@ -16,6 +16,7 @@ import io
 import contextlib
 
 import yaml
+import zmq
 import numpy as np
 import nibabel as nib
 from nipy.algorithms.registration import HistogramRegistration, Rigid
@@ -64,17 +65,50 @@ class Preprocessor:
         """
         Run preprocessing on the supplied volume
         """
-        ### calculate the motion parameters on this volume
+        ### calculate the motion parameters on this volume. motionParams are
+        # returned as dictionary with keys for 'translation', and 'rotation';
+        # e.g.
+        #   motionParms = {'translation': np.array([0,0,0]),
+        #                    'rotation': np.array([0,0,0])}
+        #
         # NOTE: estimateMotion needs the input vol to be a nibabel nifti obj
+        # the nostdout bit suppresses verbose estimation output to stdOut
         with nostdout():
             motionParams = self.motionProcessor.estimateMotion(
                                 nib.Nifti1Image(vol,self.affine),
                                 volIdx
                                 )
 
-        print(motionParams)
+        ### send to dashboard (if specified)
+        if self.settings['launchDashboard']:
+            # motion params are stored as numpy arrays. Must convert to lists
+            motionParams_asList = {k:motionParams[k].tolist() for k in motionParams.keys()}
+
+            # send to the dashboard
+            self.sendToDashboard(topic='motion',
+                                content={'volIdx':volIdx,
+                                        'motionParams': motionParams_asList})
+
         self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol
+
+
+    def sendToDashboard(self, topic=None, content=None):
+        """
+        Format the supplied parameters into a JSON message,
+        and send to the dashboard
+        """
+        print(topic)
+        print(content)
+        if self.settings['launchDashboard']:
+            # format message
+            msg = {'topic': topic,
+                    'content': content}
+
+            self.dashboardSocket.send_json(msg)
+            print('sent: {}'.format(msg))
+            response = self.dashboardSocket.recv_string()
+            print('response: {}'.format(response))
 
 
 class MotionProcessor():
