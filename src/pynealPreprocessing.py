@@ -46,7 +46,7 @@ class Preprocessor:
         # self.motionProcessor.start()
         # self.logger.debug('Starting motion processor')
 
-        # create the socket to send data to dashboard (if specified)
+        # create the socket to send data to dashboard (if dashboard there be)
         if self.settings['launchDashboard']:
             context = zmq.Context.instance()
             self.dashboardSocket = context.socket(zmq.REQ)
@@ -118,6 +118,7 @@ class MotionProcessor():
             self.previousEstimate = T
 
         return motionParams
+
 
 # suppress stdOut from verbose functions
 @contextlib.contextmanager

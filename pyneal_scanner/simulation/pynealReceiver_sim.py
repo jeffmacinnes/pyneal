@@ -7,10 +7,11 @@ from __future__ import division
 import os
 import sys
 import time
-import zmq
-import dicom
 import json
 import base64
+
+import zmq
+import dicom
 import numpy as np
 import nibabel as nib
 
