@@ -39,6 +39,9 @@ class DashboardIPCServer(Thread):
         # get local reference to socket
         self.ipc_socket = socket
 
+        # dashboard data
+        self.configSettings = None
+
         self.alive = True
 
     def run(self):
@@ -73,11 +76,17 @@ class DashboardIPCServer(Thread):
         sure the content is appropriate to the topics
         """
 
-        if msg['topic'] == 'volNum':
+        if msg['topic'] == 'configSettings':
+            print(msg)
+            #self.configSettings = msg['content']
+
+            # send to client
+            socketio.emit('configSettings', msg['content'])
+            pass
+
+        elif msg['topic'] == 'volNum':
+            print(msg)
             socketio.emit('volNum', msg['content'])
-        elif msg['topic'] == 'motion':
-            print(msg['content'])
-            socketio.emit('motion', msg['content'])
             pass
 
 

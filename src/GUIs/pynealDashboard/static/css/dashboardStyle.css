@@ -1,0 +1,61 @@
+#dashboardContainer {
+    width: 85%;
+    height: 100%;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 140px 90px 300px 400px;
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+    grid-template-areas:
+        "header header header header"
+        "progress progress progress progress"
+        "motion motion timing timing"
+        "pynealLog pynealLog resultsServerLog resultsServerLog";
+}
+
+
+#header {
+    grid-area: header;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    border-bottom: 1px solid rgba(0,0,0,.7);
+}
+
+#header img{
+    /* display: inline-block; */
+    margin-left: auto;
+    margin-right: auto;
+    height:100%;
+}
+
+
+#progressDiv {
+    grid-area: progress;
+    background-color: rgba(0,0,0,.1);
+    padding-bottom: 5px;
+}
+
+
+#motionDiv {
+    grid-area: motion;
+    background-color: rgba(0,0,0,.2);
+}
+
+
+#timingDiv {
+    grid-area: timing;
+    background-color: rgba(0,0,0,.2);
+}
+
+
+#pynealLogDiv {
+    grid-area: pynealLog;
+    background-color: rgba(0,0,0,.3);
+}
+
+
+#resultsServerLogDiv {
+    grid-area: resultsServerLog;
+    background-color: rgba(0,0,0,.3);
+}
