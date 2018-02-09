@@ -1,10 +1,13 @@
+// Config vars
+var numTimepts = 1;     // tmp value for total number of timePts
+var currentVol = 0;
 
-console.log(location.port)
+
 
 // --------- READ INCOMING SOCKET MESSAGES ----
 var socket = io('http://127.0.0.1:' + location.port);
 socket.on('connect', function() {
-    // we emit a connected message to let know the client that we are connected.
+    // we emit a connected message to let know the server that we are connected.
     //socket.emit('client_connected', {data: 'New client!'});
     console.log("browser connected")
 });
@@ -12,13 +15,16 @@ socket.on('connect', function() {
 
 // handle messages about configuration settings
 socket.on('configSettings', function(msg){
-    console.log(msg)
+    // get total timePts
+    numTimepts = msg.nTimepts;
     console.log(msg.nTimepts)
 });
 
 // handle incoming messages about current volNum
 socket.on('volNum', function(msg) {
-    console.log(msg)
+    currentVol = msg
+    console.log(currentVol)
+    updateProgressBar(currentVol)
 });
 
 
@@ -26,3 +32,21 @@ socket.on('volNum', function(msg) {
 socket.on('motion', function(msg) {
     console.log(msg)
 });
+
+
+
+// Progress Area functions
+var progressBar = d3.select('#progressDiv')
+                    .append('svg')
+                    .attrs({'width':'90%', 'height': 200})
+
+progressBar.append('rect')
+    .attrs({x: 10, y:10, width:'100%', height:20, fill:'white'});
+progressBar.append('rect')
+    .attrs({id: 'progressBarRect', x: 10, y:10, width:'0%', height:20, fill:'#A44754'});
+
+function updateProgressBar(volIdx) {
+    d3.select('#progressBarRect')
+        .transition()
+        .attr('width', volIdx+1/numTimepts*100 + '%')
+}

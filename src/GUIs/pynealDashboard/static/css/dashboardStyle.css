@@ -32,8 +32,9 @@
 
 #progressDiv {
     grid-area: progress;
-    background-color: rgba(0,0,0,.1);
+    background-color: rgba(0,0,0,.05);
     padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0,0,0,.7);
 }
 
 
