@@ -23,7 +23,7 @@ socket.on('configSettings', function(msg){
 // handle incoming messages about current volNum
 socket.on('volNum', function(msg) {
     currentVol = msg
-    console.log(currentVol)
+    updateCurrentVol(currentVol)
     updateProgressBar(currentVol)
 });
 
@@ -35,18 +35,30 @@ socket.on('motion', function(msg) {
 
 
 
-// Progress Area functions
-var progressBar = d3.select('#progressDiv')
+// Progress Area behavior ---------------------------------------------
+var progressBar = d3.select('#progressBarDiv')
                     .append('svg')
-                    .attrs({'width':'90%', 'height': 200})
+                    .attrs({'width':'95%', 'height': '100%'})
 
 progressBar.append('rect')
-    .attrs({x: 10, y:10, width:'100%', height:20, fill:'white'});
+    .attrs({x: 0, y:30,
+            width:'100%', height:30,
+            fill:'white',
+            stroke: 'rgb(100, 100, 100)',
+            'stroke-alignment': 'inner'});
+
 progressBar.append('rect')
-    .attrs({id: 'progressBarRect', x: 10, y:10, width:'0%', height:20, fill:'#A44754'});
+    .attrs({id: 'progressBarRect', x: 0, y:30,
+            width:'0%', height:30,
+            fill:'#A44754'});
+
+function updateCurrentVol(volIdx){
+    d3.select('#currentVol').html(String(volIdx+1));
+}
 
 function updateProgressBar(volIdx) {
+    console.log((volIdx+1)/numTimepts*100 + '%')
     d3.select('#progressBarRect')
         .transition()
-        .attr('width', volIdx+1/numTimepts*100 + '%')
+        .attr('width', ((volIdx+1)/numTimepts)*100 + '%')
 }

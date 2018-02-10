@@ -1,8 +1,44 @@
+@font-face {
+    font-family:'TeX Gyre Adventor';
+    src: "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.eot')}}";
+    src: "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.eot?#iefix')}}" format('embedded-opentype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.woff')}}", format('woff'),
+         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.ttf')}}" format('truetype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.svg#texgyreadventorregular')}}" format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* @font-face {
+    font-family: 'TeX Gyre Adventor Bold';
+    src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot')}}";
+    src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix') format('embedded-opentype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.woff') format('woff'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.ttf') format('truetype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.svg#texgyreadventorregular') format('svg');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'TeX Gyre Adventor Italic';
+    src: "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.eot')}}";
+    src: "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.eot?#iefix') format('embedded-opentype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.woff') format('woff'),
+         "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.ttf') format('truetype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.svg#texgyreadventorregular') format('svg');
+    font-weight: normal;
+    font-style: italic;
+}
+ */
+
+
 #dashboardContainer {
     width: 85%;
     height: 100%;
     margin: auto;
     display: grid;
+    font-family: "TeX Gyre Adventor";
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 140px 90px 300px 400px;
     grid-column-gap: 5px;
@@ -29,15 +65,40 @@
     height:100%;
 }
 
-
+/* PROGRESS DIV ------------------------------------ */
 #progressDiv {
     grid-area: progress;
-    background-color: rgba(0,0,0,.05);
+    /* background-color: rgba(0,0,0,.05); */
     padding-bottom: 5px;
     border-bottom: 1px solid rgba(0,0,0,.7);
 }
 
+#currentVolDiv {
+    height: 100%;
+    width: 150px;
+    padding-left: 10px;
+    margin-right: 20px;
+    font-size: 24;
+    float: left;
+    text-align: center;
+    /* background-color: rgba(1, 0, 0, .2); */
+}
 
+#currentVolDiv p{
+    font-size: 40;
+    margin: auto;
+}
+
+#progressBarDiv {
+    height: 100%;
+    width: auto;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+
+
+/* MOTION DIV ------------------------------------ */
 #motionDiv {
     grid-area: motion;
     background-color: rgba(0,0,0,.2);
