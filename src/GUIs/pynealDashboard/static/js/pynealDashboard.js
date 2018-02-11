@@ -65,15 +65,15 @@ function updateProgressBar(volIdx) {
 
 
 // Motion Area behavior ---------------------------------------------
-var motionPlotDiv = d3.select('#motionPlotDiv');
-var motionPlotSVG = motionPlotDiv.append('svg');
-var motionScale_x, motionAxis_x
-var motionScale_y, motionAxis_y
-
 function drawMotionPlot(numTimepts) {
+    var motionScale_x, motionAxis_x
+    var motionScale_y, motionAxis_y
+
+    var motionPlotDiv = d3.select('#motionPlotDiv');
+    motionPlotDiv.html("")
+
     // get the current dimensions of the div
-    var divBBox= motionPlotDiv.node().getBoundingClientRect();
-    console.log(divBBox)
+    var divBBox = motionPlotDiv.node().getBoundingClientRect();
     var divWidth = divBBox.width;
     var divHeight = divBBox.height;
     var paddingBottom = 15;
@@ -81,8 +81,10 @@ function drawMotionPlot(numTimepts) {
     var plotWidth = (.95*divWidth)-paddingLeft;
     var plotHeight = (.95*divHeight)-paddingBottom;
 
+    console.log(divWidth);
     // size the svg for the plot
-    motionPlotSVG.attrs({'width':divWidth, 'height':divHeight});
+    var motionPlotSVG = motionPlotDiv.append('svg')
+                        .attrs({'width':divWidth, 'height':divHeight});
 
 
     // Set up the scales and axes
@@ -118,66 +120,72 @@ function drawMotionPlot(numTimepts) {
 
 
 // Timing Area behavior ---------------------------------------------
-var timingPlotDiv = d3.select('#timingPlotDiv');
-var timingPlotSVG = timingPlotDiv.append('svg');
-var timingScale_x, timingAxis_x
-var timingScale_y, timingAxis_y
-
-function drawtimingPlot(numTimepts) {
-    // get the current dimensions of the div
-    var divBBox= timingPlotDiv.node().getBoundingClientRect();
-    console.log(divBBox)
-    var divWidth = divBBox.width;
-    var divHeight = divBBox.height;
-    var paddingBottom = 15;
-    var paddingLeft = 30;
-    var plotWidth = (.95*divWidth)-paddingLeft;
-    var plotHeight = (.95*divHeight)-paddingBottom;
-
-    // size the svg for the plot
-    timingPlotSVG.attrs({'width':divWidth, 'height':divHeight});
-
-
-    // Set up the scales and axes
-    timingScale_x = d3.scaleLinear()
-                    .domain([0,numTimepts])
-                    .range([0,plotWidth]);
-    timingAxis_x = d3.axisBottom()
-                    .scale(timingScale_x);
-
-    timingScale_y = d3.scaleLinear()
-                    .domain([1.5, 0])
-                    .range([0, plotHeight-paddingBottom]);
-    timingAxis_y = d3.axisLeft()
-                    .scale(timingScale_y)
-                    .ticks(3);
-
-    // call the axes to draw it to the div
-    timingPlotSVG.append('g')
-        .attr("transform", function(){
-            var plotOffsetX = paddingLeft;
-            var plotOffsetY = plotHeight;
-            return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
-        })
-        .call(timingAxis_x);
-    timingPlotSVG.append('g')
-        .attr("transform", function(){
-            var plotOffsetX = paddingLeft;
-            var plotOffsetY = (divHeight-plotHeight)/2;
-            return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
-        })
-        .call(timingAxis_y);
-}
+// var timingPlotDiv = d3.select('#timingPlotDiv');
+// var timingPlotSVG = timingPlotDiv.append('svg');
+// var timingScale_x, timingAxis_x
+// var timingScale_y, timingAxis_y
+//
+// function drawtimingPlot(numTimepts) {
+//     // clear current contents
+//     timingPlotSVG.html("")
+//
+//     // get the current dimensions of the div
+//     var divBBox= timingPlotDiv.node().getBoundingClientRect();
+//     console.log(divBBox)
+//     var divWidth = divBBox.width;
+//     var divHeight = divBBox.height;
+//     var paddingBottom = 15;
+//     var paddingLeft = 30;
+//     var plotWidth = (.95*divWidth)-paddingLeft;
+//     var plotHeight = (.95*divHeight)-paddingBottom;
+//
+//     // size the svg for the plot
+//     console.log(divWidth);
+//     timingPlotSVG.attrs({'width':divWidth, 'height':divHeight});
+//
+//
+//     // Set up the scales and axes
+//     timingScale_x = d3.scaleLinear()
+//                     .domain([0,numTimepts])
+//                     .range([0,plotWidth]);
+//     timingAxis_x = d3.axisBottom()
+//                     .scale(timingScale_x);
+//
+//     timingScale_y = d3.scaleLinear()
+//                     .domain([1.5, 0])
+//                     .range([0, plotHeight-paddingBottom]);
+//     timingAxis_y = d3.axisLeft()
+//                     .scale(timingScale_y)
+//                     .ticks(3);
+//
+//     // call the axes to draw it to the div
+//     timingPlotSVG.append('g')
+//         .attr("transform", function(){
+//             var plotOffsetX = paddingLeft;
+//             var plotOffsetY = plotHeight;
+//             return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
+//         })
+//         .call(timingAxis_x);
+//     timingPlotSVG.append('g')
+//         .attr("transform", function(){
+//             var plotOffsetX = paddingLeft;
+//             var plotOffsetY = (divHeight-plotHeight)/2;
+//             return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
+//         })
+//         .call(timingAxis_y);
+// }
 
 
 numTimepts = 60;
 drawAll()
 
 function drawAll(){
-    console.log('here')
+    console.log('resized')
     drawMotionPlot(numTimepts)
-    drawtimingPlot(numTimepts);
+    // drawtimingPlot(numTimepts);
 }
 
 // Redraw based on the new size whenever the browser window is resized.
-window.addEventListener("resize", drawAll());
+window.addEventListener("resize", function(){
+    drawAll();
+});
