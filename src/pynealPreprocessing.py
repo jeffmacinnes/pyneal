@@ -116,8 +116,9 @@ class MotionProcessor():
     Tool to estimate 6-deg of rigid-body motion. The motion estimates will be
     made relative to the first volume in the series.
 
-    Motion estimation algorithm based on:
-    https://github.com/cni/rtfmri/blob/master/rtfmri/analyzers.py
+    Motion estimation based on:
+    https://github.com/cni/rtfmri/blob/master/rtfmri/analyzers.py &
+    https://www.sciencedirect.com/science/article/pii/S1053811917306729#bib32
     """
     def __init__(self, logger=None, skipVols=4):
         # start the thread upon creation

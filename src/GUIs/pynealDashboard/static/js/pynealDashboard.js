@@ -70,51 +70,43 @@ function drawMotionPlot(numTimepts) {
     var motionScale_y, motionAxis_y
 
     var motionPlotDiv = d3.select('#motionPlotDiv');
-    motionPlotDiv.html("")
+    motionPlotDiv.html("")      // clear the existing contents
+
+    var margin = {top: 10, right:10, bottom: 30, left:15};
 
     // get the current dimensions of the div
     var divBBox = motionPlotDiv.node().getBoundingClientRect();
     var divWidth = divBBox.width;
     var divHeight = divBBox.height;
-    var paddingBottom = 15;
-    var paddingLeft = 30;
-    var plotWidth = (.95*divWidth)-paddingLeft;
-    var plotHeight = (.95*divHeight)-paddingBottom;
+    var plotWidth = divWidth - margin.left - margin.right;
+    var plotHeight = divHeight - margin.top - margin.bottom;
 
-    console.log(divWidth);
     // size the svg for the plot
     var motionPlotSVG = motionPlotDiv.append('svg')
-                        .attrs({'width':divWidth, 'height':divHeight});
-
+                        .attrs({'width':divWidth, 'height':divHeight})
+                        .append('g')
+                            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // Set up the scales and axes
     motionScale_x = d3.scaleLinear()
                     .domain([0,numTimepts])
                     .range([0,plotWidth]);
     motionAxis_x = d3.axisBottom()
-                    .scale(motionScale_x);
+                    .scale(motionScale_x)
+                    .tickSizeOuter(0);
 
     motionScale_y = d3.scaleLinear()
-                    .domain([3, -3])
-                    .range([0, plotHeight-paddingBottom]);
+                    .domain([-3, 3])
+                    .range([plotHeight, 0]);
     motionAxis_y = d3.axisLeft()
                     .scale(motionScale_y)
                     .ticks(5);
 
     // call the axes to draw it to the div
     motionPlotSVG.append('g')
-        .attr("transform", function(){
-            var plotOffsetX = paddingLeft;
-            var plotOffsetY = (plotHeight/2);
-            return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
-        })
+        .attr("transform", "translate(0," + plotHeight/2 + ")")
         .call(motionAxis_x);
     motionPlotSVG.append('g')
-        .attr("transform", function(){
-            var plotOffsetX = paddingLeft;
-            var plotOffsetY = (divHeight-plotHeight)/2;
-            return "translate(" + plotOffsetX + "," + plotOffsetY + ")";
-        })
         .call(motionAxis_y);
 }
 
