@@ -20,6 +20,7 @@ socket.on('configSettings', function(msg){
     console.log(msg.nTimepts)
 });
 
+
 // handle incoming messages about current volNum
 socket.on('volNum', function(msg) {
     currentVol = msg
