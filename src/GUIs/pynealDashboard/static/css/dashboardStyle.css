@@ -136,9 +136,15 @@
     /* background-color: rgba(0,0,0,.2); */
 }
 
-#rmsABS_line {
+#rms_abs_line {
   fill: none;
-  stroke: steelblue;
+  stroke: #265971;
+  stroke-width: 2px;
+}
+
+#rms_rel_line {
+  fill: none;
+  stroke: #5CC2F0;
   stroke-width: 2px;
 }
 

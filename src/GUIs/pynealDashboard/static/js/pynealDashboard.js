@@ -1,6 +1,6 @@
 // Config vars
 var numTimepts = 1;     // tmp value for total number of timePts
-var currentVol = 0;
+var currentVolIdx = 0;
 var motion = [];        // empty array to hold motion objects
 
 // --------- READ INCOMING SOCKET MESSAGES ----
@@ -17,10 +17,9 @@ socket.on('existingData', function(msg){
     console.log('received all existing data:');
     console.log(msg);
 
-    // set the number of timepts
+    // set all vars according to values in existing data
     numTimepts = msg.numTimepts;
-
-    // set up motion
+    currentVolIdx = msg.currentVolIdx;
     motion = msg.motion;
 
     // update all plots
@@ -40,9 +39,9 @@ socket.on('configSettings', function(msg){
 
 // handle incoming messages about current volIdx
 socket.on('volIdx', function(msg) {
-    currentVol = msg
-    updateCurrentVol(currentVol)
-    updateProgressBar(currentVol)
+    currentVolIdx = msg
+    updateCurrentVol()
+    updateProgressBar()
 });
 
 
@@ -77,16 +76,16 @@ progressBar.append('rect')
             fill:'#A44754'});
 
 
-function updateCurrentVol(volIdx){
-    d3.select('#currentVol').html(String(volIdx+1));
+function updateCurrentVol(){
+    d3.select('#currentVol').html(String(currentVolIdx+1));
 }
 
 
-function updateProgressBar(volIdx) {
-    console.log((volIdx+1)/numTimepts*100 + '%')
+function updateProgressBar() {
+    console.log((currentVolIdx+1)/numTimepts*100 + '%')
     d3.select('#progressBarRect')
         .transition()
-        .attr('width', ((volIdx+1)/numTimepts)*100 + '%');
+        .attr('width', ((currentVolIdx+1)/numTimepts)*100 + '%');
 }
 
 
@@ -142,11 +141,19 @@ function drawMotionPlot() {
     rms_abs_line = d3.line()
             .x(function(d){ return motionScale_x(d.volIdx+1)})
             .y(function(d){ return motionScale_y(d.rms_abs)});
+    rms_rel_line = d3.line()
+            .x(function(d){ return motionScale_x(d.volIdx+1)})
+            .y(function(d){ return motionScale_y(d.rms_rel)});
+
 
     motionPlotSVG.append('path')
         .datum(motion)
-        .attr('id', 'rmsABS_line')
+        .attr('id', 'rms_abs_line')
         .attr('d', rms_abs_line);
+    motionPlotSVG.append('path')
+        .datum(motion)
+        .attr('id', 'rms_rel_line')
+        .attr('d', rms_rel_line);
 
     // call the axes to draw it to the div
     motionPlotSVG.append('g')
@@ -165,6 +172,31 @@ function drawMotionPlot() {
         .style("text-anchor", "middle")
         .style("font-size", 12)
         .text("displacement (mm)");
+
+    // append a legend
+    legendData = ['abs', 'rel']
+    var motionLegend = motionPlotSVG.selectAll('.legendKey')
+        .data(legendData)
+        .enter()
+        .append('g')
+        .attr('transform', function (d,i){
+            var xOffset = motionPlotWidth*.75 + i*50;
+            return "translate(" + xOffset + ",10)";
+        })
+        .attr('class', 'legendKey')
+    motionLegend.append('rect')
+        .attrs({'x':0, 'y':0, 'width':12, 'height':12})
+        .style('fill', function(d){
+            if (d=='abs'){
+                return '#265971';
+            } else if (d=='rel') {
+                return '#5CC2F0';
+            }
+        });
+    motionLegend.append('text')
+        .attrs({'x': 20, 'y':12})
+        .text(function(d) {return d})
+        .style('font-size', 12);
 }
 
 function updateMotionPlot(){
@@ -186,7 +218,10 @@ function updateMotionPlot(){
             .call(motionAxis_y);
 
     // update motion plot with new current motion data
-    d3.select('#rmsABS_line')
+    d3.select('#rms_abs_line')
+        .datum(motion)
+        .attr('d', rms_abs_line);
+    d3.select('#rms_rel_line')
         .datum(motion)
         .attr('d', rms_abs_line);
 }
@@ -198,6 +233,8 @@ function updateMotionPlot(){
 drawAll()
 function drawAll(){
     console.log('resized')
+    updateCurrentVol();
+    updateProgressBar();
     drawMotionPlot()
     // drawtimingPlot(numTimepts);
 }
