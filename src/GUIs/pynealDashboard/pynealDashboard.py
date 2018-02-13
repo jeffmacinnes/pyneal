@@ -78,7 +78,7 @@ class DashboardIPCServer(Thread):
                         content to ensure it gets handled appropriately on this
                         end
         E.g.
-              msg = {'topic':'volNum',
+              msg = {'topic':'volIdx',
                       'content':25}
 
         messages are processed differently according to their topic.
@@ -92,20 +92,18 @@ class DashboardIPCServer(Thread):
 
         if msg['topic'] == 'configSettings':
             print(msg)
-            #self.configSettings = msg['content']
+            existingData['numTimepts'] = msg['content']['numTimepts']
 
             # send to client
             socketio.emit('configSettings', msg['content'])
-            pass
 
-        elif msg['topic'] == 'volNum':
+        elif msg['topic'] == 'volIdx':
             print(msg)
             # update existing data
             existingData['currentVolIdx'] = msg['content']
 
             # send to client
-            socketio.emit('volNum', msg['content'])
-            pass
+            socketio.emit('volIdx', msg['content'])
 
         elif msg['topic'] == 'motion':
             print(msg)
@@ -114,7 +112,6 @@ class DashboardIPCServer(Thread):
 
             # send to client
             socketio.emit('motion', msg['content'])
-            pass
 
 
 # Root dashboard page

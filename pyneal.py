@@ -108,13 +108,10 @@ def launchPyneal():
         # Open dashboard in browser
         #os.system('open http://127.0.0.1:{}'.format(settings['dashboardClientPort']))
 
-        # for i in range(25):
-        #     msg = {'topic': 'volNum', 'data': str(i)}
-        #     dashboardSocket.send_json(msg)
-        #     print('sent: {}'.format(msg))
-        #     response = dashboardSocket.recv_string()
-        #     print('response: {}'.format(response))
-        #     time.sleep(.5)
+        # send configuration settings to dashboard
+        msg = {'topic': 'configSettings',
+                'content': {'numTimepts': settings['numTimepts']}}
+        dashboardSocket.send_json(msg)
 
 
     ### Create processing objects --------------------------
@@ -126,7 +123,6 @@ def launchPyneal():
 
     # Class to handle all analysis
     analyzer = Analyzer(settings, mask_img)
-
 
     ### Wait For Scan To Start -----------------------------
     while not scanReceiver.scanStarted: time.sleep(.5)

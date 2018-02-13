@@ -14,7 +14,7 @@ import numpy as np
 ### Configuration Settings
 TR = 1
 port = 5557
-nTimepts = 60
+numTimepts = 60
 
 
 # build the socket to send data to the dashboard webserver
@@ -37,18 +37,18 @@ def sendToDashboard(topic=None, content=None):
 
 # send initial settings to server
 topic = 'configSettings'
-content = {'nTimepts': nTimepts}
+content = {'numTimepts': numTimepts}
 sendToDashboard(topic=topic, content=content)
 
 
 # continuously send new messages during 'scan'
-for volIdx in range(nTimepts):
+for volIdx in range(numTimepts):
     startTime = time.time()
 
-    # send volume number
-    sendToDashboard(topic='volNum', content=volIdx)
+    #### send volume number
+    sendToDashboard(topic='volIdx', content=volIdx)
 
-    # build motion params
+    #### build motion params
     motionParams = {'volIdx': volIdx,
                 'rms_abs': np.random.normal(scale=2),
                 'rms_rel': np.random.normal(scale=.5)}

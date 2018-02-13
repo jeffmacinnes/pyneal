@@ -136,6 +136,12 @@
     /* background-color: rgba(0,0,0,.2); */
 }
 
+#rmsABS_line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
 
 /* TIMING DIV ------------------------------------ */
 #timingDiv {
