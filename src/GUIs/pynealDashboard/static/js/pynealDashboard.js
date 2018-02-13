@@ -7,10 +7,15 @@ var currentVol = 0;
 var socket = io('http://127.0.0.1:' + location.port);
 socket.on('connect', function() {
     // we emit a connected message to let know the server that we are connected.
-    //socket.emit('client_connected', {data: 'New client!'});
-    console.log("browser connected")
+    socket.emit('client_connected', {data: 'New client!'});
+    console.log("sent request for data")
 });
 
+// handle when server sends all existing data
+socket.on('existingData', function(msg){
+    console.log('received all existing data:');
+    console.log(msg)
+})
 
 // handle messages about configuration settings
 socket.on('configSettings', function(msg){

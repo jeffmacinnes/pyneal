@@ -23,8 +23,11 @@ socketio = SocketIO(app)
 
 
 # vars to store incoming data
-allData = {'volNum': [],
-            'motion': []}
+existingData = {'numTimepts': None,
+            'currentVolIdx': 0,
+            'motion': [],
+            'timePerVol': []
+            }
 
 
 class DashboardIPCServer(Thread):
@@ -44,7 +47,12 @@ class DashboardIPCServer(Thread):
 
         self.alive = True
 
+
     def run(self):
+        """
+        While the IPC server is running, it will listen for new incoming JSON
+        messages, and process according to the 'topic' field of the message
+        """
         while self.alive:
             try:
                 # listen for incoming JSON messages from pyneal
@@ -56,7 +64,8 @@ class DashboardIPCServer(Thread):
 
             except zmq.Again as e:
                 pass
-            time.sleep(.05)
+            time.sleep(.1)
+
 
     def processMsg(self, msg):
         """
@@ -72,8 +81,13 @@ class DashboardIPCServer(Thread):
               msg = {'topic':'volNum',
                       'content':25}
 
-        messages are processed differently according to their topic, so make
-        sure the content is appropriate to the topics
+        messages are processed differently according to their topic.
+
+        In addition, each time a new message appears, it's contents get added
+        to the existingData dictionary. This dictionary gets sent to the client
+        upon first connecting to the page. This way, if the client breaks the
+        connection partway through the scan, they can still receive all of
+        the existing data
         """
 
         if msg['topic'] == 'configSettings':
@@ -86,38 +100,59 @@ class DashboardIPCServer(Thread):
 
         elif msg['topic'] == 'volNum':
             print(msg)
+            # update existing data
+            existingData['currentVolIdx'] = msg['content']
+
+            # send to client
             socketio.emit('volNum', msg['content'])
             pass
 
+        elif msg['topic'] == 'motion':
+            print(msg)
+            # update existing data
+            existingData['motion'].append(msg['content'])
 
-# use decorators to link function to a URL
+            # send to client
+            socketio.emit('motion', msg['content'])
+            pass
+
+
+# Root dashboard page
 @app.route('/')
 def pynealWatcher():
     return render_template('pynealDashboard.html')
 
-# method for when web browser client connects
+
+# Method for when web browser client connects
 @socketio.on('connect')
 def handle_client_connect_event():
-    print('browser connected huzzah')
+    # when the client connects, send all existing data
+    print('client connected, sending existing data...')
+    socketio.emit('existingData', existingData)
     global thread
 
 
-def launchDashboard(ipc_socket):
+# Method to launch dashboard
+def launchDashboard(dashboardPort=9998, clientPort=9999):
     """
     start the app. Use the supplied socket to listen in for incoming messages
     that will be parsed and sent to the client's web browser
     """
 
-    # start the background thread to listen for incoming interprocess communication
-    # messages from various Pyneal modules
-    ipc_thread = IPC_Server(ipc_socket)
-    ipc_thread.daemon = True
-    ipc_thread.start()
+    ### set up the socket that the dashboard will use to listen for incoming IPC
+    dashboardPort = int(sys.argv[1])
+    context = zmq.Context.instance()
+    dashboardSocket = context.socket(zmq.REP)
+    dashboardSocket.bind('tcp://127.0.0.1:{}'.format(dashboardPort))
 
-    # launch the webserver that will host the dashboard. A web browser can
-    # access the dashboard by going to http://127.0.0.1:<clientPort>
-    clientPort = 9999
+    ### start listening for incoming ipc messages
+    dashboardServer = DashboardIPCServer(dashboardSocket)
+    dashboardServer.daemon = True
+    dashboardServer.start()
+
+    # launch the server
     socketio.run(app, port=clientPort)
+
 
 
 # Calling this script directly will start the webserver and create a zmq socket
@@ -126,18 +161,25 @@ def launchDashboard(ipc_socket):
 # specified by 'dashboardClientPort' (website at 127.0.0.1:<dashboardClientPort>)
 if __name__ == '__main__':
 
-    ### set up the socket that the dashboard will use to listen for incoming IPC
-    dashboardPort = int(sys.argv[1])
-    context = zmq.Context.instance()
-    dashboardSocket = context.socket(zmq.REP)
-    dashboardSocket.bind('tcp://127.0.0.1:{}'.format(dashboardPort))
+    if len(sys.argv) < 2:
+        print('Please specify a dashboard port, and a client port')
+        print('e.g. python pynealDashboard.py 5555 5556')
 
-    ### start the server listening for incoming ipc messages
-    dashboardServer = DashboardIPCServer(dashboardSocket)
-    dashboardServer.daemon = True
-    dashboardServer.start()
+    # launch the dashboard using the supplied ports
+    launchDashboard(dashboardPort=int(sys.argv[1]), clientPort=int(sys.argv[2]))
 
-    ### launch the webserver
-    dashboardClientPort = int(sys.argv[2])
-    print(dashboardClientPort)
-    socketio.run(app, port=dashboardClientPort)
+    # ### set up the socket that the dashboard will use to listen for incoming IPC
+    # dashboardPort = int(sys.argv[1])
+    # context = zmq.Context.instance()
+    # dashboardSocket = context.socket(zmq.REP)
+    # dashboardSocket.bind('tcp://127.0.0.1:{}'.format(dashboardPort))
+    #
+    # ### start the server listening for incoming ipc messages
+    # dashboardServer = DashboardIPCServer(dashboardSocket)
+    # dashboardServer.daemon = True
+    # dashboardServer.start()
+    #
+    # ### launch the webserver
+    # dashboardClientPort = int(sys.argv[2])
+    # print(dashboardClientPort)
+    # socketio.run(app, port=dashboardClientPort)

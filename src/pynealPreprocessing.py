@@ -63,28 +63,22 @@ class Preprocessor:
         Run preprocessing on the supplied volume
         """
         ### calculate the motion parameters on this volume. motionParams are
-        # returned as dictionary with keys for 'translation', and 'rotation';
-        # e.g.
-        #   motionParms = {'translation': np.array([0,0,0]),
-        #                    'rotation': np.array([0,0,0])}
-        #
+        # returned as dictionary with keys for 'rms_abs', and 'rms_rel';
         # NOTE: estimateMotion needs the input vol to be a nibabel nifti obj
         # the nostdout bit suppresses verbose estimation output to stdOut
         with nostdout():
             motionParams = self.motionProcessor.estimateMotion(
                                 nib.Nifti1Image(vol,self.affine),
-                                volIdx
-                                )
+                                volIdx)
 
         ### send to dashboard (if specified)
         if self.settings['launchDashboard']:
-            # motion params are stored as numpy arrays. Must convert to lists
-            motionParams_asList = {k:motionParams[k].tolist() for k in motionParams.keys()}
+            if motionParams not None:
 
-            # send to the dashboard
-            self.sendToDashboard(topic='motion',
-                                content={'volIdx':volIdx,
-                                        'motionParams': motionParams_asList})
+                # send to the dashboard
+                self.sendToDashboard(topic='motion',
+                                    content={'volIdx':volIdx,
+                                            'motionParams': motionParams})
 
         self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol

@@ -49,12 +49,10 @@ for volIdx in range(nTimepts):
     sendToDashboard(topic='volNum', content=volIdx)
 
     # build motion params
-    motionParams = {'translation': np.random.normal(scale=2, size=3).tolist(),
-                    'rotation': np.random.normal(scale=.5, size=3).tolist()}
-    print(motionParams)
-    content = {'volIdx': volIdx,
-            'motionParams': motionParams}
-    sendToDashboard(topic='motion', content=content)
+    motionParams = {'volIdx': volIdx,
+                'rms_abs': np.random.normal(scale=2),
+                'rms_rel': np.random.normal(scale=.5)}
+    sendToDashboard(topic='motion', content=motionParams)
 
     # pause for TR
     elapsedTime = time.time()-startTime
