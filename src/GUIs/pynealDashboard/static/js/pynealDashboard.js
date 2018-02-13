@@ -2,6 +2,7 @@
 var numTimepts = 1;     // tmp value for total number of timePts
 var currentVolIdx = 0;
 var motion = [];        // empty array to hold motion objects
+var timePerVol = [];    // empty array to hold timing objects
 
 // --------- READ INCOMING SOCKET MESSAGES ----
 var socket = io('http://127.0.0.1:' + location.port);
@@ -21,6 +22,7 @@ socket.on('existingData', function(msg){
     numTimepts = msg.numTimepts;
     currentVolIdx = msg.currentVolIdx;
     motion = msg.motion;
+    timePerVol = msg.timePerVol;
 
     // update all plots
     drawAll();
@@ -50,8 +52,17 @@ socket.on('motion', function(msg) {
     // 'msg' will be JSON object with vals for volIdx, and any other motion
     // parameters you want. Add it to the 'motion' array, then update plot
     motion.push(msg);
-    //drawMotionPlot();
     updateMotionPlot();
+});
+
+
+// handle incoming messages about current timing params
+socket.on('timePerVol', function(msg) {
+    // 'msg' will be JSON object with vals for volIdx, and any other motion
+    // parameters you want. Add it to the 'motion' array, then update plot
+    timePerVol.push(msg);
+    //drawMotionPlot();
+    updateTimingPlot();
 });
 
 
@@ -227,6 +238,108 @@ function updateMotionPlot(){
 }
 
 // Timing Area behavior ---------------------------------------------
+var timingScale_x, timingAxis_x;
+var timingScale_y, timingAxis_y;
+var timingPlotWidth, timingPlotHeight;
+
+function drawTimingPlot() {
+    var timingPlotDiv = d3.select('#timingPlotDiv');
+    timingPlotDiv.html("")      // clear the existing contents
+
+    var margin = {top: 10, right:10, bottom: 30, left:40};
+
+    // get the current dimensions of the div
+    var divBBox = timingPlotDiv.node().getBoundingClientRect();
+    var divWidth = divBBox.width;
+    var divHeight = divBBox.height;
+    timingPlotWidth = divWidth - margin.left - margin.right;
+    timingPlotHeight = divHeight - margin.top - margin.bottom;
+
+    // size the svg for the plot
+    var timingPlotSVG = timingPlotDiv.append('svg')
+                        .attrs({'id': 'timingPlotSVG', 'width':divWidth, 'height':divHeight})
+                        .append('g')
+                            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    //figure out max timing param to scale plots
+    var timePerVol_max = d3.max(timePerVol, function(d){ return d.processingTime})
+    var compute_upper_yLim = function(m){
+        if (m > 1){
+            return 1.2*m;
+        } else {
+            return 1;
+        }
+    };
+    var upper_yLim = compute_upper_yLim(timePerVol_max);
+
+    // Set up the scales and axes
+    timingScale_x = d3.scaleLinear()
+                    .domain([0,numTimepts])
+                    .range([0,timingPlotWidth]);
+    timingAxis_x = d3.axisBottom()
+                    .scale(timingScale_x)
+
+    timingScale_y = d3.scaleLinear()
+                    .domain([0, upper_yLim])
+                    .range([timingPlotHeight, 0])
+    timingAxis_y = d3.axisLeft()
+                    .scale(timingScale_y)
+                    .ticks(5);
+
+    // define the lines
+    volTime_line = d3.line()
+            .x(function(d){ return timingScale_x(d.volIdx+1)})
+            .y(function(d){ return timingScale_y(d.processingTime)});
+
+    timingPlotSVG.append('path')
+        .datum(timePerVol)
+        .attr('id', 'volTime_line')
+        .attr('d', volTime_line);
+
+    // call the axes to draw it to the div
+    timingPlotSVG.append('g')
+        .attr("id", "timingPlot_xAxis")
+        .attr("transform", "translate(0," + timingPlotHeight + ")")
+        .call(timingAxis_x);
+
+    timingPlotSVG.append('g')
+        .attr("id", "timingPlot_yAxis")
+        .call(timingAxis_y);
+    timingPlotSVG.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (timingPlotHeight / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", 12)
+        .text("time (s)");
+}
+
+function updateTimingPlot(){
+    // rescale the y-axis if needed
+    var timePerVol_max = d3.max(timePerVol, function(d){ return d.processingTime});
+    var compute_upper_yLim = function(m){
+        if (m > 1){
+            return 1.2*m;
+        } else {
+            return 1;
+        }
+    };
+    var upper_yLim = compute_upper_yLim(timePerVol_max);
+
+
+    timingScale_y.domain([0, upper_yLim])
+
+    d3.select("#timingPlot_xAxis")
+        .call(timingAxis_x);
+    d3.select("#timingPlot_yAxis")
+            .call(timingAxis_y);
+
+    // update timing plot with new current timing data
+    d3.select('#volTime_line')
+        .datum(timePerVol)
+        .attr('d', volTime_line);
+}
 
 
 // draw all elements upon load
@@ -236,7 +349,7 @@ function drawAll(){
     updateCurrentVol();
     updateProgressBar();
     drawMotionPlot()
-    // drawtimingPlot(numTimepts);
+    drawTimingPlot();
 }
 
 // Redraw based on the new size whenever the browser window is resized.

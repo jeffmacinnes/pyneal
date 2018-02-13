@@ -41,7 +41,7 @@
     font-family: "TeX Gyre Adventor";
     grid-template-columns: 1fr 1fr 1fr 1fr;
     grid-template-rows: 140px 90px 300px 400px;
-    grid-column-gap: 5px;
+    grid-column-gap: 15px;
     grid-row-gap: 20px;
     grid-template-areas:
         "header header header header"
@@ -160,8 +160,13 @@
 #timingPlotDiv {
     display: table-row;
     height: 100%;
-    width: 100%;
     overflow: hidden;
+}
+
+#volTime_line {
+    fill: none;
+    stroke: #A44754;
+    stroke-width: 2px;
 }
 
 

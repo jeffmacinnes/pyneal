@@ -54,6 +54,11 @@ for volIdx in range(numTimepts):
                 'rms_rel': np.random.normal(scale=.5)}
     sendToDashboard(topic='motion', content=motionParams)
 
+    #### send timing parameters
+    timingParams = {'volIdx': volIdx,
+                    'processingTime': np.random.normal(scale=.14) +.4}
+    sendToDashboard(topic='timePerVol', content=timingParams)                
+
     # pause for TR
     elapsedTime = time.time()-startTime
     time.sleep(TR-elapsedTime)

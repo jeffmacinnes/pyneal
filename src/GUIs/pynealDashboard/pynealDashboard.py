@@ -113,6 +113,14 @@ class DashboardIPCServer(Thread):
             # send to client
             socketio.emit('motion', msg['content'])
 
+        elif msg['topic'] == 'timePerVol':
+            print(msg)
+            # update existing data
+            existingData['timePerVol'].append(msg['content'])
+
+            # send to client
+            socketio.emit('timePerVol', msg['content'])
+
 
 # Root dashboard page
 @app.route('/')
