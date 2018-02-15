@@ -1,7 +1,12 @@
 """
-App to host the backend of the Pyneal Dashboard for monitoring a real-time
-scan.
+Flask-based App to host the backend of the Pyneal Dashboard for
+monitoring a real-time scan.
 
+In addition to providing a webserver for the dashboard, this tool will
+listen for interprocess communication messages sent from the main
+Pyneal processes, which it will parse and send along to any client
+browsers that are viewing the dashboard. The client-side javascript will
+interpret the messages and update the dashboard accordingly
 """
 
 import sys
@@ -118,6 +123,10 @@ class DashboardIPCServer(Thread):
             # send to client
             socketio.emit('timePerVol', msg['content'])
 
+        elif msg['topic'] == 'pynealScannerLog':
+            # send to client
+            socketio.emit('pynealScannerLog', msg['content'])
+
         elif msg['topic'] == 'resultsServerLog':
             # send to client
             socketio.emit('resultsServerLog', msg['content'])
@@ -173,19 +182,3 @@ if __name__ == '__main__':
 
     # launch the dashboard using the supplied ports
     launchDashboard(dashboardPort=int(sys.argv[1]), clientPort=int(sys.argv[2]))
-
-    # ### set up the socket that the dashboard will use to listen for incoming IPC
-    # dashboardPort = int(sys.argv[1])
-    # context = zmq.Context.instance()
-    # dashboardSocket = context.socket(zmq.REP)
-    # dashboardSocket.bind('tcp://127.0.0.1:{}'.format(dashboardPort))
-    #
-    # ### start the server listening for incoming ipc messages
-    # dashboardServer = DashboardIPCServer(dashboardSocket)
-    # dashboardServer.daemon = True
-    # dashboardServer.start()
-    #
-    # ### launch the webserver
-    # dashboardClientPort = int(sys.argv[2])
-    # print(dashboardClientPort)
-    # socketio.run(app, port=dashboardClientPort)

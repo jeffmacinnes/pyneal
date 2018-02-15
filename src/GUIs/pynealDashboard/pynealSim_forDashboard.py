@@ -64,6 +64,11 @@ for volIdx in range(numTimepts):
     sendToDashboard(topic='timePerVol', content=timingParams)
 
 
+    ### send pyneal scanner log update message
+    newMsg = {'logString': ('Got vol idx:' + str(volIdx))}
+    sendToDashboard(topic='pynealScannerLog', content=newMsg)
+
+
     #### send results server log update message
     requestMsg = {'type':'request', 'logString': str(volIdx)}
     sendToDashboard(topic='resultsServerLog', content=requestMsg)

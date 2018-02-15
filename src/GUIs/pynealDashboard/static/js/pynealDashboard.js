@@ -66,7 +66,14 @@ socket.on('timePerVol', function(msg) {
 });
 
 
-// handle incoming message about communication on the results server
+// hande incoming messages about communication with pyneal-scanner
+socket.on('pynealScannerLog', function(msg){
+    // the logString will appear as new log message in log box
+    pynealScannerLog_newMsg(msg.logString)
+})
+
+
+// handle incoming messages about communication on the results server
 socket.on('resultsServerLog', function(msg){
     if (msg.type == 'request') {
         resultsServer_newRequest(msg.logString);
@@ -350,6 +357,45 @@ function updateTimingPlot(){
         .attr('d', volTime_line);
 }
 
+
+// Pyneal Scanner Log Area Behavior -----------------------------------------
+function pynealScannerLog_newMsg(logMsg){
+    // add the parent div for the new request
+    var newLogMsg = d3.select('#pynealScannerLogBox')
+                        .append('div')
+                        .attr('class','pynealScannerMsg');
+
+    //add the indicator circle
+    newLogMsg.append('div')
+        .attr('class','pynealScannerIndicator')
+        .append('svg')
+            .attrs({'width':'100%', 'height':'100%'})
+            .append('circle')
+            .attrs({'cy':'50%', 'cx':'50%', 'r':8});
+
+    // add the request message
+    newLogMsg.append('div')
+        .attr('class','pynealScannerLogMsg')
+        .html(logMsg);
+
+    // update the scroll window
+    updatePynealScannerScroll();
+};
+
+
+function updatePynealScannerScroll(){
+    var logBox = d3.select('#pynealScannerLogBox')
+
+    var scrollHeight = logBox.node().scrollHeight;
+
+    // if the user has scrolled to w/in 90% of the bottom, keep
+    // moving the scroll down. This will prevent it auto updating if
+    // the user has scroll back up to check a value
+    if ((logBox.node().scrollTop + logBox.node().offsetHeight) >= .9*scrollHeight){
+        logBox.node().scrollTop = scrollHeight;
+    }
+};
+
 // Results Server Area behavior ---------------------------------------------
 function resultsServer_newRequest(logMsg){
     // add the parent div for the new request
@@ -372,7 +418,8 @@ function resultsServer_newRequest(logMsg){
 
     // update the scroll window
     updateResultsServerScroll();
-}
+};
+
 
 function resultsServer_newResponse(logMsg, success){
     // set the indicator class based on success
@@ -403,7 +450,7 @@ function resultsServer_newResponse(logMsg, success){
 
     // update the scroll window
     updateResultsServerScroll();
-}
+};
 
 
 function updateResultsServerScroll(){
@@ -417,17 +464,17 @@ function updateResultsServerScroll(){
     if ((logBox.node().scrollTop + logBox.node().offsetHeight) >= .9*scrollHeight){
         logBox.node().scrollTop = scrollHeight;
     }
-}
+};
 
 
-// draw all elements upon load
+// draw all elements upon load ------------------------------------------------
 drawAll()
 function drawAll(){
     updateCurrentVol();
     updateProgressBar();
     drawMotionPlot()
     drawTimingPlot();
-}
+};
 
 // Redraw based on the new size whenever the browser window is resized.
 window.addEventListener("resize", function(){
