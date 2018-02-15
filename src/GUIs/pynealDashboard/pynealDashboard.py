@@ -89,16 +89,15 @@ class DashboardIPCServer(Thread):
         connection partway through the scan, they can still receive all of
         the existing data
         """
-
+        print(msg)
         if msg['topic'] == 'configSettings':
-            print(msg)
+            # update existing data
             existingData['numTimepts'] = msg['content']['numTimepts']
 
             # send to client
             socketio.emit('configSettings', msg['content'])
 
         elif msg['topic'] == 'volIdx':
-            print(msg)
             # update existing data
             existingData['currentVolIdx'] = msg['content']
 
@@ -106,7 +105,6 @@ class DashboardIPCServer(Thread):
             socketio.emit('volIdx', msg['content'])
 
         elif msg['topic'] == 'motion':
-            print(msg)
             # update existing data
             existingData['motion'].append(msg['content'])
 
@@ -114,12 +112,15 @@ class DashboardIPCServer(Thread):
             socketio.emit('motion', msg['content'])
 
         elif msg['topic'] == 'timePerVol':
-            print(msg)
             # update existing data
             existingData['timePerVol'].append(msg['content'])
 
             # send to client
             socketio.emit('timePerVol', msg['content'])
+
+        elif msg['topic'] == 'resultsServerLog':
+            # send to client
+            socketio.emit('resultsServerLog', msg['content'])
 
 
 # Root dashboard page

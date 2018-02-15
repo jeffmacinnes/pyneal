@@ -7,7 +7,9 @@ of the dashboard
 import os
 import sys
 import time
+import random
 
+import json
 import zmq
 import numpy as np
 
@@ -48,16 +50,30 @@ for volIdx in range(numTimepts):
     #### send volume number
     sendToDashboard(topic='volIdx', content=volIdx)
 
+
     #### build motion params
     motionParams = {'volIdx': volIdx,
                 'rms_abs': np.random.normal(scale=2),
                 'rms_rel': np.random.normal(scale=.5)}
     sendToDashboard(topic='motion', content=motionParams)
 
+
     #### send timing parameters
     timingParams = {'volIdx': volIdx,
-                    'processingTime': np.random.normal(scale=.14) +.4}
-    sendToDashboard(topic='timePerVol', content=timingParams)                
+                    'processingTime': np.random.normal(scale=.14, loc=.4)}
+    sendToDashboard(topic='timePerVol', content=timingParams)
+
+
+    #### send results server log update message
+    requestMsg = {'type':'request', 'logString': str(volIdx)}
+    sendToDashboard(topic='resultsServerLog', content=requestMsg)
+
+    serverResponse = {'foundResults': random.choice([True, False]), 'average':np.random.normal(loc=2432, scale=10)}
+    responseMsg = {'type':'response',
+                    'logString':json.dumps(serverResponse),
+                    'success':serverResponse['foundResults']}
+
+    sendToDashboard(topic='resultsServerLog', content=responseMsg)
 
     # pause for TR
     elapsedTime = time.time()-startTime

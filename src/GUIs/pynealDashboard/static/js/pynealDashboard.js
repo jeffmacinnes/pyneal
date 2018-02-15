@@ -66,6 +66,14 @@ socket.on('timePerVol', function(msg) {
 });
 
 
+// handle incoming message about communication on the results server
+socket.on('resultsServerLog', function(msg){
+    if (msg.type == 'request') {
+        resultsServer_newRequest(msg.logString);
+    } else if (msg.type == 'response') {
+        resultsServer_newResponse(msg.logString, msg.success);
+    }
+})
 
 // Progress Area behavior ---------------------------------------------
 var progressBar = d3.select('#progressBarDiv')
@@ -93,7 +101,6 @@ function updateCurrentVol(){
 
 
 function updateProgressBar() {
-    console.log((currentVolIdx+1)/numTimepts*100 + '%')
     d3.select('#progressBarRect')
         .transition()
         .attr('width', ((currentVolIdx+1)/numTimepts)*100 + '%');
@@ -343,11 +350,79 @@ function updateTimingPlot(){
         .attr('d', volTime_line);
 }
 
+// Results Server Area behavior ---------------------------------------------
+function resultsServer_newRequest(logMsg){
+    // add the parent div for the new request
+    var newRequest = d3.select('#resultsServerLogBox')
+                        .append('div')
+                        .attr('class','resultsRequest');
+
+    //add the indicator circle
+    newRequest.append('div')
+        .attr('class','requestIndicator')
+        .append('svg')
+            .attrs({'width':'100%', 'height':'100%'})
+            .append('circle')
+            .attrs({'cy':'50%', 'cx':'50%', 'r':8});
+
+    // add the request message
+    newRequest.append('div')
+        .attr('class','requestMsg')
+        .html('requested vol idx: ' + logMsg);
+
+    // update the scroll window
+    updateResultsServerScroll();
+}
+
+function resultsServer_newResponse(logMsg, success){
+    // set the indicator class based on success
+    if (success == true){
+        var indicatorClass = 'responseSuccess';
+    } else {
+        var indicatorClass = 'responseFail';
+    };
+
+    // add the parent div for the new request
+    var newResponse = d3.select('#resultsServerLogBox')
+                        .append('div')
+                        .attr('class','resultsResponse');
+
+    //add the indicator circle
+    newResponse.append('div')
+        .attr('class','responseIndicator')
+        .append('svg')
+            .attrs({'width':'100%', 'height':'100%'})
+            .append('circle')
+            .attr('class', indicatorClass)
+            .attrs({'cy':'50%', 'cx':'50%', 'r':8});
+
+    // add the request message
+    newResponse.append('div')
+        .attr('class','responseMsg')
+        .html('response: ' + logMsg);
+
+    // update the scroll window
+    updateResultsServerScroll();
+}
+
+
+function updateResultsServerScroll(){
+    var logBox = d3.select('#resultsServerLogBox')
+
+    var scrollHeight = logBox.node().scrollHeight;
+
+    // if the user has scrolled to w/in 90% of the bottom, keep
+    // moving the scroll down. This will prevent it auto updating if
+    // the user has scroll back up to check a value
+    if ((logBox.node().scrollTop + logBox.node().offsetHeight) >= .9*scrollHeight){
+        logBox.node().scrollTop = scrollHeight;
+    }
+}
+
 
 // draw all elements upon load
 drawAll()
 function drawAll(){
-    console.log('resized')
     updateCurrentVol();
     updateProgressBar();
     drawMotionPlot()
