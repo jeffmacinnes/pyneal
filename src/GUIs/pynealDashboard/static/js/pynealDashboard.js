@@ -231,10 +231,12 @@ function updateMotionPlot(){
     // update motion plot with new current motion data
     d3.select('#rms_abs_line')
         .datum(motion)
+        .transition()
         .attr('d', rms_abs_line);
     d3.select('#rms_rel_line')
         .datum(motion)
-        .attr('d', rms_abs_line);
+        .transition()
+        .attr('d', rms_rel_line);
 }
 
 // Timing Area behavior ---------------------------------------------

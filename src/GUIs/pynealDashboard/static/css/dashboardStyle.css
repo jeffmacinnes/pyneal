@@ -171,13 +171,96 @@
 
 
 /* PYNEAL LOG DIV ------------------------------------ */
+.logHeader{
+    height: 30px;
+    background-color: rgba(0,0,0,.3);
+    padding-left: 10px;
+    padding-top: 10px;
+    vertical-align: middle;
+    font-size: 20;
+    border-bottom: 1px solid rgba(0,0,0,1);
+}
+
+.logMessageBox {
+    height: 370px;
+    width: 100%;
+    overflow:auto;
+}
+
 #pynealLogDiv {
     grid-area: pynealLog;
     background-color: rgba(0,0,0,.3);
 }
 
-
+/* RESULTS LOG DIV ------------------------------------ */
 #resultsServerLogDiv {
     grid-area: resultsServerLog;
-    background-color: rgba(0,0,0,.3);
+}
+
+.resultsRequest {
+    width: 100%;
+    display: table;
+}
+
+.filler {
+    width:100%;
+}
+
+.requestMsg {
+    width: 75%;
+    display: inline-block;
+    float: right;
+    font-size: 16;
+    padding-top: 8px;
+    padding-right: 3px;
+    font-family: sans-serif;
+    text-align: right;
+}
+
+.requestIndicator {
+    width: 30px;
+    height: 30px;
+    padding-right: 10px;
+    display: inline-block;
+    float:right;
+}
+
+.requestIndicator circle{
+    fill: #5CC2F0;
+}
+
+.resultsResponse {
+    width: 100%;
+    display: table;
+    /* background-color: rgba(0,0,0,.1); */
+    border-bottom: 1px solid #aaa;
+}
+
+.responseMsg {
+    width: 75%;
+    display: inline-block;
+    float: left;
+    font-size: 16;
+    padding-top: 8px;
+    padding-left: 3px;
+    font-family: sans-serif;
+    text-align: left;
+}
+
+.responseIndicator {
+    width: 30px;
+    height: 30px;
+    padding-left: 10px;
+    display: inline-block;
+    float:left;
+}
+
+circle.responseSuccess{
+    fill: #A44754;
+}
+
+circle.responseFail{
+    stroke: rgba(0,0,0,.6);
+    stroke-width: 1;
+    fill: rgba(255,255,255,1);
 }
