@@ -116,7 +116,7 @@ class MotionProcessor():
         self.refVol = None
 
         # initialize
-        self.ref_T = Rigid(np.eye(4))
+        self.refVol_T = Rigid(np.eye(4))
         self.prevVol_T = Rigid(np.eye(4))
 
 

@@ -55,31 +55,30 @@ import numpy as np
 import json
 import zmq
 
-# SET UP ZMQ PUBLISH SOCKET FOR SENDING MESSASGES OUT ABOUT VOLUMES
-# THAT HAVE ARRIVED
-
-
 class ScanReceiver(Thread):
     """
     Class to listen in for incoming scan data. As new volumes
     arrive, the header is decoded, and the volume is added to
     the appropriate place in the 4D data matrix
 
-    input args:
+    Input a dictionary called 'settings' that has (at least) the following keys:
         numTimepts: number of expected timepoints in series [500]
-        host: host IP for scanner socket ['127.0.0.1']
-        port: port # for scanner socket [5555]
+        pynealScannerPort: port # for scanner socket [e.g. 5555]
     """
-    def __init__(self, numTimepts=500, host='*', port=5555):
+    def __init__(self, settings):
         # start the thread upon creation
         Thread.__init__(self)
 
         # set up logger
         self.logger = logging.getLogger('PynealLog')
 
+        # get vars from settings dict
+        self.numTimepts = settings['numTimepts']
+        self.scannerPort = settings['pynealScannerPort']
+
         # class config vars
+        self.host = '*'
         self.scanStarted = False
-        self.numTimepts = numTimepts    # total number of vols (or timepts) expected
         self.alive = True               # thread status
         self.imageMatrix = None         # matrix that will hold the incoming data
         self.affine = None
@@ -90,8 +89,15 @@ class ScanReceiver(Thread):
         # set up socket to communicate with scanner
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
-        self.scannerSocket.bind('tcp://{}:{}'.format(host, port))
-        self.logger.debug('scanReceiver server bound to {}:{}'.format(host, port))
+        self.scannerSocket.bind('tcp://{}:{}'.format(self.host, self.scannerPort))
+        self.logger.debug('scanReceiver server bound to {}:{}'.format(self.host, self.scannerPort))
+
+        # set up socket to communicate with dashboard (if specified)
+        if settings['launchDashboard']:
+            self.dashboard = True
+            context = zmq.Context.instance()
+            self.dashboardSocket = context.socket(zmq.REQ)
+            self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
 
     def run(self):
@@ -139,7 +145,10 @@ class ScanReceiver(Thread):
             # send response back to Pyneal-Scanner
             response = 'Received vol {}'.format(volIdx)
             self.scannerSocket.send_string(response)
+
+            # update log and dashboard
             self.logger.info(response)
+            self.sendToDashboard(response)
 
 
     def createImageMatrix(self, volHeader):
@@ -187,14 +196,33 @@ class ScanReceiver(Thread):
             return None
 
 
+    def sendToDashboard(self, msg):
+        """
+        If dashboard is launched, send the msg to the dashboard. The dashboard
+        expects messages formatted in specific way, namely a dictionary with 2
+        keys: 'topic', and 'content'
+
+        Any message from the scanReceiver should set the topic as
+        'pynealScannerLog', and the content should be it's own dictionary with
+        the key 'logString'. logString should contain the log message you want
+        the dashboard to display
+        """
+        if self.dashboard:
+            dashboardMsg = {'topic': 'pynealScannerLog',
+                            'content': {'logString': msg}}
+            self.dashboardSocket.send_json(dashboardMsg)
+            response = self.dashboardSocket.recv_string()
+
+
     def stop(self):
         # function to stop the Thread
         self.alive = False
 
 
 if __name__ == '__main__':
-    host = '*'
-    port = 5555
+    # set up settings dict
+    settings = {'numTimepts': 100,
+                'pynealScannerPort': 5555}
 
     ### set up logging
     fileLogger = logging.FileHandler('./scanReceiver.log', mode='w')
@@ -202,12 +230,10 @@ if __name__ == '__main__':
     fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
                                         '%m-%d %H:%M:%S')
     fileLogger.setFormatter(fileLogFormat)
-
-    #
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(fileLogger)
 
     # start the scanReceiver
-    scanReceiver = ScanReceiver(numTimepts=100, host=host, port=port)
+    scanReceiver = ScanReceiver(settings)
     scanReceiver.start()

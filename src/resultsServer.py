@@ -41,15 +41,19 @@ import socket
 from threading import Thread
 
 import numpy as np
+import zmq
 
 class ResultsServer(Thread):
     """
     Class to serve results from real-time analysis. This server will accept
     connections from remote clients, check if the requested results are available,
     and return a JSON-formatted message
+
+    Input a dictionary called 'settings' that has (at least) the following keys:
+        resultsServerPort: port # for results server socket [e.g. 5555]
     """
 
-    def __init__(self, host='127.0.0.1', port=5556):
+    def __init__(self, settings):
         # start the thread upon creation
         Thread.__init__(self)
 
@@ -59,20 +63,27 @@ class ResultsServer(Thread):
         # configuration parameters
         self.alive = True
         self.results = {}       # store results in dict like {'vol#':{results}}
-        self.host = host
-        self.port = port
+        self.host = '127.0.0.1'
+        self.resultsServerPort = settings['resultsServerPort']
         self.maxClients = 1
 
         # launch server
         self.resultsSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.resultsSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.resultsSocket.bind((self.host, self.port))
+        self.resultsSocket.bind((self.host, self.resultsServerPort))
         self.resultsSocket.listen(self.maxClients)
-        self.logger.debug('Results Server bound to {}:{}'.format(self.host, self.port))
+        self.logger.debug('Results Server bound to {}:{}'.format(self.host, self.resultsServerPort))
         self.logger.info('Results Server alive and listening....')
 
         # atexit function, shut down server
         atexit.register(self.killServer)
+
+        # set up socket to communicate with dashboard (if specified)
+        if settings['launchDashboard']:
+            self.dashboard = True
+            context = zmq.Context.instance()
+            self.dashboardSocket = context.socket(zmq.REQ)
+            self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
 
     def run(self):
@@ -88,6 +99,7 @@ class ResultsServer(Thread):
             # volume number, e.g. '0001')
             recvMsg = connection.recv(4).decode()
             self.logger.debug('Received request: {}'.format(recvMsg))
+            self.sendToDashboard(msgType='request', msg=recvMsg)
 
             # reformat the requested volume to remove any leading 0s
             requestedVol = str(int(recvMsg))
@@ -97,6 +109,8 @@ class ResultsServer(Thread):
 
             ### Send the results to the client
             self.sendResults(connection, volResults)
+            self.logger.debug('Response: {}'.format(volResults))
+            self.sendToDashboard(msgType='response', msg=volResults)
 
             # close client connection
             connection.close()
@@ -145,15 +159,49 @@ class ResultsServer(Thread):
         self.logger.debug('Sent result: {}'.format(formattedMsg))
 
 
+    def sendToDashboard(self, msgType=None, msg=None):
+        """
+        If dashboard is launched, send the msg to the dashboard. The dashboard
+        expects messages formatted in specific way, namely a dictionary with 2
+        keys: 'topic', and 'content'
+
+        Any message from the scanReceiver should set the topic as
+        'resultsServerLog'.
+
+        Content should be it's own dictionary with keys for 'type' and 'logString'
+            - if msgType = 'request', include a key for logString that contains the
+                requested volIdx
+            - if msgType = 'respone', include key for logString that contains the
+                json response from the server, AND a key for success indicating
+                whether or not the results were found for the requested volume
+        """
+        if self.dashboard:
+            topic = 'resultsServerLog'
+            if msgType == 'request':
+                content = {'type': msgType,
+                            'logString': msg}
+            elif msgType == 'response':
+                content = {'type': msgType,
+                            'logString': json.dumps(msg),
+                            'success': msg['foundResults']}
+
+            # format messsage
+            dashboardMsg = {'topic': topic,
+                            'content': content}
+
+            # send msg to dashboard
+            self.dashboardSocket.send_json(dashboardMsg)
+            response = self.dashboardSocket.recv_string()
+
     def killServer(self):
         self.alive = False
 
 
-
 if __name__ == '__main__':
-    port = 5556
+    # set up settings dict
+    settings = {'resultsServerPort': 5556}
 
-    resultsServer = ResultsServer(port=port)
+    resultsServer = ResultsServer(settings)
     #resultsServer.daemon = True
     resultsServer.start()
     print('Results Server alive and listening...')

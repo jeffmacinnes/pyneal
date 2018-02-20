@@ -94,7 +94,6 @@ class DashboardIPCServer(Thread):
         connection partway through the scan, they can still receive all of
         the existing data
         """
-        print(msg)
         if msg['topic'] == 'configSettings':
             # update existing data
             existingData['numTimepts'] = msg['content']['numTimepts']

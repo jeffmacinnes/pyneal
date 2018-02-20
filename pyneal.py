@@ -56,11 +56,8 @@ def launchPyneal():
     with open(settingsFile, 'r') as ymlFile:
         settings = yaml.load(ymlFile)
 
-
     ### Create the output directory
     outputDir = createOutputDir(settings['outputPath'])
-    print(outputDir)
-
 
     ### Set Up Logging ------------------------------------
     # The createLogger function will do a lot of the formatting set up
@@ -68,7 +65,7 @@ def launchPyneal():
     # logger var and specifying the level, e.g.: logger.debug('msg')
     # Other modules can write to this same log by calling
     # logger = logging.getLogger('PynealLog')
-    logFname = join(pynealDir, 'logs/pynealLog.log')
+    logFname = join(outputDir, 'pynealLog.log')
     logger = createLogger(logFname)
 
     # write all settings to log
@@ -78,15 +75,14 @@ def launchPyneal():
 
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
-    scanReceiver = ScanReceiver(numTimepts=settings['numTimepts'],
-                                port=settings['pynealScannerPort'])
+    scanReceiver = ScanReceiver(settings)
     scanReceiver.daemon = True
     scanReceiver.start()
     logger.debug('Starting Scan Receiver')
 
     # Results Server Thread, listens for requests from end-user (e.g. task
     # presentation), and sends back results
-    resultsServer = ResultsServer(port=settings['resultsServerPort'])
+    resultsServer = ResultsServer(settings)
     resultsServer.daemon = True
     resultsServer.start()
     logger.debug('Starting Results Server')
@@ -114,7 +110,7 @@ def launchPyneal():
         dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
         # Open dashboard in browser
-        #os.system('open http://127.0.0.1:{}'.format(settings['dashboardClientPort']))
+        os.system('open http://127.0.0.1:{}'.format(settings['dashboardClientPort']))
 
         # send configuration settings to dashboard
         msg = {'topic': 'configSettings',
