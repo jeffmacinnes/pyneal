@@ -17,6 +17,7 @@ from __future__ import print_function
 import os
 import sys
 from os.path import join
+import glob
 import time
 import subprocess
 import atexit
@@ -42,16 +43,6 @@ def launchPyneal():
     retrieve settings, initialize all threads, and start processing
     incoming scans
     """
-    ### Set Up Logging ------------------------------------
-    # The createLogger function will do a lot of the formatting set up
-    # behind the scenes. You can write to this log by calling the
-    # logger var and specifying the level, e.g.: logger.debug('msg')
-    # Other modules can write to this same log by calling
-    # logger = logging.getLogger('PynealLog')
-    logFname = join(pynealDir, 'logs/pynealLog.log')
-    logger = createLogger(logFname)
-
-
     ### Read Settings ------------------------------------
     # Read the settings file, and launch the setup GUI to give the user
     # a chance to update the settings. Hitting 'submit' within the GUI
@@ -64,6 +55,23 @@ def launchPyneal():
     # Read the new settings file, store as dict, write to log
     with open(settingsFile, 'r') as ymlFile:
         settings = yaml.load(ymlFile)
+
+
+    ### Create the output directory
+    outputDir = createOutputDir(settings['outputPath'])
+    print(outputDir)
+
+
+    ### Set Up Logging ------------------------------------
+    # The createLogger function will do a lot of the formatting set up
+    # behind the scenes. You can write to this log by calling the
+    # logger var and specifying the level, e.g.: logger.debug('msg')
+    # Other modules can write to this same log by calling
+    # logger = logging.getLogger('PynealLog')
+    logFname = join(pynealDir, 'logs/pynealLog.log')
+    logger = createLogger(logFname)
+
+    # write all settings to log
     for k in settings:
         logger.debug('Setting: {}: {}'.format(k, settings[k]))
 
@@ -151,9 +159,33 @@ def launchPyneal():
         # send result to the resultsServer
         resultsServer.updateResults(volIdx, result)
 
-
     ### Figure out how to clean everything up nicely at the end
     scanReceiver.stop()
+
+
+def createOutputDir(parentDir):
+    """
+    Create a new output directory in the parent dir. Output directories
+    are named sequentially, starting with pyneal_001.
+
+    This function will find all existing pyneal_### directories in the
+    parentDir and name the new output directory accordingly.
+
+    returns full path to the new output directory
+    """
+    # find any existing pyneal_### directories, create the next one in series
+    existingDirs = glob.glob(join(parentDir, 'pyneal_*'))
+    if len(existingDirs) == 0:
+        outputDir = join(parentDir, 'pyneal_001')
+    else:
+        # add 1 to highest numbered existing dir
+        nextDirNum = int(sorted(existingDirs)[-1][-3:]) + 1
+        outputDir = join(parentDir, 'pyneal_' + str(nextDirNum).zfill(3))
+
+    # create the output dir and return full path to it
+    os.makedirs(outputDir)
+    return outputDir
+
 
 
 def cleanup(pid):

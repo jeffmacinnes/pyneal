@@ -22,7 +22,6 @@ import nibabel as nib
 from nipy.algorithms.registration import HistogramRegistration, Rigid
 
 
-
 class Preprocessor:
     """
     Preprocessing class. The methods of this class can be used to
@@ -73,7 +72,7 @@ class Preprocessor:
 
         ### send to dashboard (if specified)
         if self.settings['launchDashboard']:
-            if motionParams not None:
+            if motionParams is not None:
 
                 # send to the dashboard
                 self.sendToDashboard(topic='motion',
@@ -171,8 +170,9 @@ class MotionProcessor():
             # update the estimate
             self.prevVol_T = T
 
-            return motionParams = {'rms_abs': rms_abs,
-                                    'rms_rel': rms_rel}
+            motionParams = {'rms_abs': rms_abs,
+                            'rms_rel': rms_rel}
+            return motionParams
 
 
     def computeRMS(self, T1, T2, R=50):
