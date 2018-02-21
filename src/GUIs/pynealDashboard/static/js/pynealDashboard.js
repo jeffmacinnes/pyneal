@@ -1,5 +1,5 @@
 // Config vars
-var numTimepts = 1;     // tmp value for total number of timePts
+var numTimepts = 0;     // tmp value for total number of timePts
 var currentVolIdx = 0;
 var motion = [];        // empty array to hold motion objects
 var timePerVol = [];    // empty array to hold timing objects
@@ -98,7 +98,7 @@ progressBar.append('rect')
 
 progressBar.append('rect')
     .attrs({id: 'progressBarRect', x: 0, y:30,
-            width:'0%', height:30,
+            width:1, height:30,
             fill:'#A44754'});
 
 
@@ -230,8 +230,9 @@ function updateMotionPlot(){
     var rms_rel_min = d3.min(motion, function(d){ return d.rms_rel})
     var rms_abs_max = d3.max(motion, function(d){ return d.rms_abs})
     var rms_rel_max = d3.max(motion, function(d){ return d.rms_rel})
-    var upper_yLim = 1.2* d3.max([rms_abs_max, rms_rel_max]);
-    var lower_yLim = 1.2* d3.min([rms_abs_min, rms_rel_min]);
+    var upper_yLim = 1.5* d3.max([rms_abs_max, rms_rel_max]);
+    var lower_yLim = 1.5* d3.min([rms_abs_min, rms_rel_min]);
+    lower_yLim = (lower_yLim < 0 ) ? lower_yLim : 0;
     var y_range = upper_yLim - lower_yLim
 
     motionScale_y.domain([lower_yLim, upper_yLim])

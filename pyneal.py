@@ -21,6 +21,7 @@ import glob
 import time
 import subprocess
 import atexit
+import webbrowser as web
 
 import yaml
 import nibabel as nib
@@ -110,12 +111,15 @@ def launchPyneal():
         dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
         # Open dashboard in browser
-        os.system('open http://127.0.0.1:{}'.format(settings['dashboardClientPort']))
+        #s = '127.0.0.1:{}'.format(settings['dashboardClientPort'])
+        #print(s)
+        #web.open('127.0.0.1:{}'.format(settings['dashboardClientPort']))
 
         # send configuration settings to dashboard
         msg = {'topic': 'configSettings',
                 'content': {'numTimepts': settings['numTimepts']}}
         dashboardSocket.send_json(msg)
+        resp = dashboardSocket.recv_string()
 
 
     ### Create processing objects --------------------------
@@ -143,6 +147,9 @@ def launchPyneal():
         ### make sure this volume has arrived before continuing
         while not scanReceiver.completedVols[volIdx]: time.sleep(.1)
 
+        ### start timer
+        startTime = time.time()
+
         ### Retrieve the raw volume
         rawVol = scanReceiver.get_vol(volIdx)
 
@@ -155,8 +162,35 @@ def launchPyneal():
         # send result to the resultsServer
         resultsServer.updateResults(volIdx, result)
 
+        ### Calculate processing time for this volume
+        elapsedTime = time.time() - startTime
+
+        # update dashboard (if dashboard is launched)
+        if settings['launchDashboard']:
+            # completed volIdx
+            sendToDashboard(dashboardSocket, topic='volIdx', content=volIdx)
+            
+            # timePerVol
+            timingParams = {'volIdx': volIdx,
+                    'processingTime': np.round(elapsedTime, decimals=3)}
+            sendToDashboard(dashboardSocket, topic='timePerVol', content=timingParams)
+
+
+
     ### Figure out how to clean everything up nicely at the end
     scanReceiver.stop()
+
+
+def sendToDashboard(dashboardSocket, topic=None, content=None):
+    msg = {'topic': topic,
+            'content': content}
+
+    # send
+    dashboardSocket.send_json(msg)
+    print('sent: {}'.format(msg))
+
+    response = dashboardSocket.recv_string()
+    print('response: {}'.format(response))
 
 
 def createOutputDir(parentDir):

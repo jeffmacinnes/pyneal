@@ -55,7 +55,8 @@
     margin-left: 10px;
     text-align: center;
     font-size: 20;
-    display: table-row;
+    display: flex;
+    flex: .15;
 }
 
 .svg-container {
@@ -125,13 +126,15 @@
 #motionDiv {
     grid-area: motion;
     /* background-color: rgba(0,0,0,.2); */
-    display: table;
+    display: flex;
+    flex-direction: column;
+    flex:1;
 }
 
 
 #motionPlotDiv {
-    display: table-row;
-    height: 100%;
+    display: flex;
+    flex: 1;
     overflow: hidden;
     /* background-color: rgba(0,0,0,.2); */
 }
@@ -153,13 +156,16 @@
 #timingDiv {
     grid-area: timing;
     /* background-color: rgba(0,0,0,.2); */
-    display: table;
+    display: flex;
+    flex-direction: column;
+    flex:1
 }
 
 
 #timingPlotDiv {
-    display: table-row;
-    height: 100%;
+    display: flex;
+    flex: 1;
+    height: 270px;
     overflow: hidden;
 }
 

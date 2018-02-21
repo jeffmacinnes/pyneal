@@ -72,9 +72,11 @@ class Analyzer:
         outputs: {'weightedAverage': ####} or {'average': ####}
         """
         if self.weightMask:
-            return {'weightedAverage': np.average(vol[self.mask], weights=self.weights[self.mask])}
+            result = np.average(vol[self.mask], weights=self.weights[self.mask])
+            return {'weightedAverage': np.round(result, decimals=2)}
         else:
-            return {'avearge': np.mean(vol[self.mask])}
+            result = np.mean(vol[self.mask])
+            return {'average': np.round(result, decimals=2)}
 
 
     def medianFromMask(self, vol):
@@ -94,7 +96,9 @@ class Analyzer:
             below_midpoint_index = np.where(cumulative_weight <= midpoint)[0][-1]
             if cumulative_weight[below_midpoint_index] == midpoint:
                 return np.mean(sorted_data[below_midpoint_index:below_midpoint_index+2])
-            return {'weightedMedian': sorted_data[below_midpoint_index+1]}
+            result = sorted_data[below_midpoint_index+1]
+            return {'weightedMedian': np.round(result, decimals=2)}
         else:
             # take the median of the voxels in the mask
-            return {'median': np.median(vol[self.mask])}
+            result = np.median(vol[self.mask])
+            return {'median': np.round(result, decimals=2)}

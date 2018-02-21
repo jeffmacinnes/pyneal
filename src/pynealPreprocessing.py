@@ -45,6 +45,7 @@ class Preprocessor:
 
         # create the socket to send data to dashboard (if dashboard there be)
         if self.settings['launchDashboard']:
+            self.dashboard = True
             context = zmq.Context.instance()
             self.dashboardSocket = context.socket(zmq.REQ)
             self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(self.settings['dashboardPort']))
@@ -77,7 +78,8 @@ class Preprocessor:
                 # send to the dashboard
                 self.sendToDashboard(topic='motion',
                                     content={'volIdx':volIdx,
-                                            'motionParams': motionParams})
+                                            'rms_abs': motionParams['rms_abs'],
+                                            'rms_rel': motionParams['rms_rel']})
 
         self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol
@@ -85,20 +87,20 @@ class Preprocessor:
 
     def sendToDashboard(self, topic=None, content=None):
         """
-        Format the supplied parameters into a JSON message,
-        and send to the dashboard
-        """
-        print(topic)
-        print(content)
-        if self.settings['launchDashboard']:
-            # format message
-            msg = {'topic': topic,
-                    'content': content}
+        If dashboard is launched, send the msg to the dashboard. The dashboard
+        expects messages formatted in specific way, namely a dictionary with 2
+        keys: 'topic', and 'content'
 
-            self.dashboardSocket.send_json(msg)
-            print('sent: {}'.format(msg))
+        Any message from the scanReceiver should set the topic as
+        'pynealScannerLog', and the content should be it's own dictionary with
+        the key 'logString'. logString should contain the log message you want
+        the dashboard to display
+        """
+        if self.dashboard:
+            dashboardMsg = {'topic': topic,
+                            'content': content}
+            self.dashboardSocket.send_json(dashboardMsg)
             response = self.dashboardSocket.recv_string()
-            print('response: {}'.format(response))
 
 
 class MotionProcessor():

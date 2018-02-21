@@ -9,7 +9,7 @@ for a specific set of timepoints (or volumes).
 
 This is an example of how requests should be formatted and sent to Pyneal. Requests
 are made on a per-volume basis, and each request should take the form of a
-4-character string representing the desired volume number (using a 0-based index).
+4-character string representing the desired volume index (using a 0-based index).
 For example, to request the first volume in the series, the string would be '0000';
 to request the 25th volume in the series the string would be '0024', and so on...
 
@@ -32,11 +32,11 @@ the results may look like 'average':1423, indicating the ROI had an average valu
 of 1423 on this volume.
 
 To use this tool:
-    python endUser_sim.py volNumber
+    python endUser_sim.py volIdx
         e.g. python endUser_sim.py 24
 
-    where 'volNumber' is the volume number you want to request data from. If
-    volume number is excluded it'll request volume 0
+    where 'volIdx' is the volume index you want to request data from. If
+    volume index is excluded it'll request volume 0
 """
 
 import socket
