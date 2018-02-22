@@ -162,7 +162,7 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
     seriesDir = join(scannerDirs.sessionDir, selectedSeries)
 
     # create an instance of the Siemens_NiftiBuilder
-    niftiBuilder =Siemens_BuildNifti(seriesDir)
+    niftiBuilder = Siemens_BuildNifti(seriesDir)
     print('Successfully built Nifti image...\n')
 
     # ask user whether they want to save it locally or send

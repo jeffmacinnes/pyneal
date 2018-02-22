@@ -1,0 +1,4 @@
+subjFunc: /Users/jeff/Desktop/development/testSession/GE_func_s1925.nii.gz
+subjAnat: /Users/jeff/Desktop/development/testSession/GE_anat_s1925.nii.gz
+MNI_mask: /Users/jeff/Desktop/development/testSession/ROI_NAc_MNI.nii.gz
+outputPrefix: testNAc

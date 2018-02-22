@@ -53,7 +53,7 @@ def launchPyneal():
     # Launch GUI to let user update the settings file
     setupGUI.launchPynealSetupGUI(settingsFile)
 
-    # Read the new settings file, store as dict, write to log
+    # Read the new settings file, store as dict
     with open(settingsFile, 'r') as ymlFile:
         settings = yaml.load(ymlFile)
 
