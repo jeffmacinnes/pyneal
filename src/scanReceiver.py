@@ -7,7 +7,8 @@ data from the scanner)
     - listen for incoming volume data (preceded by a header)
     - format the incoming data, and assign it to the proper location in a
     4D matrix for the entire san
-In additiona, it also includes various methods for accessing the progress of an on-going scan, and returning data that has successfully arrived, etc.
+In additiona, it also includes various methods for accessing the progress of an
+on-going scan, and returning data that has successfully arrived, etc.
 
 --- Notes for setting up:
 ** Socket Connection:

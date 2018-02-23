@@ -39,120 +39,142 @@ import yaml
 utilsDir = os.path.abspath(os.path.dirname(__file__))
 pynealDir = os.path.dirname(utilsDir)
 
-def launchCreateMask():
-    """
-    Open GUI to modify settings file. Read settings. Build mask accordingly
-    """
-    startTime = time.time()
-    ### Read Settings ------------------------------------
-    # Read the settings file, and launch the createMask GUI to give the user
-    # a chance to update the settings. Hitting 'submit' within the GUI
-    # will update the createMaskConfig file with the new settings
-    settingsFile = join(utilsDir, 'createMaskConfig.yaml')
 
-    # Launch GUI
-    # TODO
+class MaskCreator():
+    def __init__(self):
+        """
+        Open GUI to modify settings file. Read settings. Create logfiles
+        and necessary output directories. Make masks accordingly
+        """
+        startTime = time.time()
 
-    # Read the new settings file, store as dict
-    with open(settingsFile, 'r') as ymlFile:
-        settings = yaml.load(ymlFile)
+        ### Read Settings ------------------------------------
+        # Read the settings file, and launch the createMask GUI to give the user
+        # a chance to update the settings. Hitting 'submit' within the GUI
+        # will update the createMaskConfig file with the new settings
+        settingsFile = join(utilsDir, 'createMaskConfig.yaml')
 
-    ### Setup output dir and logging
-    outputDir = join(os.path.dirname(settings['subjFunc']), 'mask_transforms')
-    if not os.path.isdir(outputDir):
-        os.makedirs(outputDir)
-    logger = createLogger(join(outputDir, 'maskTransforms.log'))
+        # Launch GUI
+        # TODO
 
-    # write settings to log
-    for s in settings:
-        logger.debug('Settings: {}: {}'.format(s, settings[s]))
+        # Read the new settings file, store as dict
+        with open(settingsFile, 'r') as ymlFile:
+            self.settings = yaml.load(ymlFile)
 
-    ### Copy input files into 'originals' subdirectory
-    # create originals directory
-    originalsDir = join(outputDir, 'originals')
-    if not os.path.isdir(originalsDir):
-        os.makedirs(originalsDir)
+        ### Setup output dir and logging
+        self.outputDir = join(os.path.dirname(self.settings['subjFunc']), 'mask_transforms')
+        if not os.path.isdir(self.outputDir):
+            os.makedirs(self.outputDir)
+        self.logger = createLogger(join(self.outputDir, 'maskTransforms.log'))
 
-    for f in ['subjFunc', 'subjAnat']:
-        if not exists(join(originalsDir, (f + '.nii.gz'))):
-            shutil.copyfile(settings[f], join(originalsDir, (f + '.nii.gz')))
+        # write settings to log
+        for s in self.settings:
+            self.logger.debug('Settings: {}: {}'.format(s, self.settings[s]))
 
-    ### 1 - average functional data to create an example 3D func image
-    logger.info('(1/8) ---- creating exampleFunc image by averaging input func')
-    outputFile = join(outputDir, 'exampleFunc.nii.gz')
-    if not exists(outputFile):
-        subprocess.call(['fslmaths', settings['subjFunc'], '-Tmean', outputFile])
-    else:
-        logger.info('using existing: {}'.format(outputFile))
+        ### Average func data to create an example 3D func image
+        self.logger.info('creating exampleFunc image by averaging input func')
+        outputFile = join(self.outputDir, 'exampleFunc.nii.gz')
+        if not exists(outputFile):
+            subprocess.call(['fslmaths', self.settings['subjFunc'], '-Tmean', outputFile])
+        else:
+            self.logger.info('using existing: {}'.format(outputFile))
 
+        ### Create func space whole brain mask, if specified
+        if self.settings['createFuncBrainMask']:
+            self.createFuncBrainMask()
 
-    ### 2 - brain extraction on the hi-res anat image
-    logger.info('(2/8) ---- skull stripping hi-res subject anatomical')
-    outputFile = join(outputDir, 'hires_brain.nii.gz')
-    if not exists(outputFile):
-        subprocess.call(['bet', settings['subjAnat'], outputFile, '-f', '0.35'])
-    else:
-        logger.info('using existing: {}'.format(outputFile))
+        ### Transform MNI-space mask to func space, if specified
+        if self.settings['transformMaskToFunc']:
+            self.transformMaskToFunc()
+
+        ### Calculate total time
+        elapsedTime = time.time() - startTime
+        self.logger.info('Total processing time: {:.3f} seconds'.format(elapsedTime))
 
 
-    ### 3 - register MNI standard --> hires
-    logger.info('(3/8) ---- creating mni2hires transformation matrix')
-    outputFile = join(outputDir, 'mni2hires.mat')
-    if not exists(outputFile):
-        subprocess.call(['flirt', '-in', settings['MNI_standard'],
-                        '-ref', join(outputDir, 'hires_brain.nii.gz'),
-                        '-out', join(outputDir, 'mni_HIRES'),
-                        '-omat', outputFile,
-                        '-bins', '256', '-cost', 'corratio',
-                        '-searchrx', '-180', '180',
-                        '-searchry', '-180', '180',
-                        '-searchrz', '-180', '180',
-                        '-dof', '9', '-interp', 'trilinear'])
-    else:
-        logger.info('using existing: {}'.format(outputFile))
+    def createFuncBrainMask(self):
+        """
+        Create a whole brain mask of the example functional data
+        """
+        exampleFunc = join(self.outputDir, 'exampleFunc.nii.gz')
+        self.logger.info('creating whole brain mask from: {}'.format(exampleFunc))
+
+        # run fsl bet command to create whole brain mask
+        outputFile = join(self.outputDir, 'wholeBrain_FUNC')
+        subprocess.call(['bet', exampleFunc, outputFile, '-n', '-m'])
+
+        self.logger.info('created func brain mask: {}'.format(outputFile))
 
 
-    ### 4 - register hires --> functional space
-    logger.info('(4/8) ---- creating hires2func transformation matrix')
-    outputFile = join(outputDir, 'hires2func.mat')
-    if not exists(outputFile):
-        subprocess.call(['flirt', '-in', join(outputDir, 'hires_brain.nii.gz'),
-                        '-ref', settings['subjFunc'],
-                        '-out', join(outputDir, 'hires_FUNC'),
-                        '-omat', outputFile,
-                        '-bins', '256', '-cost', 'corratio',
-                        '-searchrx', '-90', '90',
-                        '-searchry', '-90', '90',
-                        '-searchrz', '-90', '90',
-                        '-dof', '9', '-interp', 'trilinear'])
-    else:
-        logger.info('using existing: {}'.format(outputFile))
+    def transformMaskToFunc(self):
+        """
+        transform the chosen MNI space mask to functional space
+        """
+        self.logger.info('transforming MNI mask to functional space')
+
+        ###  - brain extraction on the hi-res anat image
+        self.logger.info('skull stripping hi-res subject anatomical')
+        outputFile = join(self.outputDir, 'hires_brain.nii.gz')
+        if not exists(outputFile):
+            subprocess.call(['bet', self.settings['subjAnat'], outputFile, '-f', '0.35'])
+        else:
+            self.logger.info('using existing: {}'.format(outputFile))
 
 
-    ### 5 - concatenate mni2hires and hires2func to create mni2func transform
-    logger.info('(5/8) ---- concatenating mni2hires and hires2func matrices')
-    outputFile = join(outputDir, 'mni2func.mat')
-    if not exists(outputFile):
-        # Note that the transform after '-concat' should be 2nd transform you want applied
-        subprocess.call(['convert_xfm', '-omat', outputFile,
-                        '-concat', join(outputDir, 'hires2func.mat'), join(outputDir, 'mni2hires.mat')])
-    else:
-        logger.info('using existing: {}'.format(outputFile))
+        ### register MNI standard --> hires
+        self.logger.info('creating mni2hires transformation matrix')
+        outputFile = join(self.outputDir, 'mni2hires.mat')
+        if not exists(outputFile):
+            subprocess.call(['flirt', '-in', self.settings['MNI_standard'],
+                            '-ref', join(self.outputDir, 'hires_brain.nii.gz'),
+                            '-out', join(self.outputDir, 'mni_HIRES'),
+                            '-omat', outputFile,
+                            '-bins', '256', '-cost', 'corratio',
+                            '-searchrx', '-180', '180',
+                            '-searchry', '-180', '180',
+                            '-searchrz', '-180', '180',
+                            '-dof', '9', '-interp', 'trilinear'])
+        else:
+            self.logger.info('using existing: {}'.format(outputFile))
 
 
-    ### 6 - apply mni2func transform to the chosen mask
-    logger.info('(6/8) ---- applying mni2func transform to {}'.format(settings['MNI_mask']))
-    outputFile = join(outputDir, (settings['outputPrefix'] + '_FUNC_weighted'))
-    subprocess.call(['flirt', '-in', settings['MNI_mask'],
-                    '-ref', join(outputDir, 'exampleFunc.nii.gz'),
-                    '-out', outputFile,
-                    '-applyxfm', '-init', join(outputDir, 'mni2func.mat'),
-                    '-interp', 'trilinear'])
+        ### register hires --> functional space
+        self.logger.info('creating hires2func transformation matrix')
+        outputFile = join(self.outputDir, 'hires2func.mat')
+        if not exists(outputFile):
+            subprocess.call(['flirt', '-in', join(self.outputDir, 'hires_brain.nii.gz'),
+                            '-ref',self.settings['subjFunc'],
+                            '-out', join(self.outputDir, 'hires_FUNC'),
+                            '-omat', outputFile,
+                            '-bins', '256', '-cost', 'corratio',
+                            '-searchrx', '-90', '90',
+                            '-searchry', '-90', '90',
+                            '-searchrz', '-90', '90',
+                            '-dof', '9', '-interp', 'trilinear'])
+        else:
+            self.logger.info('using existing: {}'.format(outputFile))
 
 
+        ### concatenate mni2hires and hires2func to create mni2func transform
+        self.logger.info('concatenating mni2hires and hires2func matrices')
+        outputFile = join(self.outputDir, 'mni2func.mat')
+        if not exists(outputFile):
+            # Note that the transform after '-concat' should be 2nd transform you want applied
+            subprocess.call(['convert_xfm', '-omat', outputFile,
+                            '-concat', join(self.outputDir, 'hires2func.mat'),
+                            join(self.outputDir, 'mni2hires.mat')])
+        else:
+            self.logger.info('using existing: {}'.format(outputFile))
 
 
-
+        ### apply mni2func transform to the chosen mask
+        self.logger.info('applying mni2func transform to {}'.format(self.settings['MNI_mask']))
+        outputFile = join(self.outputDir, (self.settings['outputPrefix'] + '_FUNC_weighted'))
+        subprocess.call(['flirt', '-in', self.settings['MNI_mask'],
+                        '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
+                        '-out', outputFile,
+                        '-applyxfm', '-init', join(self.outputDir, 'mni2func.mat'),
+                        '-interp', 'trilinear'])
 
 
 def createLogger(logName):
@@ -176,7 +198,5 @@ def createLogger(logName):
 
     return logger
 
-
-
 if __name__ == '__main__':
-    launchCreateMask()
+    m = MaskCreator()

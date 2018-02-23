@@ -211,7 +211,6 @@ class MotionProcessor():
         return rms
 
 
-
 # suppress stdOut from verbose functions
 @contextlib.contextmanager
 def nostdout():
