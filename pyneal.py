@@ -182,6 +182,7 @@ def launchPyneal():
 
 
 def sendToDashboard(dashboardSocket, topic=None, content=None):
+    # format the message to send to dashboard
     msg = {'topic': topic,
             'content': content}
 
@@ -189,6 +190,7 @@ def sendToDashboard(dashboardSocket, topic=None, content=None):
     dashboardSocket.send_json(msg)
     print('sent: {}'.format(msg))
 
+    # recv
     response = dashboardSocket.recv_string()
     print('response: {}'.format(response))
 
