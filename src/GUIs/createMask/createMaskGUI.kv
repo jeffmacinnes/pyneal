@@ -1,0 +1,41 @@
+#kivy 1.10.0
+#:import split os.path.split
+MainContainer:
+
+
+
+
+<MainContainer>:
+    padding: root.width * .02, root.height * .02
+    spacing: "10dp"
+    canvas.before:
+        Color:
+            rgba: 1,1,1,1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    orientation: 'vertical'
+    ### Logo Box ------------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: 200
+        Image:
+            allow_stretch: True
+            source: root.setupGUI_dir + '/images/createMaskLogo.png'
+
+    ### Func Image
+    BoxLayout:
+        padding: [20, 5]
+        spacing: 10
+        Label:
+            size_hint_x: 1.5
+            padding: [30, 0]
+            text_size: self.size
+            text: 'func data:'
+            color: root.textColor
+            halign: 'right'
+            valign: 'middle'
+        TextInput:
+            id: funcImageInput
+            text: 'test'
