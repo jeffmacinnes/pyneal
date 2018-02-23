@@ -1,4 +1,4 @@
-![Pyneal Logo](resources/images/pyneal_logo.jpg)
+![Pyneal Logo](src/images/logo.jpg)
 
 # Pyneal -- real-time fMRI Analysis Software
 
