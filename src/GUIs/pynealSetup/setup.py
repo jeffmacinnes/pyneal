@@ -67,6 +67,7 @@ class ModifyPathDialog(BoxLayout):
     Alternatively, the user can click the folder icon to open up a file browser
     to select a new file/dir using that method
     """
+    setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
     # var to store the current path (string)
     currentPath = StringProperty()
 

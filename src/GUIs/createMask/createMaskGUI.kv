@@ -28,14 +28,43 @@ MainContainer:
     BoxLayout:
         padding: [20, 5]
         spacing: 10
+        InputPathWidget:
+            labelText: '4D Func: '
+            currentPath: '/Users/jeff'
+
+
+
+
+
+
+
+
+
+
+### Generic Select Path Dialog Window #################################
+<InputPathWidget>:
+    BoxLayout:
+        padding: [20, 5]
+        spacing: 10
         Label:
-            size_hint_x: 1.5
-            padding: [30, 0]
+            size_hint_x: .5
             text_size: self.size
-            text: 'func data:'
             color: root.textColor
+            text: root.labelText
             halign: 'right'
             valign: 'middle'
-        TextInput:
-            id: funcImageInput
-            text: 'test'
+        FilePathInputField:
+            id: inputPath
+            size_hint_x: 1.5
+            text: root.currentPath
+            on_text:root.currentPath = inputPath.text
+            font_size: 28
+            padding: [15,15]
+        Button:
+            size_hint: (None, None)
+            size: (65,65)
+            spacing: 15
+            padding: (15,15)
+            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
+            allow_stretch: False
+            on_release: root.launchFileBrowser()
