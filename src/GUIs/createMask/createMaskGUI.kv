@@ -26,7 +26,7 @@ MainContainer:
 
     ### Func Image
     InputPathWidget:
-        labelText: '4D Func: '
+        labelText: '4D FUNC: '
         currentPath: '/Users/jeff'
 
     ### Create Whole Brain Mask Option
@@ -42,6 +42,46 @@ MainContainer:
             halign: 'left'
         BoxLayout:
             size_hint_x: 1.23
+
+    Widget:
+        id: separator
+        size_hint_y: None
+        height: 3
+        canvas:
+            Color:
+                rgb:.5, 0.5, 0.5
+            Rectangle:
+                pos: 50, separator.center_y
+                size: separator.width-60, 2
+
+    ### Transform MNI mask to FUNC
+    BoxLayout:
+        CheckBox:
+            halign: 'left'
+            #id: launchDashboardCheckbox
+            #state: 'down' if root.GUI_settings.launchDashboard else 'normal'
+            #on_active: root.setLaunchDashboardChoice()
+        Label:
+            text: 'Transform MNI mask to FUNC'
+            color: root.textColor
+            halign: 'left'
+        BoxLayout:
+            size_hint_x: 1.23
+
+    ### Anat Image
+    InputPathWidget:
+        labelText: 'hi-res ANAT: '
+        currentPath: '/Users/jeff'
+
+    ### Func Image
+    InputPathWidget:
+        labelText: 'MNI standard: '
+        currentPath: '/Users/jeff'
+
+    ### Mask Path
+    InputPathWidget:
+        labelText: 'MNI mask: '
+        currentPath: '/Users/jeff'
 
 
 
@@ -76,11 +116,11 @@ MainContainer:
 ### Generic Select Path Dialog Window #################################
 <InputPathWidget>:
     BoxLayout:
-        padding: [20, 5]
+        padding: [10, 5]
         spacing: 10
-        size_hint: (.9, .8)
+        size_hint: (1, .8)
         Label:
-            size_hint_x: .5
+            size_hint_x: .3
             text_size: self.size
             color: root.textColor
             text: root.labelText
@@ -88,7 +128,7 @@ MainContainer:
             valign: 'middle'
         FilePathInputField:
             id: inputPath
-            size_hint_x: 1.5
+            size_hint_x: .7
             text: root.currentPath
             on_text:root.currentPath = inputPath.text
             font_size: 28
