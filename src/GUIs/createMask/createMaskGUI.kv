@@ -25,19 +25,41 @@ MainContainer:
             source: root.setupGUI_dir + '/images/createMaskLogo.png'
 
     ### Func Image
+    InputPathWidget:
+        labelText: '4D Func: '
+        currentPath: '/Users/jeff'
+
+    ### Create Whole Brain Mask Option
     BoxLayout:
-        padding: [20, 5]
-        spacing: 10
-        InputPathWidget:
-            labelText: '4D Func: '
-            currentPath: '/Users/jeff'
+        size_hint: (1, None)
 
 
 
 
 
 
+### Generic Load File Dialog Window #################################
+<LoadFileDialog>:
+    BoxLayout:
+        font_size: '10sp'
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: root.path
+            filters: root.fileFilter
+            font_name: 'Roboto-Bold'
 
+        BoxLayout:
+            size_hint_y: None
+            height: 50
+            Button:
+                text: "Load"
+                on_release: root.loadFunc(filechooser.path, filechooser.selection)
+            Button:
+                text: "Cancel"
+                on_release: root.cancelFileChooser()
 
 
 
@@ -46,6 +68,7 @@ MainContainer:
     BoxLayout:
         padding: [20, 5]
         spacing: 10
+        size_hint: (.9, .8)
         Label:
             size_hint_x: .5
             text_size: self.size

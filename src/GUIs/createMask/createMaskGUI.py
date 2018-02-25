@@ -74,7 +74,7 @@ class InputPathWidget(BoxLayout):
             startingPath = self.currentPath
         else:
             startingPath = '~/'
-
+        print(startingPath)
         # method to pop open a file browser
         content = LoadFileDialog(loadFunc=self.updateCurrentPath,
                                     cancelFileChooser=self.cancelFileChooser,
