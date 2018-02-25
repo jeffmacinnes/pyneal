@@ -31,7 +31,17 @@ MainContainer:
 
     ### Create Whole Brain Mask Option
     BoxLayout:
-        size_hint: (1, None)
+        CheckBox:
+            halign: 'left'
+            #id: launchDashboardCheckbox
+            #state: 'down' if root.GUI_settings.launchDashboard else 'normal'
+            #on_active: root.setLaunchDashboardChoice()
+        Label:
+            text: 'Create whole-brain FUNC mask'
+            color: root.textColor
+            halign: 'left'
+        BoxLayout:
+            size_hint_x: 1.23
 
 
 
