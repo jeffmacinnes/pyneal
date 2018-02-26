@@ -26,18 +26,19 @@ MainContainer:
 
     ### Func Image
     InputPathWidget:
+        id: subjFuncWidget
         labelText: '4D FUNC: '
-        currentPath: '/Users/jeff'
+        currentPath: root.GUI_settings.subjFunc
 
     ### Create Whole Brain Mask Option
     BoxLayout:
         CheckBox:
             halign: 'left'
-            #id: launchDashboardCheckbox
-            #state: 'down' if root.GUI_settings.launchDashboard else 'normal'
-            #on_active: root.setLaunchDashboardChoice()
+            id: createFuncBrainMaskCheckbox
+            state: 'down' if root.GUI_settings.createFuncBrainMask else 'normal'
+            on_active: root.setCreateFuncBrainMask()
         Label:
-            text: 'Create whole-brain FUNC mask'
+            text: 'Create FUNC whole-brain mask'
             color: root.textColor
             halign: 'left'
         BoxLayout:
@@ -87,6 +88,49 @@ MainContainer:
         currentPath: '/Users/jeff'
         isDisabled: not transformMask_checkbox.active
 
+    ### Output Name
+    BoxLayout:
+        padding: [10, 5]
+        spacing: 10
+        size_hint: (1, .8)
+        Label:
+            size_hint_x: .31
+            text_size: self.size
+            color: root.textColor if transformMask_checkbox.active else root.disabledTextColor
+            text: 'Output Prefix: '
+            halign: 'right'
+            valign: 'middle'
+        FilePathInputField:
+            size_hint_x: .62
+            id: inputPath
+            text: 'root.currentPath'
+            write_tab: False
+            disabled: not transformMask_checkbox.active
+            #on_text:root.currentPath = inputPath.text
+            font_size: 28
+            padding: [15,15]
+        BoxLayout:
+            size_hint_x: .2
+
+    ### Submit Box
+    Widget:
+        id: separator
+        size_hint_y: None
+        height: 3
+        canvas:
+            Color:
+                rgb:.5, 0.5, 0.5
+            Rectangle:
+                pos: 50, separator.center_y
+                size: separator.width-60, 2
+
+    BoxLayout:
+        padding: [150, 0]
+        spacing: 10
+        Button:
+            text: 'Submit'
+            on_release: root.submitGUI()
+
 
 
 
@@ -135,6 +179,7 @@ MainContainer:
             size_hint_x: .7
             text: root.currentPath
             on_text:root.currentPath = inputPath.text
+            write_tab: False
             font_size: 28
             padding: [15,15]
             disabled: root.isDisabled
