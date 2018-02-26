@@ -19,7 +19,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
-from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty
+from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty, BooleanProperty
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
@@ -47,8 +47,10 @@ class InputPathWidget(BoxLayout):
     """
     setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
     textColor = ListProperty([0,0,0,1])
+    disabledTextColor = ListProperty([.6, .6, .6, 1])
     labelText = StringProperty('test')
     currentPath = StringProperty()
+    isDisabled = BooleanProperty(False)
 
     def updateCurrentPath(self, path, selection):
         # if a file was selected, return full path to the file

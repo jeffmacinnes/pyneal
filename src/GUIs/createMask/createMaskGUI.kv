@@ -58,7 +58,8 @@ MainContainer:
     BoxLayout:
         CheckBox:
             halign: 'left'
-            #id: launchDashboardCheckbox
+            id: transformMask_checkbox
+            active: False
             #state: 'down' if root.GUI_settings.launchDashboard else 'normal'
             #on_active: root.setLaunchDashboardChoice()
         Label:
@@ -72,16 +73,19 @@ MainContainer:
     InputPathWidget:
         labelText: 'hi-res ANAT: '
         currentPath: '/Users/jeff'
+        isDisabled: not transformMask_checkbox.active
 
     ### Func Image
     InputPathWidget:
         labelText: 'MNI standard: '
         currentPath: '/Users/jeff'
+        isDisabled: not transformMask_checkbox.active
 
     ### Mask Path
     InputPathWidget:
         labelText: 'MNI mask: '
         currentPath: '/Users/jeff'
+        isDisabled: not transformMask_checkbox.active
 
 
 
@@ -122,7 +126,7 @@ MainContainer:
         Label:
             size_hint_x: .3
             text_size: self.size
-            color: root.textColor
+            color: root.textColor if not root.isDisabled else root.disabledTextColor
             text: root.labelText
             halign: 'right'
             valign: 'middle'
@@ -133,6 +137,7 @@ MainContainer:
             on_text:root.currentPath = inputPath.text
             font_size: 28
             padding: [15,15]
+            disabled: root.isDisabled
         Button:
             size_hint: (None, None)
             size: (65,65)
@@ -141,3 +146,4 @@ MainContainer:
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser()
+            disabled: root.isDisabled
