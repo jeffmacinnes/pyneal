@@ -9,7 +9,7 @@ that file to obtain initial settings, and then once the user hits 'submit' the
 file is overwritten with new settings
 """
 import os
-from os.path import join, dirname
+from os.path import join, dirname, exists
 import sys
 
 import yaml
@@ -127,7 +127,6 @@ class MainContainer(BoxLayout):
 
         self.GUI_settings = self.readSettings(createMaskConfigFile)
 
-
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
 
@@ -190,13 +189,43 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
+
     def setCreateFuncBrainMask(self):
         self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
 
 
+    def setTransformMaskToFunc(self):
+        self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
+
+
     def submitGUI(self):
+        """
+        Get all settings, confirm they are valid, save new settings file
+        """
+        # Error check all GUI settings
+        errorCheckPassed = self.check_GUI_settings()
+
         print('submit button pressed')
-        print(self.ids.subjFunc.currentPath)
+        print(self.ids.subjFuncWidget.currentPath)
+
+    def check_GUI_settings(self):
+        """
+        Make sure all of the GUI settings are legit
+        """
+        errorMsg = []
+
+        # check if input 4D func is valid
+        subjFuncInput = self.ids.subjFuncWidget.currentPath
+        if exists(subjFuncInput):
+            self.GUI_settings['subjFunc'] = subjFuncInput
+        else:
+            errorMsg.append('4D FUNC path not valid: {}'.format(subjFuncInput))
+
+        # make sure at least one checkbox is selected
+        if not any([self.GUI_settings['transformMaskToFunc'], self.GUI_settings['createFuncBrainMask']]):
+            errorMsg.append('Must check atleast one mask option')
+
+         
 
 
     ### Show Notification Pop-up ##############################################

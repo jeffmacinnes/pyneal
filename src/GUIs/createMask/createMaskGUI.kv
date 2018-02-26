@@ -59,10 +59,10 @@ MainContainer:
     BoxLayout:
         CheckBox:
             halign: 'left'
-            id: transformMask_checkbox
+            id: transformMaskToFuncCheckbox
             active: False
-            #state: 'down' if root.GUI_settings.launchDashboard else 'normal'
-            #on_active: root.setLaunchDashboardChoice()
+            state: 'down' if root.GUI_settings.transformMaskToFunc else 'normal'
+            on_active: root.setTransformMaskToFunc
         Label:
             text: 'Transform MNI mask to FUNC'
             color: root.textColor
@@ -72,21 +72,24 @@ MainContainer:
 
     ### Anat Image
     InputPathWidget:
+        id: subjAnatWidget
         labelText: 'hi-res ANAT: '
-        currentPath: '/Users/jeff'
-        isDisabled: not transformMask_checkbox.active
+        currentPath: root.GUI_settings.subjAnat
+        isDisabled: not transformMaskToFuncCheckbox.active
 
     ### Func Image
     InputPathWidget:
+        id: MNI_standardWidget
         labelText: 'MNI standard: '
-        currentPath: '/Users/jeff'
-        isDisabled: not transformMask_checkbox.active
+        currentPath: root.GUI_settings.MNI_standard
+        isDisabled: not transformMaskToFuncCheckbox.active
 
     ### Mask Path
     InputPathWidget:
+        id: MNI_maskWidget
         labelText: 'MNI mask: '
-        currentPath: '/Users/jeff'
-        isDisabled: not transformMask_checkbox.active
+        currentPath: root.GUI_settings.MNI_mask
+        isDisabled: not transformMaskToFuncCheckbox.active
 
     ### Output Name
     BoxLayout:
@@ -96,17 +99,17 @@ MainContainer:
         Label:
             size_hint_x: .31
             text_size: self.size
-            color: root.textColor if transformMask_checkbox.active else root.disabledTextColor
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
             text: 'Output Prefix: '
             halign: 'right'
             valign: 'middle'
         FilePathInputField:
             size_hint_x: .62
-            id: inputPath
-            text: 'root.currentPath'
+            id: outputPrefixWidget
+            text: root.GUI_settings.outputPrefix
             write_tab: False
-            disabled: not transformMask_checkbox.active
-            #on_text:root.currentPath = inputPath.text
+            disabled: not transformMaskToFuncCheckbox.active
+            on_text:root.currentPath = outputPrefixWidget.text
             font_size: 28
             padding: [15,15]
         BoxLayout:
@@ -175,6 +178,7 @@ MainContainer:
             halign: 'right'
             valign: 'middle'
         FilePathInputField:
+            multiline: False
             id: inputPath
             size_hint_x: .7
             text: root.currentPath
