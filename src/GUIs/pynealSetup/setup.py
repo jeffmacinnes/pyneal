@@ -292,8 +292,8 @@ class MainContainer(BoxLayout):
             with open(setupConfigFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
-        # Close the GUI
-        App.get_running_app().stop()
+            # Close the GUI
+            App.get_running_app().stop()
 
 
     ### File Chooser Dialog Methods ###########################################

@@ -60,9 +60,8 @@ MainContainer:
         CheckBox:
             halign: 'left'
             id: transformMaskToFuncCheckbox
-            active: False
             state: 'down' if root.GUI_settings.transformMaskToFunc else 'normal'
-            on_active: root.setTransformMaskToFunc
+            on_active: root.setTransformMaskToFunc()
         Label:
             text: 'Transform MNI mask to FUNC'
             color: root.textColor
@@ -135,10 +134,6 @@ MainContainer:
             on_release: root.submitGUI()
 
 
-
-
-
-
 ### Generic Load File Dialog Window #################################
 <LoadFileDialog>:
     BoxLayout:
@@ -156,12 +151,11 @@ MainContainer:
             size_hint_y: None
             height: 50
             Button:
-                text: "Load"
+                text: "select"
                 on_release: root.loadFunc(filechooser.path, filechooser.selection)
             Button:
                 text: "Cancel"
                 on_release: root.cancelFileChooser()
-
 
 
 ### Generic Select Path Dialog Window #################################

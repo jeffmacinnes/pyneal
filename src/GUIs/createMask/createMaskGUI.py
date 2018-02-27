@@ -70,7 +70,7 @@ class InputPathWidget(BoxLayout):
     def launchFileBrowser(self, path='~/', fileFilter=[]):
         """
         generic function to present a popup window with a file browser. Customize this with the parameters you pass in
-            - path: path where the file browswer will start
+            - path: path where the file browser will start
             - fileFilter: list of file types to filter; e.g. ['*.txt']
             - loadFunc: function that will be called when 'load' button pressed
         """
@@ -122,13 +122,11 @@ class MainContainer(BoxLayout):
     disabledTextColor = ListProperty([.6, .6, .6, 1])
 
     def __init__(self, **kwargs):
-
-        # self.MNI_standards_dir = join(pynealDir, 'utils/MNI_templates')
-
         self.GUI_settings = self.readSettings(createMaskConfigFile)
 
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
+
 
     ### Methods for dealing with loading/saving Settings -----------------------
     def readSettings(self, settingsFile):
@@ -189,6 +187,10 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
+    # def setCheckboxOptions(self):
+    #     print('hi')
+    #     #self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
+    #     #self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
 
     def setCreateFuncBrainMask(self):
         self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
@@ -207,7 +209,6 @@ class MainContainer(BoxLayout):
 
         # write GUI settings to file
         if errorCheckPassed:
-            print('here')
             # Convery the GUI_settings from kivy dictproperty to a regular ol'
             # python dict
             allSettings = {}
@@ -218,8 +219,8 @@ class MainContainer(BoxLayout):
             with open(createMaskConfigFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
-        # Close the GUI
-        #App.get_running_app().stop()
+            # Close the GUI
+            App.get_running_app().stop()
 
 
     def check_GUI_settings(self):
@@ -236,8 +237,11 @@ class MainContainer(BoxLayout):
             errorMsg.append('4D FUNC path not valid: {}'.format(subjFuncInput))
 
         ## make sure at least one checkbox is selected
-        if not any([self.GUI_settings['transformMaskToFunc'], self.GUI_settings['createFuncBrainMask']]):
-            errorMsg.append('Must check atleast one mask option')
+        self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
+        self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
+        if not any([(self.GUI_settings['transformMaskToFunc']),
+                    (self.GUI_settings['createFuncBrainMask'])]):
+            errorMsg.append('Must check at least one mask option')
 
         ### check if hi-res anat is valid
         subjAnatInput = self.ids.subjAnatWidget.currentPath
@@ -273,6 +277,7 @@ class MainContainer(BoxLayout):
             errorCheckPassed = False
         else:
             errorCheckPassed = True
+
         return errorCheckPassed
 
 
