@@ -214,18 +214,45 @@ class MainContainer(BoxLayout):
         """
         errorMsg = []
 
-        # check if input 4D func is valid
+        ### check if input 4D func is valid
         subjFuncInput = self.ids.subjFuncWidget.currentPath
         if exists(subjFuncInput):
             self.GUI_settings['subjFunc'] = subjFuncInput
         else:
             errorMsg.append('4D FUNC path not valid: {}'.format(subjFuncInput))
 
-        # make sure at least one checkbox is selected
+        ## make sure at least one checkbox is selected
         if not any([self.GUI_settings['transformMaskToFunc'], self.GUI_settings['createFuncBrainMask']]):
             errorMsg.append('Must check atleast one mask option')
 
-         
+        ### check if hi-res anat is valid
+        subjAnatInput = self.ids.subjAnatWidget.currentPath
+        if exists(subjAnatInput):
+            self.GUI_settings['subjAnat'] = subjAnatInput
+        else:
+            errorMsg.append('hi-res ANAT path not valid: {}'.format(subjAnatInput))
+
+        ### check if MNI_standard is valid
+        MNI_standardInput = self.ids.MNI_standardWidget.currentPath
+        if exists(MNI_standardInput):
+            self.GUI_settings['MNI_standard'] = MNI_standardInput
+        else:
+            errorMsg.append('MNI standard path not valid: {}'.format(MNI_standardInput))
+
+        ### check if MNI_mask is valid
+        MNI_maskInput = self.ids.MNI_maskWidget.currentPath
+        if exists(MNI_maskInput):
+            self.GUI_settings['MNI_mask'] = MNI_maskInput
+        else:
+            errorMsg.append('MNI mask path not valid: {}'.format(MNI_maskInput))
+
+        # show the error notification, if any
+        if len(errorMsg) > 0:
+            self.show_ErrorNotification('\n\n'.join(errorMsg))
+            errorCheckPassed = False
+        else:
+            errorCheckPassed = True
+        return errorCheckPassed
 
 
     ### Show Notification Pop-up ##############################################

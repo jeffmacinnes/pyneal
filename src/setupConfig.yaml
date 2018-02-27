@@ -1,6 +1,6 @@
 analysisChoice: Average
 launchDashboard: true
-maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/tests/transforms/averageFunc.nii.gz
+maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/Philips_0004_mask.nii.gz
 maskIsWeighted: false
 numTimepts: 60
 outputPath: /Users/jeff/Desktop/development/pynealOutput

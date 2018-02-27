@@ -119,11 +119,12 @@ class Philips_DirStructure():
 
             # loop through all dirs, check modification time
             for thisDir in childDirs:
-                thisDir_mTime = os.path.getmtime(thisDir)
-                if thisDir_mTime > startTime:
-                    seriesDir = thisDir
-                    keepWaiting = False
-                    break
+                if os.path.basename(thisDir)[0] == '0':
+                    thisDir_mTime = os.path.getmtime(thisDir)
+                    if thisDir_mTime > startTime:
+                        seriesDir = thisDir
+                        keepWaiting = False
+                        break
 
             # pause before searching directories again
             time.sleep(interval)

@@ -196,3 +196,12 @@ MainContainer:
             allow_stretch: False
             on_release: root.launchFileBrowser()
             disabled: root.isDisabled
+
+            
+### Error Notification Pop-up Window #################################
+<ErrorNotification>:
+    BoxLayout:
+        Label:
+            text_size: self.size
+            valign: 'top'
+            text: root.errorMsg
