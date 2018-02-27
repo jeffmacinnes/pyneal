@@ -434,7 +434,7 @@ def launchPynealSetupGUI(settingsFile):
 # command line
 if __name__ == '__main__':
     # specify the settings file to read
-    settingsFile = '../../setupConfig.yaml'
+    settingsFile = 'setupConfig.yaml'
 
     # launch setup GUI
     launchPynealSetupGUI(settingsFile)

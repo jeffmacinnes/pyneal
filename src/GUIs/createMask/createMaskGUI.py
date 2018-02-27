@@ -187,10 +187,6 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
-    # def setCheckboxOptions(self):
-    #     print('hi')
-    #     #self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
-    #     #self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
 
     def setCreateFuncBrainMask(self):
         self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
@@ -318,7 +314,6 @@ def launchCreateMaskGUI(settingsFile):
 
     # launch the app
     CreateMaskGUIApp().run()
-
 
 
 # for testing purposes, you can launch the GUI directly from the command line

@@ -48,7 +48,7 @@ def launchPyneal():
     # Read the settings file, and launch the setup GUI to give the user
     # a chance to update the settings. Hitting 'submit' within the GUI
     # will update the setupConfig file with the new settings
-    settingsFile = join(pynealDir,'src/setupConfig.yaml')
+    settingsFile = join(pynealDir,'src/GUIs/pynealSetup/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
     setupGUI.launchPynealSetupGUI(settingsFile)
