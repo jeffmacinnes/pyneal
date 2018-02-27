@@ -109,7 +109,7 @@ MainContainer:
             text: root.GUI_settings.outputPrefix
             write_tab: False
             disabled: not transformMaskToFuncCheckbox.active
-            on_text:root.currentPath = outputPrefixWidget.text
+            on_text:root.GUI_settings.outputPrefix = outputPrefixWidget.text
             font_size: 28
             padding: [15,15]
         BoxLayout:
@@ -197,7 +197,7 @@ MainContainer:
             on_release: root.launchFileBrowser()
             disabled: root.isDisabled
 
-            
+
 ### Error Notification Pop-up Window #################################
 <ErrorNotification>:
     BoxLayout:

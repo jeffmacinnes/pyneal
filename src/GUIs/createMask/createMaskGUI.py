@@ -205,8 +205,22 @@ class MainContainer(BoxLayout):
         # Error check all GUI settings
         errorCheckPassed = self.check_GUI_settings()
 
-        print('submit button pressed')
-        print(self.ids.subjFuncWidget.currentPath)
+        # write GUI settings to file
+        if errorCheckPassed:
+            print('here')
+            # Convery the GUI_settings from kivy dictproperty to a regular ol'
+            # python dict
+            allSettings = {}
+            for k in self.GUI_settings.keys():
+                allSettings[k] = self.GUI_settings[k]
+
+            # write the settings as the new config yaml file
+            with open(createMaskConfigFile, 'w') as outputFile:
+                yaml.dump(allSettings, outputFile, default_flow_style=False)
+
+        # Close the GUI
+        #App.get_running_app().stop()
+
 
     def check_GUI_settings(self):
         """
@@ -245,6 +259,13 @@ class MainContainer(BoxLayout):
             self.GUI_settings['MNI_mask'] = MNI_maskInput
         else:
             errorMsg.append('MNI mask path not valid: {}'.format(MNI_maskInput))
+
+        ### Check if outputPrefix is specified, remove any spaces
+        outputPrefixInput = self.ids.outputPrefixWidget.text
+        if len(outputPrefixInput) > 0:
+            self.GUI_settings['outputPrefix'] = outputPrefixInput.replace(' ', '')
+        else:
+            errorMsg.append('Output prefix not specified')
 
         # show the error notification, if any
         if len(errorMsg) > 0:
