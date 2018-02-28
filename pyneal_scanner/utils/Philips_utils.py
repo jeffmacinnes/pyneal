@@ -114,17 +114,28 @@ class Philips_DirStructure():
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
         while keepWaiting:
-            # obtain a list of all directories in sessionDir
-            childDirs = [join(self.sessionDir, d) for d in os.listdir(self.sessionDir) if os.path.isdir(join(self.sessionDir, d))]
+            # obtain a list of all directories in sessionDir that start with '0'
+            childDirs = glob.glob(join(self.sessionDir, '0*'))
 
             # loop through all dirs, check modification time
             for thisDir in childDirs:
-                if os.path.basename(thisDir)[0] == '0':
-                    thisDir_mTime = os.path.getmtime(thisDir)
-                    if thisDir_mTime > startTime:
-                        seriesDir = thisDir
-                        keepWaiting = False
-                        break
+                thisDir_mTime = os.path.getmtime(thisDir)
+                if thisDir_mTime > startTime:
+                    seriesDir = thisDir
+                    keepWaiting = False
+                    break
+
+            # WORKS, AS BACKUP:
+            # childDirs = [join(self.sessionDir, d) for d in os.listdir(self.sessionDir) if os.path.isdir(join(self.sessionDir, d))]
+
+            ## loop through all dirs, check modification time
+            # for thisDir in childDirs:
+            #     if os.path.basename(thisDir)[0] == '0':
+            #         thisDir_mTime = os.path.getmtime(thisDir)
+            #         if thisDir_mTime > startTime:
+            #             seriesDir = thisDir
+            #             keepWaiting = False
+            #             break
 
             # pause before searching directories again
             time.sleep(interval)
