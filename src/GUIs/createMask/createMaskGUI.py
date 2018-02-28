@@ -36,6 +36,8 @@ createMaskConfigFile = None
 setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
 pynealDir = dirname(dirname(dirname(setupGUI_dir)))
 
+submitButtonPressed = False
+
 
 class FilePathInputField(TextInput):
     pass
@@ -216,6 +218,8 @@ class MainContainer(BoxLayout):
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
             # Close the GUI
+            global submitButtonPressed
+            submitButtonPressed = True
             App.get_running_app().stop()
 
 
@@ -292,8 +296,11 @@ class CreateMaskGUIApp(App):
     Calling 'run' on this class instance will launch the GUI
     """
     title = 'Create Mask'
-    pass
 
+    def on_stop(self):
+        global submitButtonPressed
+        if not submitButtonPressed:
+            sys.exit()
 
 # Register the various components of the GUI
 Factory.register('MainContainer', cls=MainContainer)

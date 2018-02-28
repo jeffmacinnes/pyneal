@@ -42,6 +42,8 @@ Config.set('graphics', 'height', '800')
 # initialize global var that will store path to the setupConfigFile
 setupConfigFile = None
 
+submitButtonPressed = False
+
 class SectionHeading(BoxLayout):
     textWidth = NumericProperty()
     labelText = StringProperty('test')
@@ -293,6 +295,8 @@ class MainContainer(BoxLayout):
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
             # Close the GUI
+            global submitButtonPressed
+            submitButtonPressed = True
             App.get_running_app().stop()
 
 
@@ -405,6 +409,11 @@ class SetupApp(App):
     """
     title = 'Pyneal Setup'
     pass
+
+    def on_stop(self):
+        global submitButtonPressed
+        if not submitButtonPressed:
+            sys.exit()
 
 
 # Register the various components of the GUI
