@@ -141,7 +141,7 @@ def pynealWatcher():
 @socketio.on('connect')
 def handle_client_connect_event():
     # when the client connects, send all existing data
-    print('client connected, sending existing data...')
+    print('dashboard client connected, sending existing data...')
     socketio.emit('existingData', existingData)
     global thread
 

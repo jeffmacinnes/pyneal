@@ -168,8 +168,11 @@ class MainContainer(BoxLayout):
             'numTimepts': [999, int],
             'analysisChoice': ['Average', str],
             'outputPath': ['', str],
-            'launchDashboard': [True, bool]
+            'launchDashboard': [True, bool],
+            'dashboardPort': [5557, int],
+            'dashboardClientPort': [5558, int]
             }
+
 
         # initialize dictionary that will eventually hold the new settings
         newSettings = {}

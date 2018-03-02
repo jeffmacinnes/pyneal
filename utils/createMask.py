@@ -219,6 +219,7 @@ class MaskCreator():
             cmd.append('-cm')
             cmd.append('yellow')
 
+		# add the transformed masks (weighted and binarized both), if specified
         if self.settings['transformMaskToFunc']:
             cmd.append(join(self.maskOutputDir, (self.settings['outputPrefix'] + '_FUNC_mask.nii.gz')))
             cmd.append('-cm')

@@ -1,4 +1,6 @@
 analysisChoice: Average
+dashboardClientPort: 5558
+dashboardPort: 5557
 launchDashboard: true
 maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/Philips_0004_mask.nii.gz
 maskIsWeighted: false
@@ -6,5 +8,3 @@ numTimepts: 60
 outputPath: /Users/jeff/Desktop/development/pynealOutput
 pynealScannerPort: 5555
 resultsServerPort: 5556
-dashboardPort: 5557
-dashboardClientPort: 5558
