@@ -22,10 +22,10 @@ import argparse
 import zmq
 
 # regEx for Siemens style file naming
-Siemens_filePattern = re.compile('RESEARCH.*.MR.PRISMA_HEAD.*')
+Siemens_filePattern = re.compile('\d{3}_\d{6}_\d{6}.dcm')
 
 # regEx for pulling the volume field out of the mosaic file name
-Siemens_mosaicVolumeNumberField = re.compile('(?<=HEAD\.\d{4}\.)\d{4}')
+Siemens_mosaicVolumeNumberField = re.compile('(?<=\d{6}_)\d{6}')
 
 
 class Siemens_DirStructure():
