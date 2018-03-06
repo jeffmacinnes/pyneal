@@ -49,7 +49,7 @@ class CustomAnalysis:
 
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################
-
+        self.myResult = 1
 
 
 
@@ -65,7 +65,7 @@ class CustomAnalysis:
         """
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################
-        myResult = 1
+        self.myResult += 1
 
 
 
@@ -73,4 +73,4 @@ class CustomAnalysis:
         ############# ^^^ END USER-SPECIFIED CODE ^^^ ##########################
         ########################################################################
 
-        return {'result': myResult}
+        return {'result': self.myResult}

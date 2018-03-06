@@ -72,7 +72,7 @@ class Analyzer:
         Run preprocessing on the supplied volume
         """
         output = self.analysisFunc(vol)
-        self.logger.debug('analyzed vol: {}'.format(volIdx))
+        self.logger.info('analyzed vol: {}'.format(volIdx))
         return output
 
 
