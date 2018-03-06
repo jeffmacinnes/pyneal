@@ -51,7 +51,7 @@ def launchPyneal():
     settingsFile = join(pynealDir,'src/GUIs/pynealSetup/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
-    setupGUI.launchPynealSetupGUI(settingsFile)
+    #setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict
     with open(settingsFile, 'r') as ymlFile:
@@ -174,8 +174,6 @@ def launchPyneal():
             timingParams = {'volIdx': volIdx,
                     'processingTime': np.round(elapsedTime, decimals=3)}
             sendToDashboard(dashboardSocket, topic='timePerVol', content=timingParams)
-
-
 
     ### Figure out how to clean everything up nicely at the end
     scanReceiver.stop()

@@ -116,14 +116,14 @@ class ResultsServer(Thread):
             connection.close()
 
 
-    def updateResults(self, vol, volResults):
+    def updateResults(self, volIdx, volResults):
         """
         Add the supplied result to the results dictionary.
             - vol: the volume number associated with this result
             - volResults: dictionary containing all of the results for this volume
         """
-        self.results[str(vol)] = volResults
-        self.logger.debug('vol {} - {} added to resultsServer'.format(vol, volResults))
+        self.results[str(volIdx)] = volResults
+        self.logger.debug('vol {} - {} added to resultsServer'.format(volIdx, volResults))
 
 
     def requestLookup(self, vol):

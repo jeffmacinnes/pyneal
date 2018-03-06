@@ -14,6 +14,7 @@ import sys
 from os.path import join
 import time
 import logging
+import importlib
 
 import yaml
 import numpy as np
@@ -52,7 +53,18 @@ class Analyzer:
         elif settings['analysisChoice'] == 'Median':
             self.analysisFunc = self.medianFromMask
         else:
-            print('No function specified for {} option yet!'.format(settings['analysisChoice']))
+            # must be a custom analysis script
+            # get the path to the custom analysis file and import it
+            customAnalysisDir, customAnalysisName = os.path.split(settings['analysisChoice'])
+            sys.path.append(customAnalysisDir)
+            customAnalysisModule = importlib.import_module(customAnalysisName.split('.')[0])
+
+            # create instance of customAnalysis class, pass in mask reference
+            customAnalysis = customAnalysisModule.CustomAnalysis(mask_img)
+
+            # define the analysis func for the custom analysis (should be 'compute'
+            # method of the customAnaylsis template)
+            self.analysisFunc = customAnalysis.compute
 
 
     def runAnalysis(self, vol, volIdx):
