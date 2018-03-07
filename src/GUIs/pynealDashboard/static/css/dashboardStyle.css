@@ -9,7 +9,7 @@
     font-style: normal;
 }
 
-/* @font-face {
+@font-face {
     font-family: 'TeX Gyre Adventor Bold';
     src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot')}}";
     src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix') format('embedded-opentype'),
@@ -20,6 +20,7 @@
     font-style: normal;
 }
 
+/*
 @font-face {
     font-family: 'TeX Gyre Adventor Italic';
     src: "{{url_for('static', filename='fonts/texgyreadventor_italic/texgyreadventor-italic-webfont.eot')}}";
@@ -39,15 +40,15 @@
     margin: auto;
     display: grid;
     font-family: "TeX Gyre Adventor";
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    grid-template-rows: 140px 90px 300px 400px;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: 140px 100px 300px 400px;
     grid-column-gap: 15px;
     grid-row-gap: 20px;
     grid-template-areas:
-        "header header header header"
-        "progress progress progress progress"
-        "motion motion timing timing"
-        "pynealScannerLog pynealScannerLog resultsServerLog resultsServerLog";
+        "header header header header header header header header"
+        "progress progress progress progress progress settings settings settings"
+        "motion motion motion motion timing timing timing timing"
+        "pynealScannerLog pynealScannerLog pynealScannerLog pynealScannerLog resultsServerLog resultsServerLog resultsServerLog resultsServerLog";
 }
 
 .divHeading {
@@ -73,7 +74,7 @@
     top: 10px;
     left: 0;
 }
-
+/* Header DIV ------------------------------------ */
 #header {
     grid-area: header;
     padding-bottom: 5px;
@@ -88,6 +89,7 @@
     height:100%;
 }
 
+
 /* PROGRESS DIV ------------------------------------ */
 #progressDiv {
     grid-area: progress;
@@ -101,14 +103,14 @@
     width: 150px;
     padding-left: 10px;
     margin-right: 20px;
-    font-size: 24;
+    font-size: 20;
     float: left;
     text-align: center;
     /* background-color: rgba(1, 0, 0, .2); */
 }
 
 #currentVolDiv p{
-    font-size: 40;
+    font-size: 32;
     margin: auto;
 }
 
@@ -121,6 +123,40 @@
 }
 
 
+/* Settings DIV ------------------------------------ */
+#settings {
+    grid-area: settings;
+    padding-bottom: 5px;
+    padding-left: 20px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    font-size: 14;
+    line-height: 1.3;
+    /* background-color: rgba(0,0,0,.1); */
+}
+
+#settings .settingsHeading{
+    width: 20%;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    margin-right: 5px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    display: inline-block;
+    text-align: right;
+    font-weight: bold;
+    color: #A44754;
+    font-size: 13;
+    /* background-color: rgba(255,0,0, .5) */
+}
+
+#settings .setting{
+    display: inline-block;
+    margin-left:0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    width: 70%;
+}
 
 /* MOTION DIV ------------------------------------ */
 #motionDiv {
@@ -195,6 +231,7 @@
 
 #pynealScannerLogDiv {
     grid-area: pynealScannerLog;
+    border: 1px solid rgba(0,0,0,.15);
 }
 
 .pynealScannerMsg {
@@ -228,6 +265,8 @@
 /* RESULTS LOG DIV ------------------------------------ */
 #resultsServerLogDiv {
     grid-area: resultsServerLog;
+    border: 1px solid rgba(0,0,0,.15);
+
 }
 
 .resultsRequest {

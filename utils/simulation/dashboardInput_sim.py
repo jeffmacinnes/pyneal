@@ -17,6 +17,10 @@ import numpy as np
 TR = 1
 port = 5557
 numTimepts = 60
+maskPath = '/path/to/my/mask.nii.gz'
+analysisChoice = 'Average'
+volDims = '(64, 64, 44)'
+outputPath = '/path/to/output/pyneal001'
 
 
 # build the socket to send data to the dashboard webserver
@@ -39,7 +43,11 @@ def sendToDashboard(topic=None, content=None):
 
 # send initial settings to server
 topic = 'configSettings'
-content = {'numTimepts': numTimepts}
+content = {'mask': os.path.split(maskPath)[1],
+        'analysisChoice': analysisChoice,
+        'volDims': volDims,
+        'numTimepts': numTimepts,
+        'outputPath': outputPath}
 sendToDashboard(topic=topic, content=content)
 
 

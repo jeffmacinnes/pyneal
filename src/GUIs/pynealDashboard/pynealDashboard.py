@@ -28,7 +28,11 @@ socketio = SocketIO(app)
 
 
 # vars to store incoming data
-existingData = {'numTimepts': None,
+existingData = {'mask': '',
+            'analysisChoice': '',
+            'volDims': '',
+            'numTimepts': None,
+            'outputPath': '',
             'currentVolIdx': 0,
             'motion': [],
             'timePerVol': []
@@ -96,7 +100,11 @@ class DashboardIPCServer(Thread):
         """
         if msg['topic'] == 'configSettings':
             # update existing data
+            existingData['mask'] = msg['content']['mask']
+            existingData['analysisChoice'] = msg['content']['analysisChoice']
+            existingData['volDims'] = msg['content']['volDims']
             existingData['numTimepts'] = msg['content']['numTimepts']
+            existingData['outputPath'] = msg['content']['outputPath']
 
             # send to client
             socketio.emit('configSettings', msg['content'])
@@ -141,7 +149,7 @@ def pynealWatcher():
 @socketio.on('connect')
 def handle_client_connect_event():
     # when the client connects, send all existing data
-    print('dashboard client connected, sending existing data...')
+    print('dashboard client connected, sending any existing data...')
     socketio.emit('existingData', existingData)
     global thread
 

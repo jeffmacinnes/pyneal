@@ -1,5 +1,9 @@
 // Config vars
-var numTimepts = 0;     // tmp value for total number of timePts
+var mask = '';
+var analysisChoice = '';
+var volDims = '';
+var numTimepts = 0;
+var outputPath = '';
 var currentVolIdx = 0;
 var motion = [];        // empty array to hold motion objects
 var timePerVol = [];    // empty array to hold timing objects
@@ -19,7 +23,11 @@ socket.on('existingData', function(msg){
     console.log(msg);
 
     // set all vars according to values in existing data
+    mask = msg.mask;
+    analysisChoice = msg.analysisChoice;
+    volDims = msg.volDims;
     numTimepts = msg.numTimepts;
+    outputPath = msg.outputPath;
     currentVolIdx = msg.currentVolIdx;
     motion = msg.motion;
     timePerVol = msg.timePerVol;
@@ -33,7 +41,11 @@ socket.on('existingData', function(msg){
 socket.on('configSettings', function(msg){
     // get total timePts
     console.log(msg)
+    mask = msg.mask;
+    analysisChoice = msg.analysisChoice;
+    volDims = msg.volDims;
     numTimepts = msg.numTimepts;
+    outputPath = msg.outputPath;
     drawAll();
 
 });
@@ -111,6 +123,15 @@ function updateProgressBar() {
     d3.select('#progressBarRect')
         .transition()
         .attr('width', ((currentVolIdx+1)/numTimepts)*100 + '%');
+}
+
+
+function updateSettings() {
+    d3.select('#mask').html(mask);
+    d3.select('#analysisChoice').html(analysisChoice);
+    d3.select('#volDims').html(volDims);
+    d3.select('#numTimepts').html(numTimepts);
+    d3.select('#outputPath').html(outputPath);
 }
 
 
@@ -473,6 +494,7 @@ drawAll()
 function drawAll(){
     updateCurrentVol();
     updateProgressBar();
+    updateSettings();
     drawMotionPlot()
     drawTimingPlot();
 };

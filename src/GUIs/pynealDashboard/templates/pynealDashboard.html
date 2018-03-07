@@ -22,6 +22,14 @@
         <img src="{{ url_for('static', filename='images/pynealText.png')}}">
     </div>
 
+    <div id="settings">
+        <p class="settingsHeading">mask:</p> <p class="setting" id="mask"></p>
+        <p class="settingsHeading">analysis:</p> <p class="setting" id="analysisChoice"></p>
+        <p class="settingsHeading">vol dims:</p> <p class="setting" id="volDims"></p>
+        <p class="settingsHeading"># timepts:</p> <p class="setting" id="numTimepts"></p>
+        <p class="settingsHeading">output dir:</p> <p class="setting" id="outputPath"></p>
+    </div>
+
     <div id='progressDiv'>
         <div id="currentVolDiv">Current Vol:
             <p id="currentVol">0</p>
