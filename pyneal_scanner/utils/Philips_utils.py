@@ -17,7 +17,6 @@ from threading import Thread
 from queue import Queue
 
 import numpy as np
-import dicom
 import nibabel as nib
 import argparse
 import zmq

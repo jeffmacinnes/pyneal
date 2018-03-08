@@ -15,7 +15,7 @@ from threading import Thread
 from queue import Queue
 
 import numpy as np
-import dicom
+import pydicom
 import nibabel as nib
 import argparse
 import zmq
@@ -106,7 +106,7 @@ class test_GE_processSlice(Thread):
             self.processFirstSlice(dcm_fname)
 
         # read in the dicom file
-        dcm = dicom.read_file(dcm_fname)
+        dcm = pydicom.dcmread(dcm_fname)
 
         ### Get the Slice Number
         # The dicom tag 'InStackPositionNumber' will tell
@@ -164,7 +164,7 @@ class test_GE_processSlice(Thread):
         completedSlice table to store subsequent slice data as it arrives
         """
         # Read the header dicom tags only
-        dcmHdr = dicom.read_file(dcm_fname, stop_before_pixels=True)
+        dcmHdr = pydicom.dcmread(dcm_fname, stop_before_pixels=True)
 
         ### Get series parameters from the dicom tags
         self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')

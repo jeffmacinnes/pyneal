@@ -45,7 +45,7 @@ import re
 import time
 import subprocess
 
-import dicom
+import pydicom
 
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
@@ -75,7 +75,7 @@ def GE_sim(dicomDir, outputDir, TR):
             sliceFiles[dicomNumber] = f
 
     # read one slice (first entry in sliceFiles dict) to get TR and # of slices/vol info
-    ds = dicom.read_file(join(dicomDir, sliceFiles[list(sliceFiles.keys())[0]]))
+    ds = pydicom.dcmread(join(dicomDir, sliceFiles[list(sliceFiles.keys())[0]]))
     slicesPerVol = ds.ImagesInAcquisition
     totalVols = ds.NumberOfTemporalPositions
 

@@ -15,7 +15,7 @@ from threading import Thread
 from queue import Queue
 
 import numpy as np
-import dicom
+import pydicom
 import nibabel as nib
 import argparse
 import zmq
@@ -297,7 +297,7 @@ class GE_BuildNifti():
         from voxels to mm from the dicom tags
         """
         # read the first dicom in the list to get overall image dimensions
-        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
         sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
         self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         sliceThickness = getattr(dcm, 'SliceThickness')
@@ -320,12 +320,12 @@ class GE_BuildNifti():
         # keys. Sort by the position numbers, and assemble the image in order
         sliceDict = {}
         for s in dicomFiles:
-            dcm = dicom.read_file(join(self.seriesDir, s))
+            dcm = pydicom.dcmread(join(self.seriesDir, s))
             sliceDict[dcm.InStackPositionNumber] = join(self.seriesDir, s)
 
         # sort by InStackPositionNumber and assemble the image
         for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
-            dcm = dicom.read_file(sliceDict[ISPN])
+            dcm = pydicom.dcmread(sliceDict[ISPN])
 
             # grab the slices necessary for creating the affine transformation
             if sliceIdx == 0:
@@ -347,8 +347,8 @@ class GE_BuildNifti():
         firstSlice = sliceDict[sorted(sliceDict.keys())[0]]
         lastSlice = sliceDict[sorted(sliceDict.keys())[-1]]
 
-        dcm_first = dicom.read_file(firstSlice)
-        dcm_last = dicom.read_file(lastSlice)
+        dcm_first = pydicom.dcmread(firstSlice)
+        dcm_last = pydicom.dcmread(lastSlice)
         self.pixelSpacing = getattr(dcm_first, 'PixelSpacing')
         self.firstSlice_IOP = np.array(getattr(dcm_first, 'ImageOrientationPatient'))
         self.firstSlice_IPP = np.array(getattr(dcm_first, 'ImagePositionPatient'))
@@ -372,7 +372,7 @@ class GE_BuildNifti():
         from voxels to mm from the dicom tags
         """
         # read the first dicom in the list to get overall image dimensions
-        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
         sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
         self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         nVols = getattr(dcm, 'NumberOfTemporalPositions')
@@ -395,7 +395,7 @@ class GE_BuildNifti():
         for s in dicomFiles:
 
             # read in the dcm file
-            dcm = dicom.read_file(join(self.seriesDir, s))
+            dcm = pydicom.dcmread(join(self.seriesDir, s))
 
             # The dicom tag 'InStackPositionNumber' will tell
             # what slice number within a volume this dicom is.
@@ -493,7 +493,7 @@ class GE_BuildNifti():
         in the dicom tags
         """
         # read the dicom file
-        dcm = dicom.read_file(join(self.seriesDir, sliceDcm), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, sliceDcm), stop_before_pixels=1)
 
         if getattr(dcm,'MRAcquisitionType') == '3D':
             scanType = 'anat'
@@ -671,7 +671,7 @@ class GE_processSlice(Thread):
             self.processFirstSlice(dcm_fname)
 
         # read in the dicom file
-        dcm = dicom.read_file(dcm_fname)
+        dcm = pydicom.dcmread(dcm_fname)
 
         ### Get the Slice Number
         # The dicom tag 'InStackPositionNumber' will tell
@@ -729,7 +729,7 @@ class GE_processSlice(Thread):
         completedSlice table to store subsequent slice data as it arrives
         """
         # Read the header dicom tags only
-        dcmHdr = dicom.read_file(dcm_fname, stop_before_pixels=True)
+        dcmHdr = pydicom.dcmread(dcm_fname, stop_before_pixels=True)
 
         ### Get series parameters from the dicom tags
         self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')

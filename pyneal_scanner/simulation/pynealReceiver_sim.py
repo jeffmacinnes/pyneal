@@ -11,7 +11,6 @@ import json
 import base64
 
 import zmq
-import dicom
 import numpy as np
 import nibabel as nib
 

@@ -8,7 +8,6 @@ import os
 import sys
 import time
 import zmq
-import dicom
 import base64
 import numpy as np
 import nibabel as nib

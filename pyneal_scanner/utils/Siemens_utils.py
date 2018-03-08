@@ -15,7 +15,7 @@ from threading import Thread
 from queue import Queue
 
 import numpy as np
-import dicom
+import pydicom
 import nibabel as nib
 from nibabel.nicom import dicomreaders
 import argparse
@@ -196,7 +196,7 @@ class Siemens_BuildNifti():
         from voxels to mm from the dicom tags
         """
         # read the first dicom in the list to get overall image dimensions
-        dcm = dicom.read_file(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
         sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
         self.nSlicesPerVol = len(dicomFiles)
         sliceThickness = getattr(dcm, 'SliceThickness')
@@ -215,12 +215,12 @@ class Siemens_BuildNifti():
         # with functional data with multiple volumes
         sliceDict = {}
         for s in dicomFiles:
-            dcm = dicom.read_file(join(self.seriesDir, s))
+            dcm = pydicom.dcmread(join(self.seriesDir, s))
             sliceDict[dcm.InstanceNumber] = join(self.seriesDir, s)
 
         # sort by InStackPositionNumber and assemble the image
         for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
-            dcm = dicom.read_file(sliceDict[ISPN])
+            dcm = pydicom.dcmread(sliceDict[ISPN])
 
             # grab the slices necessary for creating the affine transformation
             if sliceIdx == 0:
@@ -241,8 +241,8 @@ class Siemens_BuildNifti():
         firstSlice = sliceDict[sorted(sliceDict.keys())[0]]
         lastSlice = sliceDict[sorted(sliceDict.keys())[-1]]
 
-        dcm_first = dicom.read_file(firstSlice)
-        dcm_last = dicom.read_file(lastSlice)
+        dcm_first = pydicom.dcmread(firstSlice)
+        dcm_last = pydicom.dcmread(lastSlice)
         self.pixelSpacing = getattr(dcm_first, 'PixelSpacing')
         self.firstSlice_IOP = np.array(getattr(dcm_first, 'ImageOrientationPatient'))
         self.firstSlice_IPP = np.array(getattr(dcm_first, 'ImagePositionPatient'))
@@ -281,7 +281,7 @@ class Siemens_BuildNifti():
             # we use the nibabel mosaic_to_nii() method which does a lot of the
             # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
             # the affine
-            dcm = dicom.read_file(mosaic_dcm_fname)     # create dicom object
+            dcm = pydicom.dcmread(mosaic_dcm_fname)     # create dicom object
 
             # for mosaic files, the instanceNumber tag will correspond to the
             # volume number (using a 1-based indexing, so subtract by 1)
@@ -371,7 +371,7 @@ class Siemens_BuildNifti():
         in the dicom tags
         """
         # read the dicom file
-        dcm = dicom.read_file(join(self.seriesDir, dicomFile), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFile), stop_before_pixels=1)
 
         if getattr(dcm,'MRAcquisitionType') == '3D':
             scanType = 'anat'
@@ -535,7 +535,7 @@ class Siemens_processMosaic(Thread):
         # we use the nibabel mosaic_to_nii() method which does a lot of the
         # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
         # the affine
-        dcm = dicom.read_file(mosaic_dcm_fname)     # create dicom object
+        dcm = pydicom.dcmread(mosaic_dcm_fname)     # create dicom object
         thisVol = dicomreaders.mosaic_to_nii(dcm)   # convert to nifti
 
         # convert to RAS+
