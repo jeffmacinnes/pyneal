@@ -89,6 +89,17 @@ def launchPyneal():
     logger.debug('Starting Results Server')
 
 
+    ### Create processing objects --------------------------
+    # Load the mask
+    mask_img = nib.load(settings['maskFile'])
+
+    # Class to handle all preprocessing
+    preprocessor = Preprocessor(settings, mask_img)
+
+    # Class to handle all analysis
+    analyzer = Analyzer(settings, mask_img)
+
+
     ### Launch Real-time Scan Monitor GUI
     if settings['launchDashboard']:
         ### launch the dashboard app as it's own separate process. Once called, it
@@ -117,20 +128,13 @@ def launchPyneal():
 
         # send configuration settings to dashboard
         msg = {'topic': 'configSettings',
-                'content': {'numTimepts': settings['numTimepts']}}
+                'content': {'mask': os.path.split(settings['maskFile'])[1],
+                            'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
+                            'volDims': str(mask_img.shape),
+                            'numTimepts': settings['numTimepts'],
+                            'outputPath': outputDir}}
         dashboardSocket.send_json(msg)
         resp = dashboardSocket.recv_string()
-
-
-    ### Create processing objects --------------------------
-    # Load the mask
-    mask_img = nib.load(settings['maskFile'])
-
-    # Class to handle all preprocessing
-    preprocessor = Preprocessor(settings, mask_img)
-
-    # Class to handle all analysis
-    analyzer = Analyzer(settings, mask_img)
 
     ### Wait For Scan To Start -----------------------------
     while not scanReceiver.scanStarted: time.sleep(.5)

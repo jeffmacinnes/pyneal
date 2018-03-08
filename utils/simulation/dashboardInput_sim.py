@@ -81,7 +81,7 @@ for volIdx in range(numTimepts):
     requestMsg = {'type':'request', 'logString': str(volIdx)}
     sendToDashboard(topic='resultsServerLog', content=requestMsg)
 
-    serverResponse = {'foundResults': random.choice([True, False]), 'average':np.random.normal(loc=2432, scale=10)}
+    serverResponse = {'foundResults': random.choice([True, False]), 'average':np.around(np.random.normal(loc=2432, scale=10), decimals=2)}
     responseMsg = {'type':'response',
                     'logString':json.dumps(serverResponse),
                     'success':serverResponse['foundResults']}
