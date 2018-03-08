@@ -57,6 +57,8 @@ if len(sys.argv) > 1:
     request = str(sys.argv[1]).zfill(4)
 else:
     request = '0000'
+
+print('Sending request to {}:{} for vol {}'.format(host, port, request))
 clientSocket.send(request.encode())
 
 # When the results server recieved the request, it will send back a variable
@@ -70,7 +72,6 @@ while True:
     else:
         hdr += nextChar
 msgLen = int(hdr)
-print('message length: {}'.format(msgLen))
 
 # now read the full response from the server
 serverResp = clientSocket.recv(msgLen)
