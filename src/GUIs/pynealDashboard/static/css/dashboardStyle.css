@@ -11,11 +11,11 @@
 
 @font-face {
     font-family: 'TeX Gyre Adventor Bold';
-    src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot')}}";
-    src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix') format('embedded-opentype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.woff') format('woff'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.ttf') format('truetype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.svg#texgyreadventorregular') format('svg');
+        src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot')}}";
+        src: "{{url_for('static',       filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix')" format('embedded-opentype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.woff')" format('woff'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.ttf')" format('truetype'),
+         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.svg#texgyreadventorregular')" format('svg');
     font-weight: bold;
     font-style: normal;
 }

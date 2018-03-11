@@ -31,6 +31,8 @@ make sure to contain all of your edits within the sections labeled
 import sys
 import os
 from os.path import join
+import logger
+
 import numpy as np
 
 
@@ -39,13 +41,20 @@ class CustomAnalysis:
         """
         Everything in the __init__ class will be executed BEFORE the scan begins
         """
-        self.mask = mask_img        # local reference to MASK from Pyneal setup GUI
+        # local reference to MASK from Pyneal setup GUI
+        self.mask = mask_img
 
-        # add the directory that this script lives in to the path. This way it
+        # Add the directory that this script lives in to the path. This way it
         # is easy to load any additional files you want to put in the same
         # directory as your custom analysis script
         self.customAnalysisDir = os.path.abspath(os.path.dirname(__file__))
         sys.path.append(self.customAnalysisDir)
+
+        # Import the logger. If desired, you can write log messages to the
+        # Pyneal log file using:
+        # self.logger.info('my log message') - log file and stdOut
+        # self.logger.debug('my log message') - log file only
+        self.logger = logging.getLogger('PynealLog')
 
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################
@@ -58,10 +67,13 @@ class CustomAnalysis:
 
 
 
-    def compute(self, volume):
+    def compute(self, volume, volIdx):
         """
         Code that will be executed on EACH new 3D volume that arrives DURING the
-        real-time scan. Results must be returned in a dictionary
+        real-time scan. Results must be returned in a dictionary. No restrictions
+        on dict key names or values, but note that the volume index will get added
+        automatically by Pyneal before the result gets placed on the results
+        server, so no need to specify that here
         """
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################

@@ -69,14 +69,18 @@ class Analyzer:
 
     def runAnalysis(self, vol, volIdx):
         """
-        Run preprocessing on the supplied volume
+        Run preprocessing on the supplied volume. Every analysisFunc will be
+        passed in the volume (as nibabel obj) and the volIdx (0-based). Not all
+        analysisFuncs will use the volIdx for anything (e.g. averageFromMask),
+        but is included anyway so that any custom analysis scripts that need it
+        have access to it
         """
-        output = self.analysisFunc(vol)
+        output = self.analysisFunc(vol, volIdx)
         self.logger.info('analyzed vol: {}'.format(volIdx))
         return output
 
 
-    def averageFromMask(self, vol):
+    def averageFromMask(self, vol, volIdx):
         """
         Compute the average voxel activation within the mask.
         Note: np.average has weights option, np.mean doesn't
@@ -91,7 +95,7 @@ class Analyzer:
             return {'average': np.round(result, decimals=2)}
 
 
-    def medianFromMask(self, vol):
+    def medianFromMask(self, vol, volIdx):
         """
         Compute the median voxel activation within the mask
         Note: weighted median algorithm from: https://pypi.python.org/pypi/weightedstats/0.2
