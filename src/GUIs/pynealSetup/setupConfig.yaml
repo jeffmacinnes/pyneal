@@ -6,6 +6,6 @@ maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/sandbox/testMask_64-64-1
 maskIsWeighted: false
 numTimepts: 60
 outputPath: /Users/jeff/Desktop/development/pynealOutput
-pynealHost: 173.250.196.123
+pynealHost: 127.0.0.1
 pynealScannerPort: 5555
 resultsServerPort: 5556

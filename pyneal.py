@@ -51,7 +51,7 @@ def launchPyneal():
     settingsFile = join(pynealDir,'src/GUIs/pynealSetup/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
-    #setupGUI.launchPynealSetupGUI(settingsFile)
+    setupGUI.launchPynealSetupGUI(settingsFile)
 
     # Read the new settings file, store as dict
     with open(settingsFile, 'r') as ymlFile:
