@@ -163,5 +163,5 @@ if __name__ == '__main__':
     # run pynealScanner Simulator
     pynealScannerSimulator(dataset,
                             TR=args.tr,
-                            host=args.sockethost,
+                            host=args.sockethost[0],
                             port=args.socketport)

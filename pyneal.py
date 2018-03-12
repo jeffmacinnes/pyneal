@@ -65,13 +65,14 @@ def launchPyneal():
     # behind the scenes. You can write to this log by calling the
     # logger var and specifying the level, e.g.: logger.debug('msg')
     # Other modules can write to this same log by calling
-    # logger = logging.getLogger('PynealLog')
+    # the command: logger = logging.getLogger('PynealLog')
     logFname = join(outputDir, 'pynealLog.log')
     logger = createLogger(logFname)
 
     # write all settings to log
     for k in settings:
-        logger.debug('Setting: {}: {}'.format(k, settings[k]))
+        logger.info('Setting: {}: {}'.format(k, settings[k]))
+    print('-'*20)
 
 
     ### Launch Threads -------------------------------------

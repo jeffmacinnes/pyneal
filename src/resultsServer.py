@@ -50,6 +50,7 @@ class ResultsServer(Thread):
     and return a JSON-formatted message
 
     Input a dictionary called 'settings' that has (at least) the following keys:
+        pynealHost: IP address of machine running Pyneal
         resultsServerPort: port # for results server socket [e.g. 5555]
     """
 
@@ -63,9 +64,9 @@ class ResultsServer(Thread):
         # configuration parameters
         self.alive = True
         self.results = {}       # store results in dict like {'vol#':{results}}
-        self.host = '127.0.0.1'
+        self.host = settings['pynealHost']
         self.resultsServerPort = settings['resultsServerPort']
-        self.maxClients = 1
+        self.maxClients = 5
 
         # launch server
         self.resultsSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

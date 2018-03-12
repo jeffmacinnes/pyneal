@@ -64,6 +64,7 @@ class ScanReceiver(Thread):
 
     Input a dictionary called 'settings' that has (at least) the following keys:
         numTimepts: number of expected timepoints in series [500]
+        pynealHost: ip address for the computer running Pyneal
         pynealScannerPort: port # for scanner socket [e.g. 5555]
     """
     def __init__(self, settings):
@@ -75,10 +76,10 @@ class ScanReceiver(Thread):
 
         # get vars from settings dict
         self.numTimepts = settings['numTimepts']
+        self.host = settings['pynealHost']
         self.scannerPort = settings['pynealScannerPort']
 
         # class config vars
-        self.host = '*'
         self.scanStarted = False
         self.alive = True               # thread status
         self.imageMatrix = None         # matrix that will hold the incoming data
@@ -87,11 +88,12 @@ class ScanReceiver(Thread):
         # array to keep track of completedVols
         self.completedVols = np.zeros(self.numTimepts, dtype=bool)
 
-        # set up socket to communicate with scanner
+        # set up socket server to listen for msgs from pyneal-scanner
         context = zmq.Context.instance()
         self.scannerSocket = context.socket(zmq.PAIR)
         self.scannerSocket.bind('tcp://{}:{}'.format(self.host, self.scannerPort))
         self.logger.debug('scanReceiver server bound to {}:{}'.format(self.host, self.scannerPort))
+        self.logger.info('ScanReceiver Server alive and listening....')
 
         # set up socket to communicate with dashboard (if specified)
         if settings['launchDashboard']:
