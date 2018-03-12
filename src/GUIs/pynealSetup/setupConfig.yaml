@@ -1,4 +1,4 @@
-analysisChoice: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/customAnalyses/customAnalysisTemplate.py
+analysisChoice: Average
 dashboardClientPort: 5558
 dashboardPort: 5557
 launchDashboard: true
@@ -6,5 +6,6 @@ maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/Phil
 maskIsWeighted: false
 numTimepts: 60
 outputPath: /Users/jeff/Desktop/development/pynealOutput
+pynealHost: 127.0.0.1
 pynealScannerPort: 5555
 resultsServerPort: 5556

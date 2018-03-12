@@ -35,7 +35,11 @@ MainContainer:
 <NumberInputField>:
     multiline: False
     write_tab: False
+    width: 100
 
+<IP_inputField>:
+    multiline: False
+    write_tab: False
 
 <FilePathInputField>:
     multiline: False
@@ -69,19 +73,35 @@ MainContainer:
                 size_hint: (1, None)
                 text: 'Load Settings'
                 size: [100,60]
-                on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings)
+                on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings, cancelFunc=root.closeFileBrowser)
 
 
     ### Communication Box ------------------
     BoxLayout:
         size_hint: (1,None)
-        height: 200
+        height: 240
         BoxLayout:
             spacing: 10
             orientation: 'vertical'
             # box label
             SectionHeading:
                 labelText: 'Communication'
+            # pyneal host IP
+            BoxLayout:
+                padding: [20, 5]
+                spacing: 10
+                Label:
+                    size_hint_x: 1.5
+                    padding: [30, 0]
+                    text_size: self.size
+                    text: 'Pyneal Host IP:'
+                    color: root.textColor
+                    halign: 'right'
+                    valign: 'middle'
+                IP_inputField:
+                    id: pynealHost
+                    text: str(root.GUI_settings.pynealHost)
+                    on_text: root.GUI_settings.pynealHost = pynealHost.text
             # scanner port
             BoxLayout:
                 padding: [20, 5]
@@ -98,7 +118,7 @@ MainContainer:
                     id: pynealScannerPort
                     text: str(root.GUI_settings.pynealScannerPort)
                     on_text: root.GUI_settings.pynealScannerPort = pynealScannerPort.text
-            # output port
+            # Results Server port
             BoxLayout:
                 padding: [20, 5]
                 spacing: 10
@@ -216,9 +236,16 @@ MainContainer:
                     text: 'Custom'
                     group: 'analysisChoice'
                     state: 'down' if root.GUI_settings.analysisChoice not in ['Average', 'Median'] else 'normal'
-                    on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomAnalysis)
+                    on_release: root.setAnalysisChoice('Custom')
+                    #on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomAnalysis)
             Label:
                 size_hint_y: .6
+                padding: [20, 15]
+                text_size: (750, None)
+                font_size: 28
+                halign: 'center'
+                shorten: True
+                shorten_from: 'left'
                 text: root.analysisInfo
                 color: root.textColor
 
@@ -310,7 +337,7 @@ MainContainer:
                 on_release: root.loadFunc(filechooser.path, filechooser.selection)
             Button:
                 text: "Cancel"
-                on_release: root.cancelFileChooser()
+                on_release: root.cancelFunc()
 
 
 ### Generic Select Path Dialog Window #################################

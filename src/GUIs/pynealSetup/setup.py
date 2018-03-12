@@ -57,6 +57,14 @@ class NumberInputField(TextInput):
         s = re.sub(pat, '', substring)
         return super().insert_text(s, from_undo=from_undo)
 
+class IP_inputField(TextInput):
+    # restrict the text input to 0-9, and '.' only
+    pat = re.compile('[^0-9.]')
+    def insert_text(self, substring, from_undo=False):
+        pat = self.pat
+        s = re.sub(pat, '', substring)
+        return super().insert_text(s, from_undo=from_undo)
+
 
 class FilePathInputField(TextInput):
     pass
@@ -104,7 +112,7 @@ class ModifyPathDialog(BoxLayout):
 
         # method to pop open a file browser
         content = LoadFileDialog(loadFunc=self.updateCurrentPath,
-                                    cancelFileChooser=self.cancelFileChooser,
+                                    cancelFunc=self.cancelFileChooser,
                                     path=startingPath,
                                     fileFilter=fileFilter)
         self._popup = Popup(title="Select", content=content,
@@ -120,7 +128,7 @@ class ModifyPathDialog(BoxLayout):
 class LoadFileDialog(BoxLayout):
     """ generic class to present file chooser popup """
     loadFunc= ObjectProperty(None)
-    cancelFileChooser = ObjectProperty(None)
+    cancelFunc = ObjectProperty(None)
     path = StringProperty()
     fileFilter = ListProperty()
 
@@ -161,6 +169,7 @@ class MainContainer(BoxLayout):
         # set up defaults. Store the value and the dtype. This is used
         # to confirm that a loaded setting is valid
         defaultSettings = {
+            'pynealHost': ['127.0.0.1', str],
             'pynealScannerPort': [999, int],
             'resultsServerPort': [999, int],
             'maskFile': ['None', str],
@@ -222,7 +231,12 @@ class MainContainer(BoxLayout):
 
 
     def setAnalysisChoice(self, choice):
-        self.GUI_settings['analysisChoice'] = choice
+        if choice in ['Average', 'Median']:
+            self.GUI_settings['analysisChoice'] = choice
+        elif choice == 'Custom':
+            self.show_loadFileDialog(path='~/', fileFilter=['*.py'],
+                                        loadFunc=self.loadCustomAnalysis,
+                                        cancelFunc=self.cancelCustomAnalysis)
         self.setAnalysisInfo()
 
 
@@ -235,8 +249,8 @@ class MainContainer(BoxLayout):
                 self.analysisInfo = 'Compute the Weighted {} of voxels within mask'.format(self.GUI_settings['analysisChoice'])
             else:
                 self.analysisInfo = 'Compute the {} of voxels within mask'.format(self.GUI_settings['analysisChoice'])
-        elif self.GUI_settings['analysisChoice'] == 'Custom':
-            self.analysisInfo = 'Custom Analysis: {}'.format(split(self.GUI_settings.analysisChoice)[1])
+        else:
+            self.analysisInfo = self.GUI_settings.analysisChoice
 
 
     def setLaunchDashboardChoice(self):
@@ -304,7 +318,7 @@ class MainContainer(BoxLayout):
 
 
     ### File Chooser Dialog Methods ###########################################
-    def show_loadFileDialog(self, path='~/', fileFilter=[], loadFunc=None):
+    def show_loadFileDialog(self, path='~/', fileFilter=[], loadFunc=None, cancelFunc=None):
         """
         generic function to present a popup window that will allow users
         to select a file. Customize this with the parameters you pass in
@@ -314,16 +328,14 @@ class MainContainer(BoxLayout):
         """
         # method to pop open a file browser
         content = LoadFileDialog(loadFunc=loadFunc,
-                                    cancelFileChooser=self.cancelFileChooser,
+                                    cancelFunc=cancelFunc,
                                     path=path,
                                     fileFilter=fileFilter)
         self._popup = Popup(title="Load File", content=content,
                             size_hint=(0.9,0.9))
         self._popup.open()
 
-
-    def cancelFileChooser(self):
-        # close the file chooser dialog
+    def closeFileBrowser(self):
         self._popup.dismiss()
 
 
@@ -336,8 +348,8 @@ class MainContainer(BoxLayout):
             self.GUI_settings = self.readSettings(settingsFile)
 
         # close  dialog
-        self._popup.dismiss()
-
+        self.closeFileBrowser()
+        
 
     # Update Mask Path
     def setMaskPath(self, path):
@@ -393,7 +405,15 @@ class MainContainer(BoxLayout):
             self.setAnalysisInfo()
 
             # close dialog
-            self._popup.dismiss()
+            self.closeFileBrowser()
+
+    # Cancel a custom analysis file
+    def cancelCustomAnalysis(self):
+        self.GUI_settings['analysisChoice'] = 'None'
+        self.setAnalysisInfo()
+
+        # close dialog
+        self.closeFileBrowser()
 
 
     ### Show Notification Pop-up ##############################################
