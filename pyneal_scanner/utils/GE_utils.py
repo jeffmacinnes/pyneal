@@ -260,7 +260,7 @@ class GE_BuildNifti():
     parameters, like voxel spacing and dimensions, are obtained automatically
     from info in the dicom tags
 
-    Output is a Nifti1 formatted 3D (anat) or 4D (func) file
+    Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+ orientation
     """
     def __init__(self, seriesDir):
         """
