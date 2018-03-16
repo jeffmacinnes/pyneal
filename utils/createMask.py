@@ -208,10 +208,15 @@ class MaskCreator():
 
     def displayMasks(self):
         """
-        Display all masks in fsleyes. Use the hires_FUNC (high-res anatomical transformed
-        to FUNC space) as the background layer
+        Display all masks in fsleyes. If transformMaskToFunc selected, use the
+        hires_FUNC (high-res anatomical transformed to FUNC space) as the
+        background layer, otherwise exampleFunc
         """
-        cmd = ['fsleyes', join(self.outputDir, 'hires_FUNC.nii.gz')]
+        # figure out appropriate BG image
+        if self.settings['transformMaskToFunc']:
+            cmd = ['fsleyes', join(self.outputDir, 'hires_FUNC.nii.gz')]
+        else:
+            cmd = ['fsleyes', join(self.outputDir, 'exampleFunc.nii.gz')]
 
         # add whole brain mask, if specified
         if self.settings['createFuncBrainMask']:

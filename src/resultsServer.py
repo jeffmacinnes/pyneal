@@ -33,6 +33,7 @@ the analysis stage for this volume
 from __future__ import print_function
 
 import os
+from os.path import join
 import sys
 import logging
 import json
@@ -67,6 +68,7 @@ class ResultsServer(Thread):
         self.host = settings['pynealHost']
         self.resultsServerPort = settings['resultsServerPort']
         self.maxClients = 5
+        self.seriesOutputDir = settings['seriesOutputDir']
 
         # launch server
         self.resultsSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -193,6 +195,17 @@ class ResultsServer(Thread):
             # send msg to dashboard
             self.dashboardSocket.send_json(dashboardMsg)
             response = self.dashboardSocket.recv_string()
+
+
+    def saveResults(self):
+        """
+        save the results to the output directory as results.json file
+        """
+        fname = join(self.seriesOutputDir, 'results.json')
+        with open(fname, 'w') as outputFile:
+            outputFile.write(json.dumps(self.results))
+
+
 
     def killServer(self):
         self.alive = False

@@ -57,8 +57,9 @@ def launchPyneal():
     with open(settingsFile, 'r') as ymlFile:
         settings = yaml.load(ymlFile)
 
-    ### Create the output directory
+    ### Create the output directory, put in settings dict
     outputDir = createOutputDir(settings['outputPath'])
+    settings['seriesOutputDir'] = outputDir
 
     ### Set Up Logging ------------------------------------
     # The createLogger function will do a lot of the formatting set up
@@ -180,8 +181,14 @@ def launchPyneal():
                     'processingTime': np.round(elapsedTime, decimals=3)}
             sendToDashboard(dashboardSocket, topic='timePerVol', content=timingParams)
 
+
+    ### Save output files
+    resultsServer.saveResults()
+    scanReceiver.saveResults()
+
     ### Figure out how to clean everything up nicely at the end
-    scanReceiver.stop()
+    resultsServer.killServer()
+    scanReceiver.killServer()
 
 
 def sendToDashboard(dashboardSocket, topic=None, content=None):
@@ -191,11 +198,11 @@ def sendToDashboard(dashboardSocket, topic=None, content=None):
 
     # send
     dashboardSocket.send_json(msg)
-    print('sent: {}'.format(msg))
+    #logger.debug('sent to dashboard: {}'.format(msg))
 
     # recv
     response = dashboardSocket.recv_string()
-    print('response: {}'.format(response))
+    #logger.debug('response from dashboard: {}'.format(response))
 
 
 def createOutputDir(parentDir):
@@ -220,7 +227,6 @@ def createOutputDir(parentDir):
     # create the output dir and return full path to it
     os.makedirs(outputDir)
     return outputDir
-
 
 
 def cleanup(pid):

@@ -48,12 +48,15 @@ volume should be the same for all volumes in the series.
 from __future__ import print_function
 
 import os
+from os.path import join
 import sys
 from threading import Thread
 import logging
+import json
+import atexit
 
 import numpy as np
-import json
+import nibabel as nib
 import zmq
 
 class ScanReceiver(Thread):
@@ -78,6 +81,7 @@ class ScanReceiver(Thread):
         self.numTimepts = settings['numTimepts']
         self.host = settings['pynealHost']
         self.scannerPort = settings['pynealScannerPort']
+        self.seriesOutputDir = settings['seriesOutputDir']
 
         # class config vars
         self.scanStarted = False
@@ -94,6 +98,9 @@ class ScanReceiver(Thread):
         self.scannerSocket.bind('tcp://{}:{}'.format(self.host, self.scannerPort))
         self.logger.debug('scanReceiver server bound to {}:{}'.format(self.host, self.scannerPort))
         self.logger.info('ScanReceiver Server alive and listening....')
+
+        # atexit function, shut down server
+        atexit.register(self.killServer)
 
         # set up socket to communicate with dashboard (if specified)
         if settings['launchDashboard']:
@@ -217,7 +224,16 @@ class ScanReceiver(Thread):
             response = self.dashboardSocket.recv_string()
 
 
-    def stop(self):
+    def saveResults(self):
+        """
+        Save the image matrix as a Nifti file in the output directory for this
+        series
+        """
+        ds = nib.Nifti1Image(self.imageMatrix, self.affine)
+        nib.save(ds, join(self.seriesOutputDir, 'receivedFunc.nii.gz'))
+
+
+    def killServer(self):
         # function to stop the Thread
         self.alive = False
 
