@@ -14,11 +14,12 @@ import zmq
 import numpy as np
 import nibabel as nib
 
+# Update these vales as needed
+port = 5556
+nVols = 60
+# --------------------------
 
 host = '*'
-port = 5556
-
-nVols = 60
 firstVolHasArrived = False
 
 context = zmq.Context.instance()
