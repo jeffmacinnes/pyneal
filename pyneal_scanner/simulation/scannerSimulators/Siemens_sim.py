@@ -20,17 +20,19 @@ a given session. Mosaic files are named like:
 
 <session#>_<series#>_<vol#>.dcm
 
-[OPTIONAL]: You can specify series number that will be assigned to the "new"
+[OPTIONAL]: You can specify the series number that will be assigned to the "new"
 mosaic images. The default behavior is to assign a series number based on the
-next sequential number given the existing series.
+next sequential number given the existing series. In the example below, the
+default would be to assign a newSeriesNum as '2', but we are overriding that to
+assign it as '19'
 
-e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir --newSeriesNum 19
+e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --newSeriesNum 19
 
 [OPTIONAL]: You can specify the TR at which new slice data is copied. Default is
 1000ms, and represents the approximate amount of time it should take to copy
 over all of the slices for one volume of data.
 
-e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir --TR 2000
+e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --TR 2000
 """
 
 # python 2/3 compatibility
