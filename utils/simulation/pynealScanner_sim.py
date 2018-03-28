@@ -141,7 +141,7 @@ if __name__ == '__main__':
                         nargs=4,
                         default=[64,64,18,60],
                         help='dimensions of randomly generated dataset [x y z t]')
-    parser.add_argument('-tr',
+    parser.add_argument('-t', '--TR',
                         nargs=1,
                         default=1000,
                         help='TR (in ms)')
