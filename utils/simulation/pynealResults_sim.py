@@ -25,6 +25,7 @@ import socket
 from threading import Thread
 from pathlib import Path
 import time
+import argparse
 
 import numpy as np
 
@@ -46,7 +47,7 @@ class ResultsServer(Thread):
         # configuration parameters
         self.alive = True
         self.results = {}       # store results in dict like {'vol#':{results}}
-        self.host = '127.0.0.1'
+        self.host = settings['pynealHost']
         self.resultsServerPort = settings['resultsServerPort']
         self.maxClients = 1
 
@@ -136,7 +137,7 @@ class ResultsServer(Thread):
         self.alive = False
 
 
-def launchPynealSim(TR=1, resultsServerPort=5556):
+def launchPynealSim(TR, host, resultsServerPort):
     """
     Start the results server going on its own thread where it will listen for
     incoming responses, and then send a response to each request.
@@ -146,25 +147,40 @@ def launchPynealSim(TR=1, resultsServerPort=5556):
     """
     # Results Server Thread, listens for requests from end-user (e.g. task
     # presentation), and sends back results
-    settings = {'resultsServerPort':resultsServerPort}
+    settings = {'pynealHost': host, 'resultsServerPort':resultsServerPort}
     resultsServer = ResultsServer(settings)
     resultsServer.daemon = True
     resultsServer.start()
     print('Starting Results Server...')
 
-
     # Start making up fake results
     for volIdx in range(500):
         # generate a random value
-        avgActivation = np.around(np.random.normal(loc=2432, scale=10), decimals=2)
+        avgActivation = np.around(np.random.normal(loc=2400, scale=15), decimals=2)
         result = {'Average': avgActivation}
 
         # send result to the resultsServer
         resultsServer.updateResults(volIdx, result)
 
         # pause for TR
-        time.sleep(TR)
+        time.sleep(TR/1000)
 
 
 if __name__ == '__main__':
-    launchPynealSim(TR=1, resultsServerPort=5556)
+    # parse arguments
+    parser = argparse.ArgumentParser(description="Pyneal-Results Server Simulator",
+                                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-t', '--TR',
+                        nargs=1,
+                        default=1000,
+                        help='TR (in ms)')
+    parser.add_argument('-sh', '--sockethost',
+                        nargs=1,
+                        default='127.0.0.1',
+                        help='Pyneal socket host')
+    parser.add_argument('-sp', '--socketport',
+                        default=5556,
+                        help='Pyneal socket port')
+    args = parser.parse_args()
+
+    launchPynealSim(args.TR, args.sockethost, args.socketport)
