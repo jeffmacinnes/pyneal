@@ -2,9 +2,6 @@
 #:import split os.path.split
 MainContainer:
 
-
-
-
 <MainContainer>:
     padding: root.width * .02, root.height * .02
     spacing: "10dp"
@@ -33,7 +30,7 @@ MainContainer:
         Label:
             size_hint_x: .3
             text_size: self.size
-            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
+            color: root.textColor
             text: '4D FUNC: '
             halign: 'right'
             valign: 'middle'
@@ -42,11 +39,11 @@ MainContainer:
             id: subjFuncInput
             size_hint_x: .7
             text: root.GUI_settings.subjFunc
+            halign: 'left'
             on_text: root.GUI_settings.subjFunc = subjFuncInput.text
             write_tab: False
             font_size: 28
             padding: [15,15]
-            disabled: not transformMaskToFuncCheckbox.active
         Button:
             id: 'subjFuncButton'
             size_hint: (None, None)
@@ -56,7 +53,6 @@ MainContainer:
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setFuncFile)
-            disabled: not transformMaskToFuncCheckbox.active
 
 
     ### Create Whole Brain Mask Option
@@ -98,30 +94,113 @@ MainContainer:
         BoxLayout:
             size_hint_x: 1.23
 
-    ### Anat Image
-    InputPathWidget:
+    ### Anat Image --------------------------------------------------
+    BoxLayout:
         id: subjAnatWidget
-        widgetName: 'subjAnatWidget'
-        labelText: 'hi-res ANAT: '
-        currentPath: root.GUI_settings.subjAnat
-        isDisabled: not transformMaskToFuncCheckbox.active
+        padding: [10, 5]
+        spacing: 10
+        size_hint: (1, .8)
+        Label:
+            size_hint_x: .3
+            text_size: self.size
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
+            text: 'hi-res ANAT: '
+            halign: 'right'
+            valign: 'middle'
+        FilePathInputField:
+            multiline: False
+            id: subjAnatInput
+            size_hint_x: .7
+            text: root.GUI_settings.subjAnat
+            halign: 'left'
+            on_text: root.GUI_settings.subjAnat = subjAnatInput.text
+            write_tab: False
+            font_size: 28
+            padding: [15,15]
+            disabled: not transformMaskToFuncCheckbox.active
+        Button:
+            id: 'subjAnatButton'
+            size_hint: (None, None)
+            size: (65,65)
+            spacing: 15
+            padding: (15,15)
+            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
+            allow_stretch: False
+            on_release: root.launchFileBrowser(loadFunc=root.setAnatFile)
+            disabled: not transformMaskToFuncCheckbox.active
 
 
-    ### Func Image
-    InputPathWidget:
+    ### MNI Standard --------------------------------------------------
+    BoxLayout:
         id: MNI_standardWidget
-        widgetName: 'MNI_standardWidget'
-        labelText: 'MNI standard: '
-        currentPath: root.GUI_settings.MNI_standard
-        isDisabled: not transformMaskToFuncCheckbox.active
+        padding: [10, 5]
+        spacing: 10
+        size_hint: (1, .8)
+        Label:
+            size_hint_x: .3
+            text_size: self.size
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
+            text: 'MNI standard: '
+            halign: 'right'
+            valign: 'middle'
+        FilePathInputField:
+            multiline: False
+            id: MNI_standardInput
+            size_hint_x: .7
+            text: root.GUI_settings.MNI_standard
+            halign: 'left'
+            on_text: root.GUI_settings.MNI_standard = MNI_standardInput.text
+            write_tab: False
+            font_size: 28
+            padding: [15,15]
+            disabled: not transformMaskToFuncCheckbox.active
+        Button:
+            id: 'MNI_standardButton'
+            size_hint: (None, None)
+            size: (65,65)
+            spacing: 15
+            padding: (15,15)
+            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
+            allow_stretch: False
+            on_release: root.launchFileBrowser(loadFunc=root.setMNI_standard, path=root.MNI_standardsDir)
+            disabled: not transformMaskToFuncCheckbox.active
 
-    ### Mask Path
-    InputPathWidget:
+
+    ### Mask Path --------------------------------------------------
+    BoxLayout:
         id: MNI_maskWidget
-        widgetName: 'MNI_maskWidget'
-        labelText: 'MNI mask: '
-        currentPath: root.GUI_settings.MNI_mask
-        isDisabled: not transformMaskToFuncCheckbox.active
+        padding: [10, 5]
+        spacing: 10
+        size_hint: (1, .8)
+        Label:
+            size_hint_x: .3
+            text_size: self.size
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
+            text: 'MNI mask: '
+            halign: 'right'
+            valign: 'middle'
+        FilePathInputField:
+            multiline: False
+            id: MNI_maskInput
+            size_hint_x: .7
+            text: root.GUI_settings.MNI_mask
+            halign: 'left'
+            on_text: root.GUI_settings.MNI_mask = MNI_maskInput.text
+            write_tab: False
+            font_size: 28
+            padding: [15,15]
+            disabled: not transformMaskToFuncCheckbox.active
+        Button:
+            id: 'MNI_maskButton'
+            size_hint: (None, None)
+            size: (65,65)
+            spacing: 15
+            padding: (15,15)
+            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
+            allow_stretch: False
+            on_release: root.launchFileBrowser(loadFunc=root.setMNI_mask, path=root.masksDir)
+            disabled: not transformMaskToFuncCheckbox.active
+
 
     ### Output Name
     BoxLayout:
@@ -141,7 +220,7 @@ MainContainer:
             text: root.GUI_settings.outputPrefix
             write_tab: False
             disabled: not transformMaskToFuncCheckbox.active
-            #on_text:root.GUI_settings.outputPrefix = outputPrefixWidget.text
+            on_text:root.GUI_settings.outputPrefix = outputPrefixWidget.text
             font_size: 28
             padding: [15,15]
         BoxLayout:
@@ -189,41 +268,6 @@ MainContainer:
             Button:
                 text: "Cancel"
                 on_release: root.cancelFileChooser()
-
-
-### Generic Select Path Dialog Window #################################
-<InputPathWidget>:
-    BoxLayout:
-        padding: [10, 5]
-        spacing: 10
-        size_hint: (1, .8)
-        Label:
-            size_hint_x: .3
-            text_size: self.size
-            color: root.textColor if not root.isDisabled else root.disabledTextColor
-            text: root.labelText
-            halign: 'right'
-            valign: 'middle'
-        FilePathInputField:
-            multiline: False
-            id: inputPath
-            size_hint_x: .7
-            text: root.currentPath
-            #on_text:root.currentPath = inputPath.text
-            on_text: root.testFunc(inputPath.text)
-            write_tab: False
-            font_size: 28
-            padding: [15,15]
-            disabled: root.isDisabled
-        Button:
-            size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
-            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
-            allow_stretch: False
-            on_release: root.launchFileBrowser()
-            disabled: root.isDisabled
 
 
 ### Error Notification Pop-up Window #################################

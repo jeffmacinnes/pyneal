@@ -10,6 +10,7 @@ file is overwritten with new settings
 """
 import os
 from os.path import join, dirname, exists
+from pathlib import Path
 import sys
 
 import yaml
@@ -34,83 +35,13 @@ createMaskConfigFile = None
 
 # global paths
 setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
-pynealDir = dirname(dirname(dirname(setupGUI_dir)))
+pynealDir = Path(os.path.abspath(__file__)).resolve().parents[3]
 
 submitButtonPressed = False
 
 
 class FilePathInputField(TextInput):
     pass
-
-
-class InputPathWidget(BoxLayout):
-    """
-    class for allowing user to modify a file path. Contains a
-    text input field showing the current path, which can be modified by hand.
-    Alternatively, the user can click the folder icon to open up a file browser
-    to select a new file/dir using that method
-    """
-    setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
-    widgetName = StringProperty()
-    textColor = ListProperty([0,0,0,1])
-    disabledTextColor = ListProperty([.6, .6, .6, 1])
-    labelText = StringProperty('')
-    currentPath = StringProperty()
-    isDisabled = BooleanProperty(False)
-    fileBrowserStartDir = StringProperty('~/')
-    app = App.get_running_app()
-
-    def updateCurrentPath(self, path, selection):
-        # if a file was selected, return full path to the file
-        if len(selection) > 0:
-            self.currentPath = join(path, selection[0])
-        # if it was a dir instead, just return the path to the dir
-        else:
-            self.currentPath = path
-
-
-        # close the parent popup
-        self._popup.dismiss()
-
-
-    def testFunc(self, currentPath):
-        # set the current path to whatever was typed
-        self.currentPath = currentPath
-
-        # if this was the subjFunc input AND it's a valid path, update
-        # the fileBrowserStartDir globally
-        if self.widgetName == 'subjFuncWidget':
-            if os.path.exists(self.currentPath):
-                print('new start dir:')
-                print(os.path.split(self.currentPath)[0])
-        else:
-            print('fuckkkkk')
-
-    def launchFileBrowser(self, path='~/', fileFilter=[]):
-        """
-        generic function to present a popup window with a file browser. Customize this with the parameters you pass in
-            - path: path where the file browser will start
-            - fileFilter: list of file types to filter; e.g. ['*.txt']
-            - loadFunc: function that will be called when 'load' button pressed
-        """
-        # check to make sure the current path points to a real location
-        if os.path.exists(self.currentPath):
-            startingPath = self.currentPath
-        else:
-            startingPath = '~/'
-        # method to pop open a file browser
-        content = LoadFileDialog(loadFunc=self.updateCurrentPath,
-                                    cancelFileChooser=self.cancelFileChooser,
-                                    path=startingPath,
-                                    fileFilter=fileFilter)
-        self._popup = Popup(title="Select", content=content,
-                            size_hint=(0.9,0.9))
-        self._popup.open()
-
-
-    def cancelFileChooser(self):
-        # close the file chooser dialog
-        self._popup.dismiss()
 
 
 class LoadFileDialog(BoxLayout):
@@ -134,13 +65,20 @@ class MainContainer(BoxLayout):
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
     setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
-    MNI_standards_dir = join(pynealDir, 'utils/MNI_templates')
     textColor = ListProperty([0,0,0,1])
     disabledTextColor = ListProperty([.6, .6, .6, 1])
+
     fileBrowserStartDir = '~/'
+    MNI_standardsDir = join(pynealDir, 'utils/MNI_templates')
+    masksDir = join(pynealDir, 'utils/masks')
+
 
     def __init__(self, **kwargs):
         self.GUI_settings = self.readSettings(createMaskConfigFile)
+
+        #update the fileBrowserStartDir with path to subjFunc
+        if os.path.exists(self.GUI_settings.subjFunc):
+            self.fileBrowserStartDir = os.path.split(self.GUI_settings.subjFunc)[0]
 
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
@@ -159,7 +97,7 @@ class MainContainer(BoxLayout):
             'createFuncBrainMask': [True, bool],
             'transformMaskToFunc': [False, bool],
             'subjAnat': ['', str],
-            'MNI_standard': [join(self.MNI_standards_dir, 'MNI152_T1_1mm_brain.nii.gz'), str],
+            'MNI_standard': [join(self.MNI_standardsDir, 'MNI152_T1_1mm_brain.nii.gz'), str],
             'MNI_mask': ['', str],
             'outputPrefix': ['test', str]
         }
@@ -246,11 +184,8 @@ class MainContainer(BoxLayout):
         errorMsg = []
 
         ### check if input 4D func is valid
-        subjFuncInput = self.ids.subjFuncWidget.currentPath
-        if exists(subjFuncInput):
-            self.GUI_settings['subjFunc'] = subjFuncInput
-        else:
-            errorMsg.append('4D FUNC path not valid: {}'.format(subjFuncInput))
+        if not exists(self.GUI_settings['subjFunc']):
+            errorMsg.append('4D FUNC path not valid: {}'.format(self.GUI_settings['subjFunc']))
 
         ## make sure at least one checkbox is selected
         self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
@@ -260,25 +195,16 @@ class MainContainer(BoxLayout):
             errorMsg.append('Must check at least one mask option')
 
         ### check if hi-res anat is valid
-        subjAnatInput = self.ids.subjAnatWidget.currentPath
-        if exists(subjAnatInput):
-            self.GUI_settings['subjAnat'] = subjAnatInput
-        else:
-            errorMsg.append('hi-res ANAT path not valid: {}'.format(subjAnatInput))
+        if not exists(self.GUI_settings['subjAnat']):
+            errorMsg.append('hi-res ANAT path not valid: {}'.format(self.GUI_settings['subjAnat']))
 
         ### check if MNI_standard is valid
-        MNI_standardInput = self.ids.MNI_standardWidget.currentPath
-        if exists(MNI_standardInput):
-            self.GUI_settings['MNI_standard'] = MNI_standardInput
-        else:
-            errorMsg.append('MNI standard path not valid: {}'.format(MNI_standardInput))
+        if not exists(self.GUI_settings['MNI_standard']):
+            errorMsg.append('MNI standard path not valid: {}'.format(self.GUI_settings['MNI_standard']))
 
         ### check if MNI_mask is valid
-        MNI_maskInput = self.ids.MNI_maskWidget.currentPath
-        if exists(MNI_maskInput):
-            self.GUI_settings['MNI_mask'] = MNI_maskInput
-        else:
-            errorMsg.append('MNI mask path not valid: {}'.format(MNI_maskInput))
+        if not exists(self.GUI_settings['MNI_mask']):
+            errorMsg.append('MNI mask path not valid: {}'.format(self.GUI_settings['MNI_mask']))
 
         ### Check if outputPrefix is specified, remove any spaces
         outputPrefixInput = self.ids.outputPrefixWidget.text
@@ -316,24 +242,80 @@ class MainContainer(BoxLayout):
         # start by looking within the same dir as the func data
         if os.path.exists(selectedPath):
             self.fileBrowserStartDir = os.path.split(selectedPath)[0]
-            print(self.fileBrowserStartDir)
 
         # close the parent popup
         self._popup.dismiss()
 
 
+    def setAnatFile(self, path, selection):
+        """
+        Function attached to load button for the hi-res ANAT field
+        """
+        # if a file was selected, return full path to the file
+        if len(selection) > 0:
+            selectedPath = join(path, selection[0])
+        # if it was a dir instead, just return the path to the dir
+        else:
+            selectedPath = path
 
-    def launchFileBrowser(self, loadFunc=None, fileFilter=[]):
+        # update the GUI settings with path to hi-res anat file
+        self.GUI_settings.subjAnat = selectedPath
+
+        # close the parent popup
+        self._popup.dismiss()
+
+
+    def setMNI_standard(self, path, selection):
+        """
+        Function attached to load button for the MNI standard file
+        """
+        # if a file was selected, return full path to the file
+        if len(selection) > 0:
+            selectedPath = join(path, selection[0])
+        # if it was a dir instead, just return the path to the dir
+        else:
+            selectedPath = path
+
+        # update the GUI settings with path to MNI_standardfile
+        self.GUI_settings.MNI_standard = selectedPath
+
+        # close the parent popup
+        self._popup.dismiss()
+
+
+    def setMNI_mask(self, path, selection):
+        """
+        Function attached to load button for the MNI mask file
+        """
+        # if a file was selected, return full path to the file
+        if len(selection) > 0:
+            selectedPath = join(path, selection[0])
+        # if it was a dir instead, just return the path to the dir
+        else:
+            selectedPath = path
+
+        # update the GUI settings with path to MNI_standardfile
+        self.GUI_settings.MNI_mask= selectedPath
+
+        # close the parent popup
+        self._popup.dismiss()
+
+
+    def launchFileBrowser(self, loadFunc=None, path=None, fileFilter=[]):
         """
         generic function to present a popup window with a file browser. Customize this with the parameters you pass in
             - path: path where the file browser will start
             - fileFilter: list of file types to filter; e.g. ['*.txt']
             - loadFunc: function that will be called when 'load' button pressed
         """
+        if path is None:
+            path = self.fileBrowserStartDir
+
         # method to pop open a file browser
+        print('currentPath: {}'.format(path))
         content = LoadFileDialog(loadFunc=loadFunc,
                                     cancelFileChooser=self.cancelFileChooser,
-                                    path=self.fileBrowserStartDir,
+                                    path=path,
                                     fileFilter=fileFilter)
         self._popup = Popup(title="Select", content=content,
                             size_hint=(0.9,0.9))
@@ -370,7 +352,6 @@ class CreateMaskGUIApp(App):
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadFileDialog', cls=LoadFileDialog)
 Factory.register('ErrorNotification', cls=ErrorNotification)
-#Factory.register('InputPathWidget', cls=InputPathWidget)
 
 
 def launchCreateMaskGUI(settingsFile):

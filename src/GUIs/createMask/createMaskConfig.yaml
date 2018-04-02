@@ -1,4 +1,4 @@
-MNI_mask: /Users/jeff/Desktop/development/testSession/ROI_NAc_MNI.nii.gz
+MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/masks/ROI_NAc_MNI.nii.gz
 MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_1mm_brain.nii.gz
 createFuncBrainMask: true
 outputPrefix: 1911_NAc
