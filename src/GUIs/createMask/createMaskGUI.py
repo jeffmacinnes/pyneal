@@ -137,6 +137,7 @@ class MainContainer(BoxLayout):
     MNI_standards_dir = join(pynealDir, 'utils/MNI_templates')
     textColor = ListProperty([0,0,0,1])
     disabledTextColor = ListProperty([.6, .6, .6, 1])
+    fileBrowserStartDir = '~/'
 
     def __init__(self, **kwargs):
         self.GUI_settings = self.readSettings(createMaskConfigFile)
@@ -296,29 +297,33 @@ class MainContainer(BoxLayout):
         return errorCheckPassed
 
 
-    def getSelectedPath(self, path, selection):
+    def setFuncFile(self, path, selection):
+        """
+        Function attached to load button for the 4D FUNC field
+        """
         # if a file was selected, return full path to the file
         if len(selection) > 0:
             selectedPath = join(path, selection[0])
         # if it was a dir instead, just return the path to the dir
         else:
-            self.selectedPath = path
+            selectedPath = path
+
+        # update the GUI settings with path to 4D func file
+        self.GUI_settings.subjFunc = selectedPath
+
+        # if the selected path is legit, set the fileBrowserStartDir to the parent
+        # directory for all subsequent selections. This way the other fields will
+        # start by looking within the same dir as the func data
+        if os.path.exists(selectedPath):
+            self.fileBrowserStartDir = os.path.split(selectedPath)[0]
+            print(self.fileBrowserStartDir)
 
         # close the parent popup
         self._popup.dismiss()
 
-        print(selectedPath)
 
 
-
-    def chooseFuncFile():
-        self.launchFileBrowser(loadFunc=self.getSelectedPath)
-
-        ### Launch file browser with a loadfunc that will return the path
-        # to the func file
-
-
-    def launchFileBrowser(self, loadFunc=[], path='~/', fileFilter=[]):
+    def launchFileBrowser(self, loadFunc=None, fileFilter=[]):
         """
         generic function to present a popup window with a file browser. Customize this with the parameters you pass in
             - path: path where the file browser will start
@@ -326,9 +331,9 @@ class MainContainer(BoxLayout):
             - loadFunc: function that will be called when 'load' button pressed
         """
         # method to pop open a file browser
-        content = LoadFileDialog(loadFunc=self.getSelectedPath,
+        content = LoadFileDialog(loadFunc=loadFunc,
                                     cancelFileChooser=self.cancelFileChooser,
-                                    path=path,
+                                    path=self.fileBrowserStartDir,
                                     fileFilter=fileFilter)
         self._popup = Popup(title="Select", content=content,
                             size_hint=(0.9,0.9))

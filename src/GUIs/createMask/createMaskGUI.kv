@@ -55,7 +55,7 @@ MainContainer:
             padding: (15,15)
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
-            on_release: root.launchFileBrowser(self)
+            on_release: root.launchFileBrowser(loadFunc=root.setFuncFile)
             disabled: not transformMaskToFuncCheckbox.active
 
 
