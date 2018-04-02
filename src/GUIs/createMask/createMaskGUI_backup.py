@@ -212,6 +212,8 @@ class MainContainer(BoxLayout):
     def setTransformMaskToFunc(self):
         self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
 
+    def testFunc(self):
+        return 'hererere'
 
     def submitGUI(self):
         """
@@ -296,50 +298,6 @@ class MainContainer(BoxLayout):
         return errorCheckPassed
 
 
-    def getSelectedPath(self, path, selection):
-        # if a file was selected, return full path to the file
-        if len(selection) > 0:
-            selectedPath = join(path, selection[0])
-        # if it was a dir instead, just return the path to the dir
-        else:
-            self.selectedPath = path
-
-        # close the parent popup
-        self._popup.dismiss()
-
-        print(selectedPath)
-
-
-
-    def chooseFuncFile():
-        self.launchFileBrowser(loadFunc=self.getSelectedPath)
-
-        ### Launch file browser with a loadfunc that will return the path
-        # to the func file
-
-
-    def launchFileBrowser(self, loadFunc=[], path='~/', fileFilter=[]):
-        """
-        generic function to present a popup window with a file browser. Customize this with the parameters you pass in
-            - path: path where the file browser will start
-            - fileFilter: list of file types to filter; e.g. ['*.txt']
-            - loadFunc: function that will be called when 'load' button pressed
-        """
-        # method to pop open a file browser
-        content = LoadFileDialog(loadFunc=self.getSelectedPath,
-                                    cancelFileChooser=self.cancelFileChooser,
-                                    path=path,
-                                    fileFilter=fileFilter)
-        self._popup = Popup(title="Select", content=content,
-                            size_hint=(0.9,0.9))
-        self._popup.open()
-
-
-    def cancelFileChooser(self):
-        # close the file chooser dialog
-        self._popup.dismiss()
-
-
     ### Show Notification Pop-up ##############################################
     def show_ErrorNotification(self, msg):
         self._notification = Popup(
@@ -365,7 +323,7 @@ class CreateMaskGUIApp(App):
 Factory.register('MainContainer', cls=MainContainer)
 Factory.register('LoadFileDialog', cls=LoadFileDialog)
 Factory.register('ErrorNotification', cls=ErrorNotification)
-#Factory.register('InputPathWidget', cls=InputPathWidget)
+Factory.register('InputPathWidget', cls=InputPathWidget)
 
 
 def launchCreateMaskGUI(settingsFile):

@@ -16,7 +16,7 @@ MainContainer:
             size: self.size
 
     orientation: 'vertical'
-    ### Logo Box --------------------------------------------------
+    ### Logo Box ------------------------
     BoxLayout:
         size_hint: (1, None)
         height: 200
@@ -24,40 +24,12 @@ MainContainer:
             allow_stretch: True
             source: root.setupGUI_dir + '/images/createMaskLogo.png'
 
-    ### Func Image --------------------------------------------------
-    BoxLayout:
+    ### Func Image
+    InputPathWidget:
         id: subjFuncWidget
-        padding: [10, 5]
-        spacing: 10
-        size_hint: (1, .8)
-        Label:
-            size_hint_x: .3
-            text_size: self.size
-            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
-            text: '4D FUNC: '
-            halign: 'right'
-            valign: 'middle'
-        FilePathInputField:
-            multiline: False
-            id: subjFuncInput
-            size_hint_x: .7
-            text: root.GUI_settings.subjFunc
-            on_text: root.GUI_settings.subjFunc = subjFuncInput.text
-            write_tab: False
-            font_size: 28
-            padding: [15,15]
-            disabled: not transformMaskToFuncCheckbox.active
-        Button:
-            id: 'subjFuncButton'
-            size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
-            background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
-            allow_stretch: False
-            on_release: root.launchFileBrowser(self)
-            disabled: not transformMaskToFuncCheckbox.active
-
+        widgetName: 'subjFuncWidget'
+        labelText: '4D FUNC: '
+        currentPath: root.GUI_settings.subjFunc
 
     ### Create Whole Brain Mask Option
     BoxLayout:
