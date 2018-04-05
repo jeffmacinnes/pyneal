@@ -69,6 +69,8 @@ def launchPyneal():
     # the command: logger = logging.getLogger('PynealLog')
     logFname = join(outputDir, 'pynealLog.log')
     logger = createLogger(logFname)
+    print('Logs written to: {}'.format(logFname))
+
 
     # write all settings to log
     for k in settings:

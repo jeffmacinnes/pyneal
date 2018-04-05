@@ -27,7 +27,6 @@ def createLogger(log_fName):
         logger = logging.getLogger('PynealLog')
     """
     logDir, logFile = os.path.split(log_fName)
-    print('Logs written to: {}'.format(logDir))
 
     # create the log dir if necessary
     if not os.path.isdir(logDir):
