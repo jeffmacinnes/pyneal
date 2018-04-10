@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     # print all of the current settings and series dirs to the terminal
     scannerSettings.print_allSettings()
-    scannerDirs.print_seriesDirs()
+    scannerDirs.print_currentSeries()
 
     # load the appropriate tools for this scanning environment
     scannerMake = scannerSettings.allSettings['scannerMake']

@@ -39,7 +39,7 @@ class Philips_DirStructure():
         self.sessionDir = self.baseDir
 
 
-    def print_seriesDirs(self):
+    def print_currentSeries(self):
         """
         Find all of the series dirs in given sessionDir, and print them
         all, along with time since last modification, and directory size

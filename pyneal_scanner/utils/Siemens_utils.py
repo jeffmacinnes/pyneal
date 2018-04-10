@@ -10,6 +10,7 @@ import sys
 import time
 import re
 import json
+import glob
 import logging
 from threading import Thread
 from queue import Queue
@@ -26,11 +27,12 @@ Siemens_filePattern = re.compile('\d{3}_\d{6}_\d{6}.dcm')
 
 # regEx for pulling the volume field out of the mosaic file name
 Siemens_mosaicVolumeNumberField = re.compile('(?<=\d{6}_)\d{6}')
+Siemens_mosaicSeriesNumberField = re.compile('(?<=\d{3}_)\d{6}(?=_\d{6}.dcm)')
 
 
 class Siemens_DirStructure():
     """
-    Methods for finding and returning the names and paths of series directories
+    Methods for finding and returning the names and paths of series files
     in a Siemens Scanning Environment
     """
 
@@ -45,114 +47,82 @@ class Siemens_DirStructure():
         self.sessionDir = self.baseDir
 
 
-    def print_seriesDirs(self):
+    def print_currentSeries(self):
         """
-        Find all of the series dirs in given sessionDir, and print them
+        Find all of the series present in given sessionDir, and print them
         all, along with time since last modification, and directory size
         """
         # find the sessionDir, if not already found
         if self.sessionDir is None:
             self.findSessionDir()
+        print('Session Dir: ')
+        print('{}'.format(self.sessionDir))
 
-        # get a list of all series dirs in the sessionDir
-        seriesDirs = self._findAllSubdirs(self.sessionDir)
-
-        if seriesDirs is not None:
-            # sort based on modification time
-            seriesDirs = sorted(seriesDirs, key=lambda x: x[1])
-
-            # print directory info to the screen
-            print('Session Dir: ')
-            print('{}'.format(self.sessionDir))
-            print('Series Dirs: ')
-
+        # find all mosaic files in the sessionDir
+        self.uniqueSeries = self.getUniqueSeries()
+        if len(self.uniqueSeries) == 0:
+            print('No mosaic files found in {}'.format(self.sessionDir))
+        else:
+            # print out info on each unique series in sessionDir
             currentTime = int(time.time())
-            for s in seriesDirs:
-                # get the info from this series dir
-                dirName = s[0].split('/')[-1]
+            print('Unique Series: ')
+            for series in sorted(self.uniqueSeries):
+                # get list of all dicoms that match this series number
+                thisSeriesDicoms = glob.glob(join(self.sessionDir, ('*_' + series + '_*.dcm')))
 
-                # add to self.seriesDirs
-
-                # calculate & format directory size
-                dirSize = sum([os.path.getsize(join(s[0], f)) for f in os.listdir(s[0])])
-                if dirSize < 1000:
-                    size_string = '{:5.1f} bytes'.format(dirSize)
-                elif 1000 <= dirSize < 1000000:
-                    size_string = '{:5.1f} kB'.format(dirSize/1000)
-                elif 1000000 <= dirSize:
-                    size_string = '{:5.1f} MB'.format(dirSize/1000000)
-
-                # calculate time (in mins/secs) since it was modified
-                mTime = s[1]
-                timeElapsed = currentTime - mTime
+                # get time since last modification for last dicom in list
+                lastModifiedTime = os.stat(thisSeriesDicoms[-1]).st_mtime
+                timeElapsed = currentTime - lastModifiedTime
                 m,s = divmod(timeElapsed,60)
                 time_string = '{} min, {} s ago'.format(int(m),int(s))
 
-                print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
+                print('    {}\t{} files \t{}'.format(series, len(thisSeriesDicoms), time_string))
 
 
-    def _findAllSubdirs(self, parentDir):
+    def getUniqueSeries(self):
         """
-        Return a list of all subdirectories within the specified
-        parentDir, along with the modification time for each
-
-        output: [[subDir_path, subDir_modTime]]
+        return a list of unique series numbers from the filenames of the files
+        found in the sessionDir
         """
-        subDirs = [join(parentDir, d) for d in os.listdir(parentDir) if os.path.isdir(join(parentDir, d))]
-        if not subDirs:
-            subDirs = None
-        else:
-            # add the modify time for each directory
-            subDirs = [[path, os.stat(path).st_mtime] for path in subDirs]
+        uniqueSeries = []
+        self.allMosaics = [f for f in os.listdir(self.sessionDir) if Siemens_filePattern.match(f)]
+        if len(self.allMosaics) > 0:
+            # find unique series numbers among all mosaics
+            seriesNums = []
+            for f in self.allMosaics:
+                seriesNums.append(Siemens_mosaicSeriesNumberField.search(f).group())
+            uniqueSeries = set(seriesNums)
 
-        # return the subdirectories
-        return subDirs
+        return uniqueSeries
 
 
-    def waitForSeriesDir(self, interval=.1):
+    def waitForNewSeries(self, interval=.1):
         """
-        listen for the creation of a new series directory.
-        Once a scan starts, a new series directory will be created
+        listen for the arrival of new series images.
+        Once a scan starts, new series mosaic files will be created
         in the sessionDir. By the time this function is called, this
         class should already have the sessionDir defined
         """
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
-        while keepWaiting:
-            # obtain a list of all directories in sessionDir
-            childDirs = [join(self.sessionDir, d) for d in os.listdir(self.sessionDir) if os.path.isdir(join(self.sessionDir, d))]
 
-            # loop through all dirs, check modification time
-            for thisDir in childDirs:
-                thisDir_mTime = os.path.getmtime(thisDir)
-                if thisDir_mTime > startTime:
-                    seriesDir = thisDir
-                    keepWaiting = False
-                    break
+        existingSeries = self.getUniqueSeries()
+
+        while keepWaiting:
+            # get all of the unique series again
+            currentSeries = self.getUniqueSeries()
+
+            # compare against existing series
+            diff = currentSeries - existingSeries
+            if len(diff) > 0:
+                newSeries = diff.pop()
+                keepWaiting = False
 
             # pause before searching directories again
             time.sleep(interval)
 
         # return the found series directory
-        return seriesDir
-
-
-    def get_seriesDirs(self):
-        """
-        build a list that contains the directory names of all of the series
-        """
-        # get a list of all sub dirs in the sessionDir
-        subDirs = self._findAllSubdirs(self.sessionDir)
-
-        if subDirs is not None:
-            # extract just the dirname from subDirs and append to a list
-            self.seriesDirs = []
-            for d in subDirs:
-                self.seriesDirs.append(d[0].split('/')[-1])
-        else:
-            self.seriesDirs = None
-
-        return self.seriesDirs
+        return newSeries
 
 
 class Siemens_BuildNifti():
@@ -403,13 +373,14 @@ class Siemens_BuildNifti():
         print('Image saved at: {}', output_path)
 
 
-class Siemens_monitorSeriesDir(Thread):
+class Siemens_monitorSessionDir(Thread):
     """
-    Class to monitor for new mosaic images to appear in the seriesDir. This
+    Class to monitor for new mosaic images to appear in the sessionDir. This
     class will run independently in a separate thread. Each new mosaic file
-    that appears will be added to the Queue for further processing
+    that appears and matches the current series number will be added to the
+    Queue for further processing
     """
-    def __init__(self, seriesDir, dicomQ, interval=.5):
+    def __init__(self, sessionDir, seriesNum, dicomQ, interval=.5):
         # start the thread upon completion
         Thread.__init__(self)
 
@@ -418,7 +389,8 @@ class Siemens_monitorSeriesDir(Thread):
 
         # initialize class parameters
         self.interval = interval            # interval for polling for new files
-        self.seriesDir = seriesDir          # full path to series directory
+        self.sessionDir = sessionDir        # full path to series directory
+        self.seriesNum = seriesNum          # series number of current series
         self.dicomQ = dicomQ                # queue to store dicom mosaic files
         self.alive = True                   # thread status
         self.numMosaicsAdded = 0            # counter to keep track of # mosaics
@@ -429,15 +401,16 @@ class Siemens_monitorSeriesDir(Thread):
         # function that runs while the Thread is still alive
         while self.alive:
 
-            # create a set of all mosaic files currently in the series dir
-            currentMosaics = set(os.listdir(self.seriesDir))
+            # create a set of all mosaic files with the current series num
+            #currentMosaics = set(os.listdir(self.seriesDir))
+            currentMosaics = set(glob.glob(join(self.sessionDir, ('*_' + str(self.seriesNum).zfill(6) + '_*.dcm'))))
 
             # grab only the ones that haven't already been added to the queue
             newMosaics = [f for f in currentMosaics if f not in self.queued_mosaic_files]
 
             # loop over each of the new mosaic files, add each to queue
             for f in newMosaics:
-                mosaic_fname = join(self.seriesDir, f)
+                mosaic_fname = join(self.sessionDir, f)
                 try:
                     self.dicomQ.put(mosaic_fname)
                 except:
@@ -588,11 +561,11 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     launch a real-time session in a Siemens environment. This should be called
     from pynealScanner.py before starting the scanner. Once called, this
     method will take care of:
-        - monitoring the sessionDir for a new series directory to appear (and
-        then returing the name of the new series dir)
+        - monitoring the sessionDir for new series files to appear (and
+        then returing the new series number)
         - set up the socket connection to send volume data over
         - creating a Queue to store newly arriving DICOM files
-        - start a separate thread to monitor the new seriesDir
+        - start a separate thread to monitor the new series appearing
         - start a separate thread to process DICOMs that are in the Queue
     """
     # Create a reference to the logger. This assumes the logger has already
@@ -623,9 +596,9 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     logger.info('pynealSocket connected')
 
     ### Wait for a new series directory appear
-    logger.info('Waiting for new seriesDir...')
-    seriesDir = scannerDirs.waitForSeriesDir()
-    logger.info('New Series Directory: {}'.format(seriesDir))
+    logger.info('Waiting for new series files to appear...')
+    seriesNum = scannerDirs.waitForNewSeries()
+    logger.info('New Series Number: {}'.format(seriesNum))
 
     ### Start threads to A) watch for new mosaic files, and B) process
     # them as they appear
@@ -633,9 +606,9 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
     # dicom mosaic images, and keep track of which have been processed
     dicomQ = Queue()
 
-    # create instance of class that will monitor seriesDir. Pass in
-    # a copy of the dicom queue. Start the thread going
-    scanWatcher = Siemens_monitorSeriesDir(seriesDir, dicomQ)
+    # create instance of class that will monitor sessionDir for new mosaic
+    # images to appear. Pass in a copy of the dicom queue. Start the thread
+    scanWatcher = Siemens_monitorSessionDir(scannerDirs.sessionDir, seriesNum, dicomQ)
     scanWatcher.start()
 
     # create an instance of the class that will grab mosaic dicoms

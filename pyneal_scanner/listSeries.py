@@ -23,4 +23,4 @@ if __name__ == '__main__':
     scannerSettings.print_allSettings()
 
     # print all of the current series to the screen
-    scannerDirs.print_seriesDirs()
+    scannerDirs.print_currentSeries()
