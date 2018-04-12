@@ -188,7 +188,7 @@ if __name__ == '__main__':
     scannerSettings, scannerDirs = initializeSession()
 
     # print all of the current series dirs to the terminal
-    scannerDirs.print_seriesDirs()
+    scannerDirs.print_currentSeries()
 
     # load the appropriate tools for this scanning environment
     scannerMake = scannerSettings.allSettings['scannerMake']
