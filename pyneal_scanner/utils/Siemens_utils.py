@@ -136,18 +136,20 @@ class Siemens_BuildNifti():
 
     Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+ orientation
     """
-    def __init__(self, seriesDir):
+    def __init__(self, seriesDir, seriesNum):
         """
         Initialize class:
-            - seriesDir needs to be the full path to a directory containing
-            raw dicom slices
+            - seriesDir: the path to directory containing all dicom files. Note
+                that for Siemens, this dir can contain multiple series
+            - seriesNum: the seriesNum of the dicoms you want to use to build file
         """
         # initialize attributes
         self.seriesDir = seriesDir
+        self.seriesNum = seriesNum
         self.niftiImage = None
 
-        # make a list of all of the raw dicom files in this dir
-        rawDicoms = [f for f in os.listdir(self.seriesDir) if Siemens_filePattern.match(f)]
+        # make a list of the specified raw dicom mosaic files in this dir
+        rawDicoms = glob.glob(join(self.seriesDir, ('*_' + str(self.seriesNum).zfill(6) + '_*.dcm')))
 
         # figure out what type of image this is, 4d or 3d
         self.scanType = self._determineScanType(rawDicoms[0])
@@ -370,7 +372,7 @@ class Siemens_BuildNifti():
         specified by output_fName
         """
         nib.save(self.niftiImage, output_path)
-        print('Image saved at: {}', output_path)
+        print('Image saved at: {}'.format(output_path))
 
 
 class Siemens_monitorSessionDir(Thread):

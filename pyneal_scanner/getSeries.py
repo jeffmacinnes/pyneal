@@ -37,7 +37,7 @@ def getSeries_GE(scannerSettings, scannerDirs):
 
     # prompt user to specifiy a series. Make sure that it is a valid
     # series before continuing
-    seriesDirs = scannerDirs.get_seriesDirs()
+    seriesDirs = scannerDirs.get_currentSeries()
     while True:
         selectedSeries = input('Which Series?: ')
         if selectedSeries in seriesDirs:
@@ -60,24 +60,12 @@ def getSeries_GE(scannerSettings, scannerDirs):
 
     # create an instance of the GE_NiftiBuilder
     niftiBuilder = GE_BuildNifti(seriesDir)
-    print('Successfully built Nifti image...\n')
+    output_fName = '{}_{}.nii.gz'.format(outputPrefix, selectedSeries)
+    print('Successfully built Nifti image: {}\n'.format(output_fName))
 
-    # ask user whether they want to save it locally or send
-    print('Save nifti locally (1), or Send to remote machine (2)')
-    while True:
-        saveOrSend = input('type 1 or 2: ')
-        if saveOrSend in ['1', '2']:
-            break
-        else:
-            print('{} is not a valid choice!'.format(saveOrSend))
-
-    if saveOrSend == '1':
-        output_path = join(pynealScannerDir, 'data', '{}_{}.nii.gz'.format(outputPrefix, selectedSeries))
-        niftiBuilder.write_nifti(output_path)
-
-    elif saveOrSend == '2':
-        pass
-        #sendNifti()
+    # save Nifti image
+    output_path = join(pynealScannerDir, 'data', output_fName)
+    saveNifti(niftiBuilder, output_path)
 
 
 def getSeries_Philips(scannerSettings, scannerDirs):
@@ -112,23 +100,12 @@ def getSeries_Philips(scannerSettings, scannerDirs):
 
     # create an instance of the Siemens_NiftiBuilder
     niftiBuilder = Philips_BuildNifti(seriesDir)
-    print('Successfully built Nifti image...\n')
+    output_fName = '{}_{}.nii.gz'.format(outputPrefix, selectedSeries)
+    print('Successfully built Nifti image: {}\n'.format(output_fName))
 
-    # ask user whether they want to save it locally or send
-    print('Save nifti locally (1), or Send to remote machine (2)')
-    while True:
-        saveOrSend = input('type 1 or 2: ')
-        if saveOrSend in ['1', '2']:
-            break
-        else:
-            print('{} is not a valid choice!'.format(saveOrSend))
-
-    if saveOrSend == '1':
-        output_path = join(pynealScannerDir, 'data', '{}_{}.nii.gz'.format(outputPrefix, selectedSeries))
-        niftiBuilder.write_nifti(output_path)
-
-    elif saveOrSend == '2':
-        pass
+    # save Nifti image
+    output_path = join(pynealScannerDir, 'data', output_fName)
+    saveNifti(niftiBuilder, output_path)
 
 
 def getSeries_Siemens(scannerSettings, scannerDirs):
@@ -140,10 +117,10 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
 
     # prompt user to specifiy a series. Make sure that it is a valid
     # series before continuing
-    seriesDirs = scannerDirs.get_seriesDirs()
+    currentSeries = scannerDirs.getUniqueSeries()
     while True:
         selectedSeries = input('Which Series?: ')
-        if selectedSeries in seriesDirs:
+        if selectedSeries.zfill(6) in currentSeries:
             break
         else:
             print('{} is not a valid series choice!'.format(selectedSeries))
@@ -162,24 +139,22 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
     seriesDir = join(scannerDirs.sessionDir, selectedSeries)
 
     # create an instance of the Siemens_NiftiBuilder
-    niftiBuilder = Siemens_BuildNifti(seriesDir)
-    print('Successfully built Nifti image...\n')
+    niftiBuilder = Siemens_BuildNifti(scannerDirs.sessionDir, selectedSeries)
+    output_fName = '{}_{}.nii.gz'.format(outputPrefix, selectedSeries)
+    print('Successfully built Nifti image: {}\n'.format(output_fName))
 
-    # ask user whether they want to save it locally or send
-    print('Save nifti locally (1), or Send to remote machine (2)')
-    while True:
-        saveOrSend = input('type 1 or 2: ')
-        if saveOrSend in ['1', '2']:
-            break
-        else:
-            print('{} is not a valid choice!'.format(saveOrSend))
+    # save the nifti image
+    output_path = join(pynealScannerDir, 'data', output_fName)
+    saveNifti(niftiBuilder, output_path)
 
-    if saveOrSend == '1':
-        output_path = join(pynealScannerDir, 'data', '{}_{}.nii.gz'.format(outputPrefix, selectedSeries))
-        niftiBuilder.write_nifti(output_path)
 
-    elif saveOrSend == '2':
-        pass
+def saveNifti(niftiBuilder, outputPath):
+    """
+    Save the newly created nifti file
+        - niftiBuilder: instance of correct niftiBuilder class for this scanning env.
+        - outputPath: full path for output nifti file
+    """
+    niftiBuilder.write_nifti(outputPath)
 
 
 if __name__ == '__main__':

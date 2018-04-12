@@ -268,7 +268,7 @@ class Philips_BuildNifti():
         specified by output_fName
         """
         nib.save(self.niftiImage, output_path)
-        print('Image saved at: {}', output_path)
+        print('Image saved at: {}'.format(output_path))
 
 
 class Philips_monitorSeriesDir(Thread):
