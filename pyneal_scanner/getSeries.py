@@ -37,7 +37,7 @@ def getSeries_GE(scannerSettings, scannerDirs):
 
     # prompt user to specifiy a series. Make sure that it is a valid
     # series before continuing
-    seriesDirs = scannerDirs.get_currentSeries()
+    seriesDirs = scannerDirs.get_seriesDirs()
     while True:
         selectedSeries = input('Which Series?: ')
         if selectedSeries in seriesDirs:
