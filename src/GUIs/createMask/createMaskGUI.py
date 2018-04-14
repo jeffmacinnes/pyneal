@@ -19,6 +19,7 @@ from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.textinput import TextInput
 from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty, BooleanProperty
 from kivy.uix.filechooser import FileChooserListView
@@ -97,6 +98,7 @@ class MainContainer(BoxLayout):
             'createFuncBrainMask': [True, bool],
             'transformMaskToFunc': [False, bool],
             'subjAnat': ['', str],
+            'skullStrip': [True, bool],
             'MNI_standard': [join(self.MNI_standardsDir, 'MNI152_T1_1mm_brain.nii.gz'), str],
             'MNI_mask': ['', str],
             'outputPrefix': ['test', str]
@@ -194,6 +196,9 @@ class MainContainer(BoxLayout):
                     (self.GUI_settings['createFuncBrainMask'])]):
             errorMsg.append('Must check at least one mask option')
 
+        ### skull strip?
+        self.GUI_settings['skullStrip'] = self.ids.skullStripCheckbox.active
+
         ### check if hi-res anat is valid
         if not exists(self.GUI_settings['subjAnat']):
             errorMsg.append('hi-res ANAT path not valid: {}'.format(self.GUI_settings['subjAnat']))
@@ -263,6 +268,10 @@ class MainContainer(BoxLayout):
 
         # close the parent popup
         self._popup.dismiss()
+
+
+    def setSkullStrip(self):
+        self.GUI_settings['skullStrip'] = self.ids.skullStripCheckbox.active
 
 
     def setMNI_standard(self, path, selection):

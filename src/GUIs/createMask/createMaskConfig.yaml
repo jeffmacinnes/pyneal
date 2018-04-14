@@ -1,7 +1,7 @@
 MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/masks/ROI_NAc_MNI.nii.gz
 MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_1mm_brain.nii.gz
 createFuncBrainMask: true
-outputPrefix: 1911_NAc
-subjAnat: /Users/jeff/Desktop/development/testSession/GE_anat_s1923.nii.gz
-subjFunc: /Users/jeff/Desktop/development/testSession/GE_func_s1925.nii.gz
+outputPrefix: UNC_NAc
+subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/UNC_tests/UNC_test2_000017.nii.gz
+subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/UNC_tests/UNC_test1_000013.nii.gz
 transformMaskToFunc: true

@@ -53,6 +53,16 @@ MainContainer:
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setFuncFile)
+    Widget:
+        id: separator
+        size_hint_y: None
+        height: 3
+        canvas:
+            Color:
+                rgb:.5, 0.5, 0.5
+            Rectangle:
+                pos: 50, separator.center_y
+                size: separator.width-60, 2
 
 
     ### Create Whole Brain Mask Option
@@ -64,7 +74,7 @@ MainContainer:
             on_active: root.setCreateFuncBrainMask()
         Label:
             text: 'Create FUNC whole-brain mask'
-            color: root.textColor
+            color: root.textColor if createFuncBrainMaskCheckbox.active else root.disabledTextColor
             halign: 'left'
         BoxLayout:
             size_hint_x: 1.23
@@ -89,7 +99,7 @@ MainContainer:
             on_active: root.setTransformMaskToFunc()
         Label:
             text: 'Transform MNI mask to FUNC'
-            color: root.textColor
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
             halign: 'left'
         BoxLayout:
             size_hint_x: 1.23
@@ -128,6 +138,25 @@ MainContainer:
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setAnatFile)
             disabled: not transformMaskToFuncCheckbox.active
+    StackLayout:
+        orientation: "rl-tb"
+        padding: 15,0
+        CheckBox:
+            id: skullStripCheckbox
+            size: 250,15
+            size_hint: None, None
+            state: 'down' if root.GUI_settings.skullStrip else 'normal'
+            on_active: root.setSkullStrip()
+            disabled: not transformMaskToFuncCheckbox.active
+        Label:
+            text: 'skull strip?'
+            size: 15, 15
+            size_hint: None, None
+            color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
+            halign: "left"
+
+
+
 
 
     ### MNI Standard --------------------------------------------------
