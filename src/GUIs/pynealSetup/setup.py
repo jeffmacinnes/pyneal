@@ -25,6 +25,7 @@ import re
 import yaml
 
 from kivy.app import App
+from kivy.base import EventLoop
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
@@ -315,6 +316,7 @@ class MainContainer(BoxLayout):
             global submitButtonPressed
             submitButtonPressed = True
             App.get_running_app().stop()
+            EventLoop.exit()
 
 
     ### File Chooser Dialog Methods ###########################################
@@ -349,7 +351,7 @@ class MainContainer(BoxLayout):
 
         # close  dialog
         self.closeFileBrowser()
-        
+
 
     # Update Mask Path
     def setMaskPath(self, path):

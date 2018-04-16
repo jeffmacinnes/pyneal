@@ -2,7 +2,7 @@ MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/masks/ROI_NAc_MNI.
 MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_1mm_brain.nii.gz
 createFuncBrainMask: true
 outputPrefix: UNC_NAc
-skullStrip: false
-subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/UNC_tests/anat_brain.nii.gz
-subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/pyneal_scanner/data/UNC_tests/UNC_test1_000013.nii.gz
+skullStrip: true
+subjAnat: /Users/jeff/Desktop/sampleData/UNC_test2_000017.nii.gz
+subjFunc: /Users/jeff/Desktop/sampleData/UNC_test1_000013.nii.gz
 transformMaskToFunc: true

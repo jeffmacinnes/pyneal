@@ -243,6 +243,7 @@ class MainContainer(BoxLayout):
 
         # update the GUI settings with path to 4D func file
         self.GUI_settings.subjFunc = selectedPath
+        print(selectedPath)
 
         # if the selected path is legit, set the fileBrowserStartDir to the parent
         # directory for all subsequent selections. This way the other fields will
