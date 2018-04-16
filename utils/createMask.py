@@ -134,13 +134,17 @@ class MaskCreator():
 
         self.logger.info('transforming MNI mask to functional space')
 
-        ###  - brain extraction on the hi-res anat image
-        self.logger.info('skull stripping hi-res subject anatomical')
+        ###  - brain extraction on the hi-res anat image, if specified
         outputFile = join(self.outputDir, 'hires_brain.nii.gz')
-        if not exists(outputFile):
-            subprocess.call(['bet', self.settings['subjAnat'], outputFile, '-f', '0.35'])
+        if self.settings['skullStrip']:
+            self.logger.info('skull stripping hi-res subject anatomical')
+            if not exists(outputFile):
+                subprocess.call(['bet', self.settings['subjAnat'], outputFile, '-f', '0.35'])
+            else:
+                self.logger.info('using existing: {}'.format(outputFile))
         else:
-            self.logger.info('using existing: {}'.format(outputFile))
+            self.logger.info('copying {} to {}'.format(self.settings['subjAnat'], outputFile))
+            subprocess.call(['cp', self.settings['subjAnat'], outputFile])
 
 
         ### register MNI standard --> hires

@@ -16,6 +16,7 @@ import sys
 import yaml
 
 from kivy.app import App
+from kivy.base import EventLoop
 from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
@@ -177,6 +178,7 @@ class MainContainer(BoxLayout):
             global submitButtonPressed
             submitButtonPressed = True
             App.get_running_app().stop()
+            EventLoop.exit()
 
 
     def check_GUI_settings(self):
@@ -352,10 +354,6 @@ class CreateMaskGUIApp(App):
     """
     title = 'Create Mask'
 
-    def on_stop(self):
-        global submitButtonPressed
-        if not submitButtonPressed:
-            sys.exit()
 
 # Register the various components of the GUI
 Factory.register('MainContainer', cls=MainContainer)
