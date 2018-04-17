@@ -43,6 +43,7 @@ submitButtonPressed = False
 
 
 class FilePathInputField(TextInput):
+    cursor_blink = BooleanProperty(True)
     pass
 
 
@@ -241,9 +242,11 @@ class MainContainer(BoxLayout):
         else:
             selectedPath = path
 
+        # set the cursor
+        self.ids.subjFuncInput.cursor = (len(selectedPath), 0)
+
         # update the GUI settings with path to 4D func file
         self.GUI_settings.subjFunc = selectedPath
-        print(selectedPath)
 
         # if the selected path is legit, set the fileBrowserStartDir to the parent
         # directory for all subsequent selections. This way the other fields will
@@ -265,6 +268,9 @@ class MainContainer(BoxLayout):
         # if it was a dir instead, just return the path to the dir
         else:
             selectedPath = path
+
+        # set the cursor
+        self.ids.subjAnatInput.cursor = (len(selectedPath), 0)
 
         # update the GUI settings with path to hi-res anat file
         self.GUI_settings.subjAnat = selectedPath
@@ -288,6 +294,9 @@ class MainContainer(BoxLayout):
         else:
             selectedPath = path
 
+        # set the cursor
+        self.ids.MNI_standardInput.cursor = (len(selectedPath), 0)
+
         # update the GUI settings with path to MNI_standardfile
         self.GUI_settings.MNI_standard = selectedPath
 
@@ -305,6 +314,9 @@ class MainContainer(BoxLayout):
         # if it was a dir instead, just return the path to the dir
         else:
             selectedPath = path
+
+        # set the cursor
+        self.ids.MNI_maskInput.cursor = (len(selectedPath), 0)
 
         # update the GUI settings with path to MNI_standardfile
         self.GUI_settings.MNI_mask= selectedPath

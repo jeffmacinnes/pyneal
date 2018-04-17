@@ -48,7 +48,7 @@ class MaskCreator():
         Open GUI to modify settings file. Read settings. Create logfiles
         and necessary output directories. Make masks accordingly
         """
-        startTime = time.time()
+
 
         ### Read Settings ------------------------------------
         # Read the settings file, and launch the createMask GUI to give the user
@@ -58,6 +58,9 @@ class MaskCreator():
 
         # Launch GUI
         createMaskGUI.launchCreateMaskGUI(settingsFile)
+
+        # start the timer
+        startTime = time.time()
 
         # Read the new settings file, store as dict
         with open(settingsFile, 'r') as ymlFile:
