@@ -3,8 +3,8 @@
 MainContainer:
 
 <MainContainer>:
-    padding: root.width * .02, root.height * .02
-    spacing: "10dp"
+    padding: dp(root.width * .02), dp(root.height * .02)
+    spacing: "8dp"
     canvas.before:
         Color:
             rgba: 1,1,1,1
@@ -16,7 +16,7 @@ MainContainer:
     ### Logo Box --------------------------------------------------
     BoxLayout:
         size_hint: (1, None)
-        height: 200
+        height: dp(95)
         Image:
             allow_stretch: True
             source: root.setupGUI_dir + '/images/createMaskLogo.png'
@@ -24,8 +24,8 @@ MainContainer:
     ### Func Image --------------------------------------------------
     BoxLayout:
         id: subjFuncWidget
-        padding: [10, 5]
-        spacing: 10
+        padding: [dp(10), dp(3)]
+        spacing: dp(10)
         size_hint: (1, .8)
         Label:
             size_hint_x: .3
@@ -41,27 +41,27 @@ MainContainer:
             text: root.GUI_settings.subjFunc
             on_text: root.GUI_settings.subjFunc = subjFuncInput.text
             write_tab: False
-            font_size: 28
-            padding: [15,15]
+            font_size: sp(14)
+            padding: [dp(10), dp(5)]
         Button:
             id: 'subjFuncButton'
             size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
+            size: (dp(30), dp(30))
+            spacing: dp(15)
+            padding: (dp(15), dp(15))
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setFuncFile)
     Widget:
         id: separator
         size_hint_y: None
-        height: 3
+        height: dp(3)
         canvas:
             Color:
                 rgb:.5, 0.5, 0.5
             Rectangle:
-                pos: 50, separator.center_y
-                size: separator.width-60, 2
+                pos: dp(50), separator.center_y
+                size: separator.width-dp(50), dp(1)
 
 
     ### Create Whole Brain Mask Option
@@ -81,13 +81,13 @@ MainContainer:
     Widget:
         id: separator
         size_hint_y: None
-        height: 3
+        height: dp(3)
         canvas:
             Color:
                 rgb:.5, 0.5, 0.5
             Rectangle:
-                pos: 50, separator.center_y
-                size: separator.width-60, 2
+                pos: dp(50), separator.center_y
+                size: separator.width-dp(50), dp(1)
 
     ### Transform MNI mask to FUNC
     BoxLayout:
@@ -106,8 +106,8 @@ MainContainer:
     ### Anat Image --------------------------------------------------
     BoxLayout:
         id: subjAnatWidget
-        padding: [10, 5]
-        spacing: 10
+        padding: [dp(10), dp(3)]
+        spacing: dp(10)
         size_hint: (1, .8)
         Label:
             size_hint_x: .3
@@ -124,32 +124,32 @@ MainContainer:
             halign: 'left'
             on_text: root.GUI_settings.subjAnat = subjAnatInput.text
             write_tab: False
-            font_size: 28
-            padding: [15,15]
+            font_size: sp(14)
+            padding: [dp(10), dp(5)]
             disabled: not transformMaskToFuncCheckbox.active
         Button:
             id: 'subjAnatButton'
             size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
+            size: (dp(30), dp(30))
+            spacing: dp(15)
+            padding: (dp(15), dp(15))
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setAnatFile)
             disabled: not transformMaskToFuncCheckbox.active
     StackLayout:
         orientation: "rl-tb"
-        padding: 15,0
+        padding: dp(15),0
         CheckBox:
             id: skullStripCheckbox
-            size: 250,15
+            size: dp(100), dp(15)
             size_hint: None, None
             state: 'down' if root.GUI_settings.skullStrip else 'normal'
             on_active: root.setSkullStrip()
             disabled: not transformMaskToFuncCheckbox.active
         Label:
             text: 'skull strip?'
-            size: 15, 15
+            size: dp(15), dp(15)
             size_hint: None, None
             color: root.textColor if transformMaskToFuncCheckbox.active else root.disabledTextColor
             halign: "left"
@@ -161,8 +161,8 @@ MainContainer:
     ### MNI Standard --------------------------------------------------
     BoxLayout:
         id: MNI_standardWidget
-        padding: [10, 5]
-        spacing: 10
+        padding: [dp(10), dp(3)]
+        spacing: dp(10)
         size_hint: (1, .8)
         Label:
             size_hint_x: .3
@@ -179,15 +179,15 @@ MainContainer:
             halign: 'left'
             on_text: root.GUI_settings.MNI_standard = MNI_standardInput.text
             write_tab: False
-            font_size: 28
-            padding: [15,15]
+            font_size: sp(14)
+            padding: [dp(10), dp(5)]
             disabled: not transformMaskToFuncCheckbox.active
         Button:
             id: 'MNI_standardButton'
             size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
+            size: (dp(30), dp(30))
+            spacing: dp(15)
+            padding: (dp(15), dp(15))
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setMNI_standard, path=root.MNI_standardsDir)
@@ -197,8 +197,8 @@ MainContainer:
     ### Mask Path --------------------------------------------------
     BoxLayout:
         id: MNI_maskWidget
-        padding: [10, 5]
-        spacing: 10
+        padding: [dp(10), dp(3)]
+        spacing: dp(10)
         size_hint: (1, .8)
         Label:
             size_hint_x: .3
@@ -215,15 +215,15 @@ MainContainer:
             halign: 'left'
             on_text: root.GUI_settings.MNI_mask = MNI_maskInput.text
             write_tab: False
-            font_size: 28
-            padding: [15,15]
+            font_size: sp(14)
+            padding: [dp(10), dp(5)]
             disabled: not transformMaskToFuncCheckbox.active
         Button:
             id: 'MNI_maskButton'
             size_hint: (None, None)
-            size: (65,65)
-            spacing: 15
-            padding: (15,15)
+            size: (dp(30), dp(30))
+            spacing: dp(15)
+            padding: (dp(15), dp(15))
             background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
             allow_stretch: False
             on_release: root.launchFileBrowser(loadFunc=root.setMNI_mask, path=root.masksDir)
@@ -232,8 +232,8 @@ MainContainer:
 
     ### Output Name
     BoxLayout:
-        padding: [10, 5]
-        spacing: 10
+        padding: [dp(10), dp(3)]
+        spacing: dp(10)
         size_hint: (1, .8)
         Label:
             size_hint_x: .31
@@ -249,8 +249,8 @@ MainContainer:
             write_tab: False
             disabled: not transformMaskToFuncCheckbox.active
             on_text:root.GUI_settings.outputPrefix = outputPrefixWidget.text
-            font_size: 28
-            padding: [15,15]
+            font_size: sp(14)
+            padding: [dp(10), dp(5)]
         BoxLayout:
             size_hint_x: .2
 
@@ -258,19 +258,22 @@ MainContainer:
     Widget:
         id: separator
         size_hint_y: None
-        height: 3
+        height: dp(3)
         canvas:
             Color:
                 rgb:.5, 0.5, 0.5
             Rectangle:
-                pos: 50, separator.center_y
-                size: separator.width-60, 2
+                pos: dp(50), separator.center_y
+                size: separator.width-dp(50), dp(1)
 
     BoxLayout:
-        padding: [150, 0]
-        spacing: 10
+        #padding: [dp(10), dp(0)]
+        spacing: dp(10)
         Button:
+            size_hint: .5, .9
+            #size: (dp(190), dp(45))
             text: 'Submit'
+            font_size: sp(18)
             on_release: root.submitGUI()
 
 
@@ -289,7 +292,7 @@ MainContainer:
 
         BoxLayout:
             size_hint_y: None
-            height: 50
+            height: dp(50)
             Button:
                 text: "select"
                 on_release: root.loadFunc(filechooser.path, filechooser.selection)
