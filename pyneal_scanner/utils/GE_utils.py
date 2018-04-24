@@ -645,6 +645,15 @@ class GE_processSlice(Thread):
                 for s in range(numSlicesInQueue):
                     dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
 
+                    #ensure the file has copied completely
+                    file_size = 0
+                    while True:
+                        file_info = os.stat(dcm_fname)
+                        if file_info.st_size == 0 or file_info.st_size > file_size:
+                            file_size = file_info.st_size
+                        else:
+                            break
+
                     # process this slice
                     self.processDcmSlice(dcm_fname)
 

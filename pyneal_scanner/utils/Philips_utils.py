@@ -371,6 +371,15 @@ class Philips_processVolume(Thread):
                     # retrieve file name from queue
                     par_fname = self.parQ.get(True, 2)
 
+                    # ensure the file has copied completely
+                    file_size = 0
+                    while True:
+                        file_info = os.stat(par_fname)
+                        if file_info.st_size == 0 or file_info.st_size > file_size:
+                            file_size = file_info.st_size
+                        else:
+                            break
+
                     # process this par file
                     self.processParFile(par_fname)
 

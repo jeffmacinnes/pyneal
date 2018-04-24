@@ -477,6 +477,15 @@ class Siemens_processMosaic(Thread):
                     # retrieve file name from queue
                     mosaic_dcm_fname = self.dicomQ.get(True, 2)
 
+                    # ensure the file has copied completely
+                    file_size = 0
+                    while True:
+                        file_info = os.stat(mosaic_dcm_fname)
+                        if file_info.st_size == 0 or file_info.st_size > file_size:
+                            file_size = file_info.st_size
+                        else:
+                            break
+
                     # process this mosaic
                     self.processMosaicFile(mosaic_dcm_fname)
 
