@@ -100,7 +100,8 @@ def Philips_sim(inputDir, outputDir, TR):
 
         # sleep for remaining part of TR
         elapsedTime = time.time()-timeStart
-        time.sleep((TR/1000)-elapsedTime)
+        if elapsedTime < (TR/1000):
+            time.sleep((TR/1000)-elapsedTime)
 
 
 

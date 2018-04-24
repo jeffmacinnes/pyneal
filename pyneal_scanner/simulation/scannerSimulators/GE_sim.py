@@ -97,7 +97,9 @@ def GE_sim(dicomDir, outputDir, TR):
 
     # loop over all sorted slice files
     print('copied dicom #:', end=' ')
-    for sliceNum in sorted(sliceFiles, key=int):
+    simStart = time.time()
+    for i,sliceNum in enumerate(sorted(sliceFiles, key=int)):
+        startTime = time.time()
         src_file = join(dicomDir, sliceFiles[sliceNum])
         dst_file = join(outputDir, sliceFiles[sliceNum])
 
@@ -105,8 +107,14 @@ def GE_sim(dicomDir, outputDir, TR):
         subprocess.call(['cp', src_file, dst_file])
         print(sliceNum, end=', ', flush=True)
 
-        # introduce delay
-        time.sleep(sliceDelay)
+        # introduce interslice delay (minus any elapsed time)
+        elapsedTime = time.time()-startTime
+        if elapsedTime < sliceDelay:
+            time.sleep(sliceDelay - elapsedTime)
+            print('{:.3f}'.format(time.time()-startTime), end=', ', flush=True)
+
+    simElapsed = time.time() - simStart
+    print('Mean time per vol: {}'.format(simElapsed/totalVols))
     time.sleep(3)
 
 
