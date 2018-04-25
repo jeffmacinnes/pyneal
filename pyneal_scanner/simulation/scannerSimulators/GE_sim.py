@@ -111,7 +111,6 @@ def GE_sim(dicomDir, outputDir, TR):
         elapsedTime = time.time()-startTime
         if elapsedTime < sliceDelay:
             time.sleep(sliceDelay - elapsedTime)
-            print('{:.3f}'.format(time.time()-startTime), end=', ', flush=True)
 
     simElapsed = time.time() - simStart
     print('Mean time per vol: {}'.format(simElapsed/totalVols))
