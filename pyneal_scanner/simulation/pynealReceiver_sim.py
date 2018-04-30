@@ -6,7 +6,7 @@ Usage:
     python pynealReceiver_sim.py [--port] [--nVols]
 
 Defaults:
-    -p/--port: 5556
+    -p/--port: 5555
     -n/--nVols: 60
 
 After the scan is complete and all of the data has arrived, this
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simulate Receiving thread of Pyneal')
     parser.add_argument('-p', '--port',
                 type=int,
-                default=5556,
+                default=5555,
                 help='port number to listen on for incoming data from pynealScanner ')
     parser.add_argument('-n', '--nVols',
                 type=int,

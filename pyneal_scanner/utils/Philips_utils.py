@@ -173,7 +173,6 @@ class Philips_BuildNifti():
         # make a list of all of the par files in this dir
         par_pattern = re.compile(fnmatch.translate('*.par'), re.IGNORECASE)
         parFiles = [join(self.seriesDir, x) for x in os.listdir(self.seriesDir) if par_pattern.match(x)]
-        print(parFiles)
 
         # figure out what type of image this is, 4d or 3d
         # NEED TO FIGURE OUT HOW TO DO THIS WITH PHILIPS DATA
@@ -312,14 +311,16 @@ class Philips_monitorSeriesDir(Thread):
         self.alive = True                   # thread status
         self.numParsAdded = 0               # counter to keep track of # mosaics
         self.queued_par_files = set()       # empty set to store names of queued mosaic
-
+        self.par_pattern = re.compile(fnmatch.translate('*.par'), re.IGNORECASE)
+        parFiles =
 
     def run(self):
         # function that runs while the Thread is still alive
         while self.alive:
 
             # create a set of all par files currently in the series dir
-            currentPars = set(glob.glob(join(self.seriesDir, '*.par')))
+            #currentPars = set(glob.glob(join(self.seriesDir, '*.par')))
+            currentPars = set([join(self.seriesDir, x) for x in os.listdir(self.seriesDir) if self.par_pattern.match(x)])
 
             # grab only the ones that haven't already been added to the queue
             newPars= [f for f in currentPars if f not in self.queued_par_files]
