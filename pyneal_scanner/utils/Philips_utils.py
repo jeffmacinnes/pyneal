@@ -10,6 +10,7 @@ from os.path import join
 import sys
 import time
 import re
+import fnmatch
 import glob
 import json
 import logging
@@ -124,18 +125,6 @@ class Philips_DirStructure():
                     keepWaiting = False
                     break
 
-            # WORKS, AS BACKUP:
-            # childDirs = [join(self.sessionDir, d) for d in os.listdir(self.sessionDir) if os.path.isdir(join(self.sessionDir, d))]
-
-            ## loop through all dirs, check modification time
-            # for thisDir in childDirs:
-            #     if os.path.basename(thisDir)[0] == '0':
-            #         thisDir_mTime = os.path.getmtime(thisDir)
-            #         if thisDir_mTime > startTime:
-            #             seriesDir = thisDir
-            #             keepWaiting = False
-            #             break
-
             # pause before searching directories again
             time.sleep(interval)
 
@@ -182,11 +171,13 @@ class Philips_BuildNifti():
         self.niftiImage = None
 
         # make a list of all of the par files in this dir
-        parFiles = glob.glob(join(self.seriesDir, '*.par'))
+        par_pattern = re.compile(fnmatch.translate('*.par'), re.IGNORECASE)
+        parFiles = [join(self.seriesDir, x) for x in os.listdir(self.seriesDir) if par_pattern.match(x)]
+        print(parFiles)
 
         # figure out what type of image this is, 4d or 3d
         # NEED TO FIGURE OUT HOW TO DO THIS WITH PHILIPS DATA
-        self.scanType = 'func'
+        self.scanType = self._determineScanType(parFiles[0])
 
         # build nifti image
         if self.scanType == 'anat':
@@ -196,7 +187,19 @@ class Philips_BuildNifti():
 
 
     def buildAnat(self, parFiles):
-        pass
+        """
+        On Philip's scanner, entire anat image is assumed to be contained in single par/rec file pair. Open that file, extract the image data, realign to RAS+ and build a nifti object
+        """
+
+        # should only be a single parFile in the list
+        anatImage = nib.load(parFiles[0], strict_sort=True)
+
+        # convert to RAS+
+        anatImage_RAS = nib.as_closest_canonical(anatImage)
+
+        print('Nifti image dims: {}'.format(anatImage_RAS.shape))
+
+        return anatImage_RAS
 
 
     def buildFunc(self, parFiles):
@@ -250,6 +253,24 @@ class Philips_BuildNifti():
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
 
         return funcImage
+
+
+    def _determineScanType(self, parFile):
+        """
+        Figure out what type of scan this is, single 3D volume (anat), or a 4D
+        dataset built up of 2D slices (func) based on info found in the PAR header
+        """
+        # read the parfile
+        par = nib.load(parFile, strict_sort=True)
+        if par.header.general_info['scan_mode'] == '3D':
+            scanType = 'anat'
+        elif par.header.general_info['scan_mode'] == '2D':
+            scanType = 'func'
+        else:
+            print('Cannot determine scan type from this image! Check the header')
+            sys.exit()
+
+        return scanType
 
 
     def get_scanType(self):

@@ -140,7 +140,7 @@ if __name__ == "__main__":
         if args.inputDir[-1] == os.sep:
             args.inputDir = args.inputDir[:-1]
         sessionDir, seriesDir = os.path.split(args.inputDir)
-        defaultNewDir = '9999'
+        defaultNewDir = '0999'
         outputDir = join(sessionDir, defaultNewDir)
     else:
         outputDir = args.outputDir
