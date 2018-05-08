@@ -1,8 +1,8 @@
-MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/masks/ROI_NAc_MNI.nii.gz
+MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/juelich_prob_GMPrimaryMotorCortexBA4p_L_50prob.nii.gz
 MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_1mm_brain.nii.gz
 createFuncBrainMask: true
-outputPrefix: UNC_NAc
+outputPrefix: motorCortex_50prob
 skullStrip: true
-subjAnat: /Users/jeff/Desktop/sampleData/UNC_test2_000017.nii.gz
-subjFunc: /Users/jeff/Desktop/sampleData/UNC_test1_000013.nii.gz
+subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/subject001/anat_brain.nii.gz
+subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/subject001/pyneal_005/exampleFunc.nii.gz
 transformMaskToFunc: true

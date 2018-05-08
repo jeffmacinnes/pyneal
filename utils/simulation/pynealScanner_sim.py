@@ -58,6 +58,7 @@ def prepRandomDataset(dims):
     affine = np.eye(4)
     ds = nib.Nifti1Image(fakeDataset, affine)
 
+    print('Randomized Dataset')
     print('Dimensions: {}'.format(ds.shape))
     return ds
 
@@ -65,10 +66,14 @@ def prepRandomDataset(dims):
 def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
     """
     simulate Pyneal Scanner by sending the supplied dataset to Pyneal via
-    socket one volume at a time. Rate set by 'tr' argument. Each volume
+    socket one volume at a time. Rate set by 'TR' argument. Each volume
     preceded with a json header with metadata about volume, just like during
     a real scan
     """
+    print('TR: {}'.format(TR))
+    # convert TR to sec (the unit of time.sleep())
+    TR = TR/1000
+
     # Create socket, bind to address
     print('Connecting to Pyneal at {}:{}'.format(host, port))
     context = zmq.Context.instance()
@@ -77,9 +82,6 @@ def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
 
     ds_array = dataset.get_data()
     ds_affine = dataset.affine
-
-    # convert TR to sec (the unit of time.sleep())
-    TR = TR/1000
 
     # Wait for pyneal to connect to the socket
     print('waiting for connection...')
@@ -142,11 +144,10 @@ if __name__ == '__main__':
                         default=[64,64,18,60],
                         help='dimensions of randomly generated dataset [x y z t]')
     parser.add_argument('-t', '--TR',
-                        nargs=1,
                         default=1000,
+                        type=int,
                         help='TR (in ms)')
     parser.add_argument('-sh', '--sockethost',
-                        nargs=1,
                         default='127.0.0.1',
                         help='Pyneal socket host')
     parser.add_argument('-sp', '--socketport',
@@ -162,6 +163,6 @@ if __name__ == '__main__':
 
     # run pynealScanner Simulator
     pynealScannerSimulator(dataset,
-                            TR=args.tr,
-                            host=args.sockethost[0],
+                            TR=args.TR,
+                            host=args.sockethost,
                             port=args.socketport)
