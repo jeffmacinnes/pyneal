@@ -38,6 +38,7 @@ import src.GUIs.pynealSetup.setup as setupGUI
 # Set the Pyneal Root dir based on where this file lives
 pynealDir = os.path.abspath(os.path.dirname(__file__))
 
+
 def launchPyneal():
     """
     Main Pyneal Loop. This function will launch setup GUI,
@@ -48,7 +49,7 @@ def launchPyneal():
     # Read the settings file, and launch the setup GUI to give the user
     # a chance to update the settings. Hitting 'submit' within the GUI
     # will update the setupConfig file with the new settings
-    settingsFile = join(pynealDir,'src/GUIs/pynealSetup/setupConfig.yaml')
+    settingsFile = join(pynealDir, 'src/GUIs/pynealSetup/setupConfig.yaml')
 
     # Launch GUI to let user update the settings file
     setupGUI.launchPynealSetupGUI(settingsFile)
@@ -71,12 +72,10 @@ def launchPyneal():
     logger = createLogger(logFname)
     print('Logs written to: {}'.format(logFname))
 
-
     # write all settings to log
     for k in settings:
         logger.info('Setting: {}: {}'.format(k, settings[k]))
     print('-'*20)
-
 
     ### Launch Threads -------------------------------------
     # Scan Receiver Thread, listens for incoming volume data, builds matrix
@@ -92,7 +91,6 @@ def launchPyneal():
     resultsServer.start()
     logger.debug('Starting Results Server')
 
-
     ### Create processing objects --------------------------
     # Load the mask
     mask_img = nib.load(settings['maskFile'])
@@ -103,19 +101,19 @@ def launchPyneal():
     # Class to handle all analysis
     analyzer = Analyzer(settings, mask_img)
 
-
     ### Launch Real-time Scan Monitor GUI
     if settings['launchDashboard']:
-        ### launch the dashboard app as it's own separate process. Once called, it
-        # will set up a zmq socket to listen for inter-process messages on the
-        # 'dashboardPort', and will host the dashboard website on the
+        ### launch the dashboard app as it's own separate process. Once called,
+        # it will set up a zmq socket to listen for inter-process messages on
+        # the 'dashboardPort', and will host the dashboard website on the
         # 'dashboardClientPort'
-        pythonExec = sys.executable     # grab the path to the local python executable
+        pythonExec = sys.executable     # path to the local python executable
         p = subprocess.Popen([
                         pythonExec,
-                        join(pynealDir, 'src/GUIs/pynealDashboard/pynealDashboard.py'),
-                                str(settings['dashboardPort']),
-                                str(settings['dashboardClientPort'])
+                        join(pynealDir,
+                             'src/GUIs/pynealDashboard/pynealDashboard.py'),
+                        str(settings['dashboardPort']),
+                        str(settings['dashboardClientPort'])
                         ])
         # make sure subprocess gets killed at close
         atexit.register(cleanup, p)
@@ -126,26 +124,28 @@ def launchPyneal():
         dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
         # Open dashboard in browser
-        #s = '127.0.0.1:{}'.format(settings['dashboardClientPort'])
-        #print(s)
-        #web.open('127.0.0.1:{}'.format(settings['dashboardClientPort']))
+        # s = '127.0.0.1:{}'.format(settings['dashboardClientPort'])
+        # print(s)
+        # web.open('127.0.0.1:{}'.format(settings['dashboardClientPort']))
 
         # send configuration settings to dashboard
         msg = {'topic': 'configSettings',
-                'content': {'mask': os.path.split(settings['maskFile'])[1],
-                            'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
-                            'volDims': str(mask_img.shape),
-                            'numTimepts': settings['numTimepts'],
-                            'outputPath': outputDir}}
+               'content': {'mask': os.path.split(settings['maskFile'])[1],
+                           'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
+                           'volDims': str(mask_img.shape),
+                           'numTimepts': settings['numTimepts'],
+                           'outputPath': outputDir}}
         dashboardSocket.send_json(msg)
         resp = dashboardSocket.recv_string()
 
     ### Wait For Scan To Start -----------------------------
-    while not scanReceiver.scanStarted: time.sleep(.5)
+    while not scanReceiver.scanStarted:
+        time.sleep(.5)
     logger.debug('Scan started')
 
     ### Set up remaining configuration settings after first volume arrives
-    while not scanReceiver.completedVols[0]: time.sleep(.1)
+    while not scanReceiver.completedVols[0]:
+        time.sleep(.1)
     preprocessor.set_affine(scanReceiver.get_affine())
 
     ### Process scan  -------------------------------------
@@ -153,7 +153,8 @@ def launchPyneal():
     for volIdx in range(settings['numTimepts']):
 
         ### make sure this volume has arrived before continuing
-        while not scanReceiver.completedVols[volIdx]: time.sleep(.1)
+        while not scanReceiver.completedVols[volIdx]:
+            time.sleep(.1)
 
         ### start timer
         startTime = time.time()
@@ -180,9 +181,9 @@ def launchPyneal():
 
             # timePerVol
             timingParams = {'volIdx': volIdx,
-                    'processingTime': np.round(elapsedTime, decimals=3)}
-            sendToDashboard(dashboardSocket, topic='timePerVol', content=timingParams)
-
+                            'processingTime': np.round(elapsedTime, decimals=3)}
+            sendToDashboard(dashboardSocket, topic='timePerVol',
+                            content=timingParams)
 
     ### Save output files
     resultsServer.saveResults()
@@ -195,16 +196,15 @@ def launchPyneal():
 
 def sendToDashboard(dashboardSocket, topic=None, content=None):
     # format the message to send to dashboard
-    msg = {'topic': topic,
-            'content': content}
+    msg = {'topic': topic, 'content': content}
 
     # send
     dashboardSocket.send_json(msg)
-    #logger.debug('sent to dashboard: {}'.format(msg))
+    # logger.debug('sent to dashboard: {}'.format(msg))
 
     # recv
     response = dashboardSocket.recv_string()
-    #logger.debug('response from dashboard: {}'.format(response))
+    # logger.debug('response from dashboard: {}'.format(response))
 
 
 def createOutputDir(parentDir):
