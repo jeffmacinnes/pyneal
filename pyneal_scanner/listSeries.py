@@ -8,10 +8,6 @@ link the series names with phases of your task (e.g. anat scan, task scans)
 """
 from __future__ import print_function
 
-import os
-import sys
-from os.path import join
-
 from utils.general_utils import initializeSession
 
 

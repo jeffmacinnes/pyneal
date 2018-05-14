@@ -1,25 +1,27 @@
 """
 Simulate a GE scan [GE MR750 3T].
 GE scanners store reconstructed slice images as individual DICOM files within
-a certain directory on the scanner console. This script will simulate that directory
-and copy in individual slice DICOM images.
+a certain directory on the scanner console. This script will simulate that
+directory and copy in individual slice DICOM images.
 
 Usage:
     python GE_sim.py inputDir [--outputDir] [--TR]
 
-You must specify a local path to the inputDir. That is, the directory that already
-contains a set of reconstructed GE slice DICOMS. Let's call thie directory the
-seriesDir. Everything in the path up to the seriesDir we'll call the sessionDir.
+You must specify a local path to the inputDir. That is, the directory that
+already contains a set of reconstructed GE slice DICOMS. Let's call this
+directory the seriesDir. Everything in the path up to the seriesDir we'll call
+the sessionDir.
+
 So, your input slice data is stored somewhere like:
 
 <sessionDir>/<seriesDir>/
 
-To use this tool, you must specify an inputDir as the full path (i.e. <sessionDir>/<seriesDir>) to
-the source data.
+To use this tool, you must specify an inputDir as the full path
+(i.e. <sessionDir>/<seriesDir>) to the source data.
 
-[OPTIONAL]: You can specify the full path to an output directory where the slices
-will be copied to. If you don't specify an output directory, this tool will default
-to creating a new seriesDir, named 's9999' in the sessionDir.
+[OPTIONAL]: You can specify the full path to an output directory where the
+slices will be copied to. If you don't specify an output directory, this tool
+will default to creating a new seriesDir, named 's9999' in the sessionDir.
 
 e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --outputDir /Where/I/Want/New/Slice/Data/To/appear
 
@@ -27,9 +29,9 @@ if you did not specify an outputDir, new slices would be copied to:
 
 /Path/To/My/Existing/Slice/s9999
 
-[OPTIONAL]: You can specify the TR at which new slice data is copied. Default is 1000ms, and
-represents the approximate amount of time it should take to copy over all of the slices for
-one volume of data.
+[OPTIONAL]: You can specify the TR at which new slice data is copied. Default
+is 1000ms, and represents the approximate amount of time it should take to copy
+over all of the slices for one volume of data.
 
 e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --TR 2000
 """
@@ -37,7 +39,8 @@ e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --TR 2000
 from __future__ import print_function
 from builtins import input
 
-import os, sys
+import os
+import sys
 from os.path import join
 import argparse
 import atexit
@@ -74,8 +77,9 @@ def GE_sim(dicomDir, outputDir, TR):
             dicomNumber = f.split('.')[-1]
             sliceFiles[dicomNumber] = f
 
-    # read one slice (first entry in sliceFiles dict) to get TR and # of slices/vol info
-    ds = pydicom.dcmread(join(dicomDir, sliceFiles[list(sliceFiles.keys())[0]]))
+    # read slice (first entry in sliceFiles dict) to get TR and # of slices/vol
+    ds = pydicom.dcmread(join(dicomDir,
+                         sliceFiles[list(sliceFiles.keys())[0]]))
     slicesPerVol = ds.ImagesInAcquisition
     totalVols = ds.NumberOfTemporalPositions
 
@@ -98,7 +102,7 @@ def GE_sim(dicomDir, outputDir, TR):
     # loop over all sorted slice files
     print('copied dicom #:', end=' ')
     simStart = time.time()
-    for i,sliceNum in enumerate(sorted(sliceFiles, key=int)):
+    for i, sliceNum in enumerate(sorted(sliceFiles, key=int)):
         startTime = time.time()
         src_file = join(dicomDir, sliceFiles[sliceNum])
         dst_file = join(outputDir, sliceFiles[sliceNum])
@@ -125,19 +129,18 @@ def rmOutputDir(outputDir):
         subprocess.call(['rm', '-r', outputDir])
 
 
-
 if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate a GE scan')
     parser.add_argument('inputDir',
-                help='path to directory that contains slice DICOMS')
+                        help='path to directory that contains slice DICOMS')
     parser.add_argument('-o', '--outputDir',
-                default=None,
-                help='path to output directory where new slices images will appear (i.e. series directory)')
+                        default=None,
+                        help='path to output directory where new slices images will appear (i.e. series directory)')
     parser.add_argument('-t', '--TR',
-                type=int,
-                default=1000,
-                help='TR (ms) [default = 1000ms]')
+                        type=int,
+                        default=1000,
+                        help='TR (ms) [default = 1000ms]')
 
     # grab the input args
     args = parser.parse_args()

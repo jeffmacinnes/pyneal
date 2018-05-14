@@ -1,28 +1,30 @@
 """
 Simulate a Philips scan
-Philips scanners use XTC (eXTernal Control) to output reconstructed volumes during
-a scan. The files are written to a designated directory (e.g. XTC_Output), and
-within that directory, every series is assigned a new directory named sequentially
-starting with '0000'. For instance, volumes from the 3rd series will be stored
-like '.../XTC_Output/0002/'. This script will simulate the creation of a new series
-directory, and copy in PAR/REC files.
+Philips scanners use XTC (eXTernal Control) to output reconstructed volumes
+during a scan. The files are written to a designated directory
+(e.g. XTC_Output), and within that directory, every series is assigned a new
+directory named sequentially starting with '0000'. For instance, volumes from
+the 3rd series will be stored like '.../XTC_Output/0002/'.
+
+This script will simulate the creation of a new series directory,
+and copy in PAR/REC files.
 
 Usage:
     python Philips_sim.py inputDir [--outputDir] [--TR]
 
-You must specify a local path to the inputDir. That is, the directory that already
-contains a set of reconstructed PAR/REC files for a series. Let's call this directory
-the seriesDir. Everything in the path up to the seriesDir we'll call the sessionDir.
-So, your input PAR/REC files are stored somewhere like:
+You must specify a local path to the inputDir. That is, the directory that
+already contains a set of reconstructed PAR/REC files for a series. Let's call
+this directory the seriesDir. Everything in the path up to the seriesDir we'll
+call the sessionDir. So, your input PAR/REC files are stored somewhere like:
 
 <sessionDir>/<seriesDir>/
 
-To use this tool, you must specify an inputDir as the full path (i.e. <sessionDir>/<seriesDir>)
-to the source data.
+To use this tool, you must specify an inputDir as the full path
+(i.e. <sessionDir>/<seriesDir>) to the source data.
 
-[OPTIONAL]: You can specify the full path to an output directory where the PAR/REC files
-will be copied to. If you don't specify an output directory, this tool will default
-to creating a new seriesDir, named '9999' in the sessionDir.
+[OPTIONAL]: You can specify the full path to an output directory where the
+PAR/REC files will be copied to. If you don't specify an output directory, this
+tool will default to creating a new seriesDir, named '9999' in the sessionDir.
 
 e.g. python Philips_sim.py /Path/To/My/Existing/Series/0000 --outputDir /Where/I/Want/New/Slice/Data/To/appear
 
@@ -39,15 +41,14 @@ e.g. python GE_sim.py /Path/To/My/Existing/Series/0000 --TR 2000
 from __future__ import print_function
 from builtins import input
 
-import os, sys
+import os
+import sys
 from os.path import join
 import argparse
 import atexit
 import glob
 import time
 import subprocess
-
-import nibabel as nib
 
 
 def Philips_sim(inputDir, outputDir, TR):
@@ -78,9 +79,9 @@ def Philips_sim(inputDir, outputDir, TR):
     # create the outputDir
     os.makedirs(outputDir)
 
-    # Loop over all volume files (Note: vols are assumed to be named sequentially)
+    # Loop over all volume files (vols assumed to be named sequentially)
     print('copied volume #: ', end=' ')
-    for i,v in enumerate(sorted(parFiles)):
+    for i, v in enumerate(sorted(parFiles)):
         timeStart = time.time()
 
         # copy par file
@@ -104,7 +105,6 @@ def Philips_sim(inputDir, outputDir, TR):
             time.sleep((TR/1000)-elapsedTime)
 
 
-
 def rmOutputDir(outputDir):
     """ Remove the output dir upon exiting"""
     # if outputDir exists, delete
@@ -117,14 +117,14 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate a Philips Scan')
     parser.add_argument('inputDir',
-                help='path to directory contains PAR/RECs for the series you want to simulate')
+                        help='path to directory contains PAR/RECs for the series you want to simulate')
     parser.add_argument('-o', '--outputDir',
-                default=None,
-                help='path to output directory where new slice images will appear (i.e. new seriesDir)')
+                        default=None,
+                        help='path to output directory where new slice images will appear (i.e. new seriesDir)')
     parser.add_argument('-t', '--TR',
-                type=int,
-                default=1000,
-                help='TR(ms) [default = 1000ms]')
+                        type=int,
+                        default=1000,
+                        help='TR(ms) [default = 1000ms]')
 
     # grab the input args
     args = parser.parse_args()

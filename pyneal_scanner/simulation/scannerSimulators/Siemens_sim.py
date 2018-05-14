@@ -20,16 +20,16 @@ a given session. Mosaic files are named like:
 
 <session#>_<series#>_<vol#>.dcm
 
-[OPTIONAL]: You can specify the series number that will be assigned to the "new"
-mosaic images. The default behavior is to assign a series number based on the
-next sequential number given the existing series. In the example below, the
-default would be to assign a newSeriesNum as '2', but we are overriding that to
-assign it as '19'
+[OPTIONAL]: You can specify the series number that will be assigned to the
+"new" mosaic images. The default behavior is to assign a series number based
+on the next sequential number given the existing series. In the example below,
+the default would be to assign a newSeriesNum as '2', but we are overriding
+that to assign it as '19'
 
 e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --newSeriesNum 19
 
-[OPTIONAL]: You can specify the TR at which new slice data is copied. Default is
-1000ms, and represents the approximate amount of time it should take to copy
+[OPTIONAL]: You can specify the TR at which new slice data is copied. Default
+is 1000ms, and represents the approximate amount of time it should take to copy
 over all of the slices for one volume of data.
 
 e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --TR 2000
@@ -39,7 +39,8 @@ e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --TR 2000
 from __future__ import print_function
 from builtins import input
 
-import os, sys
+import os
+import sys
 from os.path import join
 import glob
 import argparse
@@ -56,8 +57,8 @@ Siemens_mosaicSeriesNumberField = re.compile('(?<=\d{3}_)\d{6}(?=_\d{6}.dcm)')
 
 def Siemens_sim(inputDir, seriesNum, newSeriesNum, TR):
     """
-    Read DICOM mosaics from 'dicomDir' with filenames containing seriesNum. Copy
-    and rename with newSeriesNum
+    Read DICOM mosaics from 'dicomDir' with filenames containing seriesNum.
+    Copy and rename with newSeriesNum
     """
 
     # build full path to outputDir
@@ -112,11 +113,11 @@ def makeNewFileName(srcFile, oldSeriesNum, newSeriesNum):
     newSeriesNum = str(newSeriesNum).zfill(6)
     srcDir, origFile = os.path.split(srcFile)
 
-    newFileName = origFile.replace(('_' + oldSeriesNum + '_'), ('_' + newSeriesNum + '_'))
+    newFileName = origFile.replace(('_' + oldSeriesNum + '_'),
+                                   ('_' + newSeriesNum + '_'))
 
     newFile = join(srcDir, newFileName)
     return newFile
-
 
 
 def rmFiles(seriesDir, seriesNum):
@@ -130,16 +131,16 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate a Siemens scan')
     parser.add_argument('inputDir',
-                help='path to directory that contains mosaic DICOMS')
+                        help='path to directory that contains mosaic DICOMS')
     parser.add_argument('seriesNum',
-                help='seriesNum of scan you want to simulate')
+                        help='seriesNum of scan you want to simulate')
     parser.add_argument('-n', '--newSeriesNum',
-                default=None,
-                help='new series number to assign to copied data [default: use sequential numbering])')
+                        default=None,
+                        help='new series number to assign to copied data [default: use sequential numbering])')
     parser.add_argument('-t', '--TR',
-                type=int,
-                default=1000,
-                help='TR (ms) [default = 1000ms]')
+                        type=int,
+                        default=1000,
+                        help='TR (ms) [default = 1000ms]')
 
     # grab the input args
     args = parser.parse_args()
@@ -150,7 +151,8 @@ if __name__ == "__main__":
         sys.exit()
 
     # check to make sure the specifed series number exists in the dir
-    seriesFiles = glob.glob(join(args.inputDir, ('*_' + str(args.seriesNum).zfill(6) + '_*.dcm')))
+    seriesFiles = glob.glob(join(args.inputDir,
+                            ('*_' + str(args.seriesNum).zfill(6) + '_*.dcm')))
     if len(seriesFiles) == 0:
         print('No scans with seriesNum {} were found'.format(args.seriesNum))
         sys.exit()
@@ -161,7 +163,6 @@ if __name__ == "__main__":
         seriesNums.append(int(os.path.split(f)[1].split('_')[1]))
     uniqueSeries = set(seriesNums)
 
-
     # set the newSeriesNum
     if args.newSeriesNum is not None:
         if args.newSeriesNum in uniqueSeries:
@@ -171,7 +172,6 @@ if __name__ == "__main__":
             newSeriesNum = args.newSeriesNum
     else:
         newSeriesNum = max(uniqueSeries) + 1
-
 
     # set up the cleanup function
     atexit.register(rmFiles, args.inputDir, newSeriesNum)

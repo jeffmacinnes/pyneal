@@ -2,8 +2,8 @@
 (Pyneal-Scanner: Command line function)
 Call this tool to begin listening for new incoming series data during a
 real-time run. This tool will read the scannerConfig file in an attempt to
-determine the appropriate scanning environment and set the subsequent processing
-tools appropriately.
+determine the appropriate scanning environment and set the subsequent
+processing tools appropriately.
 
 This function has 3 overall goals:
     - monitor a sessionDir for NEW, incoming series data
@@ -17,14 +17,14 @@ environments.
 Each time this function is called, a log file is written (or overwritten)
 in the pyneal_scanner dir. This file will have verbose information about
 everything that happens while this tool is running, and may be more useful in
-debugging potential issues than what you see printed back to the terminal window
+debugging potential issues than what you see printed back to the terminal
+window
 """
 
 from __future__ import print_function
 
 import os
 import sys
-from os.path import join
 
 import logging
 
@@ -56,7 +56,6 @@ def pynealScanner_Phillips(scannerSettings, scannerDirs):
     Philips_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
-
 def pynealScanner_Siemens(scannerSettings, scannerDirs):
     """
     Tools for processing a real-time scan in a Siemens environment
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     fileLogger = logging.FileHandler('./pynealScanner.log', mode='w')
     fileLogger.setLevel(logging.DEBUG)
     fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
-                                        '%m-%d %H:%M:%S')
+                                      '%m-%d %H:%M:%S')
     fileLogger.setFormatter(fileLogFormat)
 
     # logging to console

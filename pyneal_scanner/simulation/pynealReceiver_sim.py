@@ -15,23 +15,20 @@ directory as this script as 'receivedImg.nii.gz'
 """
 from __future__ import division
 
-import os
-import sys
-import time
 import json
-import base64
 import argparse
 
 import zmq
 import numpy as np
 import nibabel as nib
 
+
 def launchPynealReceiver(port, nVols):
     """
     Launch Pyneal Receiver simulation. This method will simulate
     the behavior of the scanReceiver thread of Pyneal. That is,
-    it will listen for incoming 3D volumes sent from Pyneal Scanner, enabling you to test Pyneal Scanner without having
-    to run the full Pyneal Setup
+    it will listen for incoming 3D volumes sent from Pyneal Scanner, enabling
+    you to test Pyneal Scanner without having to run the full Pyneal Setup
     """
     ### Set up socket to listen for incoming data
     # Note: since this is designed for testing, it assumes
@@ -39,8 +36,9 @@ def launchPynealReceiver(port, nVols):
     host = '*'
     context = zmq.Context.instance()
     sock = context.socket(zmq.PAIR)
-    sock.bind('tcp://{}:{}'.format(host,port))
-    print('pynealReceiver_sim listening for connection at {}:{}'.format(host, port))
+    sock.bind('tcp://{}:{}'.format(host, port))
+    print('pynealReceiver_sim listening for connection at {}:{}'.format(host,
+          port))
 
     # wait for initial contact
     while True:
@@ -63,9 +61,9 @@ def launchPynealReceiver(port, nVols):
         # build the imageMatrix if this is the first volume
         if not firstVolHasArrived:
             imageMatrix = np.zeros(shape=(volShape[0],
-                                    volShape[1],
-                                    volShape[2],
-                                    nVols), dtype=volDtype)
+                                          volShape[1],
+                                          volShape[2],
+                                          nVols), dtype=volDtype)
             volAffine = np.array(json.loads(volInfo['affine']))
 
             # update first vol flag
@@ -101,13 +99,13 @@ if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate Receiving thread of Pyneal')
     parser.add_argument('-p', '--port',
-                type=int,
-                default=5555,
-                help='port number to listen on for incoming data from pynealScanner ')
+                        type=int,
+                        default=5555,
+                        help='port number to listen on for incoming data from pynealScanner ')
     parser.add_argument('-n', '--nVols',
-                type=int,
-                default=60,
-                help='number of expected volumes')
+                        type=int,
+                        default=60,
+                        help='number of expected volumes')
 
     # grab the input args
     args = parser.parse_args()
