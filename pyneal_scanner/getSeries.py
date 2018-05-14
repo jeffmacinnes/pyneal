@@ -28,6 +28,7 @@ from utils.general_utils import initializeSession
 # the only option)
 pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
+
 def getSeries_GE(scannerSettings, scannerDirs):
     """
     Steps for getting offline data from the scanner that are
@@ -135,9 +136,6 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
     print('\tinput series: {}'.format(selectedSeries))
     print('\toutput name: {}'.format(outputPrefix))
 
-    # get the full path to the series dir
-    seriesDir = join(scannerDirs.sessionDir, selectedSeries)
-
     # create an instance of the Siemens_NiftiBuilder
     niftiBuilder = Siemens_BuildNifti(scannerDirs.sessionDir, selectedSeries)
     output_fName = '{}_{}.nii.gz'.format(outputPrefix, selectedSeries)
@@ -151,7 +149,7 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
 def saveNifti(niftiBuilder, outputPath):
     """
     Save the newly created nifti file
-        - niftiBuilder: instance of correct niftiBuilder class for this scanning env.
+        - niftiBuilder: instance of niftiBuilder class for this scanning env.
         - outputPath: full path for output nifti file
     """
     niftiBuilder.write_nifti(outputPath)
