@@ -17,7 +17,6 @@ from queue import Queue
 import numpy as np
 import pydicom
 import nibabel as nib
-import argparse
 import zmq
 
 # default path to where new series directories
@@ -26,6 +25,7 @@ GE_default_baseDir = '/export/home1/sdc_image_pool/images'
 
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
+
 
 class GE_DirStructure():
     """
@@ -74,7 +74,6 @@ class GE_DirStructure():
 
         # (hopefully) find and initialize the sessionDir (and subdirs)
         self.findSessionDir()
-
 
     def findSessionDir(self):
         """
@@ -131,7 +130,6 @@ class GE_DirStructure():
         self.eDir = eDir
         self.sessionDir = sessionDir
 
-
     def print_currentSeries(self):
         """
         Find all of the series dirs in given sessionDir, and print them
@@ -163,18 +161,17 @@ class GE_DirStructure():
                 if dirSize < 1000:
                     size_string = '{:5.1f} bytes'.format(dirSize)
                 elif 1000 <= dirSize < 1000000:
-                    size_string = '{:5.1f} kB'.format(dirSize/1000)
+                    size_string = '{:5.1f} kB'.format(dirSize / 1000)
                 elif 1000000 <= dirSize:
-                    size_string = '{:5.1f} MB'.format(dirSize/1000000)
+                    size_string = '{:5.1f} MB'.format(dirSize / 1000000)
 
                 # calculate time (in mins/secs) since it was modified
                 mTime = s[1]
                 timeElapsed = currentTime - mTime
-                m,s = divmod(timeElapsed,60)
-                time_string = '{} min, {} s ago'.format(int(m),int(s))
+                m, s = divmod(timeElapsed, 60)
+                time_string = '{} min, {} s ago'.format(int(m), int(s))
 
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
-
 
     def _findAllSubdirs(self, parentDir):
         """
@@ -192,7 +189,6 @@ class GE_DirStructure():
 
         # return the subdirectories
         return subDirs
-
 
     def waitForSeriesDir(self, interval=.1):
         """
@@ -221,7 +217,6 @@ class GE_DirStructure():
         # return the found series directory
         return seriesDir
 
-
     def get_seriesDirs(self):
         """
         build a list that contains the directory names of all of the series
@@ -239,14 +234,11 @@ class GE_DirStructure():
 
         return self.seriesDirs
 
-
     def get_pDir(self):
         return self.pDir
 
-
     def get_eDir(self):
         return self.eDir
-
 
     def get_sessionDir(self):
         return self.sessionDir
@@ -254,13 +246,15 @@ class GE_DirStructure():
 
 class GE_BuildNifti():
     """
-    Build a 3D or 4D Nifti image from all of the dicom slice images in a directory.
+    Build a 3D or 4D Nifti image from all of the dicom slice images in a
+    directory.
 
     Input is a path to a series directory containing dicom slices. Image
     parameters, like voxel spacing and dimensions, are obtained automatically
     from info in the dicom tags
 
-    Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+ orientation
+    Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+
+    orientation
     """
     def __init__(self, seriesDir):
         """
@@ -289,7 +283,6 @@ class GE_BuildNifti():
         elif self.scanType == 'func':
             self.niftiImage = self.buildFunc(self.rawDicoms)
 
-
     def buildAnat(self, dicomFiles):
         """
         Given a list of dicomFiles, build a 3D anatomical image from them.
@@ -297,7 +290,8 @@ class GE_BuildNifti():
         from voxels to mm from the dicom tags
         """
         # read the first dicom in the list to get overall image dimensions
-        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]),
+                              stop_before_pixels=1)
         sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
         self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         sliceThickness = getattr(dcm, 'SliceThickness')
@@ -306,10 +300,10 @@ class GE_BuildNifti():
         ### Build 3D array of voxel data
         # create an empty array to store the slice data
         imageMatrix = np.zeros(shape=(
-                                sliceDims[0],
-                                sliceDims[1],
-                                self.nSlicesPerVol),
-                                dtype='int16')
+                               sliceDims[0],
+                               sliceDims[1],
+                               self.nSlicesPerVol),
+                               dtype='int16')
 
         # With functional data, the dicom tag 'InStackPositionNumber'
         # seems to correspond to the slice index (one-based indexing).
@@ -324,13 +318,13 @@ class GE_BuildNifti():
             sliceDict[dcm.InStackPositionNumber] = join(self.seriesDir, s)
 
         # sort by InStackPositionNumber and assemble the image
-        for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
+        for sliceIdx, ISPN in enumerate(sorted(sliceDict.keys())):
             dcm = pydicom.dcmread(sliceDict[ISPN])
 
             # grab the slices necessary for creating the affine transformation
             if sliceIdx == 0:
                 firstSliceDcm = dcm
-            if sliceIdx == self.nSlicesPerVol-1:
+            if sliceIdx == self.nSlicesPerVol - 1:
                 lastSliceDcm = dcm
 
             # extract the pixel data as a numpy array. Transpose
@@ -339,7 +333,6 @@ class GE_BuildNifti():
 
             # place in the image matrix
             imageMatrix[:, :, sliceIdx] = pixel_array
-
 
         ### create the affine transformation to map from vox to mm space
         # in order to do this, we need to get some values from the first and
@@ -350,20 +343,22 @@ class GE_BuildNifti():
         dcm_first = pydicom.dcmread(firstSlice)
         dcm_last = pydicom.dcmread(lastSlice)
         self.pixelSpacing = getattr(dcm_first, 'PixelSpacing')
-        self.firstSlice_IOP = np.array(getattr(dcm_first, 'ImageOrientationPatient'))
-        self.firstSlice_IPP = np.array(getattr(dcm_first, 'ImagePositionPatient'))
-        self.lastSlice_IPP = np.array(getattr(dcm_last, 'ImagePositionPatient'))
+        self.firstSlice_IOP = np.array(getattr(dcm_first,
+                                       'ImageOrientationPatient'))
+        self.firstSlice_IPP = np.array(getattr(dcm_first,
+                                       'ImagePositionPatient'))
+        self.lastSlice_IPP = np.array(getattr(dcm_last,
+                                      'ImagePositionPatient'))
 
         # now we can build the affine
         affine = self.buildAffine()
 
         ### Build a Nifti object, reorder it to RAS+
         anatImage = nib.Nifti1Image(imageMatrix, affine=affine)
-        anatImage_RAS = nib.as_closest_canonical(anatImage)     # reoder to RAS+
+        anatImage_RAS = nib.as_closest_canonical(anatImage)  # reoder to RAS+
         print('Nifti image dims: {}'.format(anatImage_RAS.shape))
 
         return anatImage_RAS
-
 
     def buildFunc(self, dicomFiles):
         """
@@ -372,8 +367,10 @@ class GE_BuildNifti():
         from voxels to mm from the dicom tags
         """
         # read the first dicom in the list to get overall image dimensions
-        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
-        sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
+        dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]),
+                              stop_before_pixels=1)
+        sliceDims = (getattr(dcm, 'Columns'),
+                     getattr(dcm, 'Rows'))
         self.nSlicesPerVol = getattr(dcm, 'ImagesInAcquisition')
         nVols = getattr(dcm, 'NumberOfTemporalPositions')
         sliceThickness = getattr(dcm, 'SliceThickness')
@@ -382,12 +379,10 @@ class GE_BuildNifti():
         ### Build 4D array of voxel data
         # create an empty array to store the slice data
         imageMatrix = np.zeros(shape=(
-                                sliceDims[0],
-                                sliceDims[1],
-                                self.nSlicesPerVol,
-                                nVols),
-                                dtype='int16'
-                            )
+                               sliceDims[0],
+                               sliceDims[1],
+                               self.nSlicesPerVol,
+                               nVols), dtype='int16')
         print('Nifti image dims: {}'.format(imageMatrix.shape))
 
         ### Assemble 4D matrix
@@ -406,19 +401,22 @@ class GE_BuildNifti():
             # either the first or last slice
             if sliceIdx == 0 and self.firstSlice_IOP is None:
                 self.pixelSpacing = getattr(dcm, 'PixelSpacing')
-                self.firstSlice_IOP = np.array(getattr(dcm, 'ImageOrientationPatient'))
-                self.firstSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+                self.firstSlice_IOP = np.array(getattr(dcm,
+                                               'ImageOrientationPatient'))
+                self.firstSlice_IPP = np.array(getattr(dcm,
+                                               'ImagePositionPatient'))
 
-            if sliceIdx == (self.nSlicesPerVol-1) and self.lastSlice_IPP is None:
-                self.lastSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+            if sliceIdx == (self.nSlicesPerVol - 1) and self.lastSlice_IPP is None:
+                self.lastSlice_IPP = np.array(getattr(dcm,
+                                              'ImagePositionPatient'))
 
             # We can figure out the volume index using the dicom
             # tags "InstanceNumber" (# out of all images), and
             # "ImagesInAcquisition" (# of slices in a single vol).
             # Divide InstanceNumber by ImagesInAcquisition and drop
             # the remainder. Note: InstanceNumber is also one-based index
-            instanceIdx = getattr(dcm, 'InstanceNumber')-1
-            volIdx = int(np.floor(instanceIdx/self.nSlicesPerVol))
+            instanceIdx = getattr(dcm, 'InstanceNumber') - 1
+            volIdx = int(np.floor(instanceIdx / self.nSlicesPerVol))
 
             # We need our data to be an array that is indexed like [x,y,z,t],
             # so we need to transpose each slice from [row,col] to [col,row]
@@ -430,19 +428,19 @@ class GE_BuildNifti():
 
         ### Build a Nifti object, reorder it to RAS+
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
-        funcImage_RAS = nib.as_closest_canonical(funcImage)     # reoder to RAS+
+        funcImage_RAS = nib.as_closest_canonical(funcImage)  # reoder to RAS+
 
         return funcImage_RAS
-
 
     def buildAffine(self):
         """
         Build the affine matrix that will transform the data to RAS+.
 
         This function should only be called once the required data has been
-        extracted from the dicom tags from the relevant slices. The affine matrix
-        is constructed by using the information in the ImageOrientationPatient
-        and ImagePositionPatient tags from the first and last slices in a volume.
+        extracted from the dicom tags from the relevant slices. The affine
+        matrix is constructed by using the information in the
+        ImageOrientationPatient and ImagePositionPatient tags from the first
+        and last slices in a volume.
 
         However, note that those tags will tell you how to orient the image to
         DICOM reference coordinate space, which is LPS+. In order to to get to
@@ -466,7 +464,7 @@ class GE_BuildNifti():
         # ImagePosition of the last slice from the ImagePosition of the first,
         # then dividing by 1/(total number of slices-1), then invert to
         # make it go from LPS+ to RAS+
-        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1 - self.nSlicesPerVol)
         slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
 
         ### Invert the first two values of the firstSlice ImagePositionPatient.
@@ -477,14 +475,12 @@ class GE_BuildNifti():
 
         ### Assemble the affine matrix
         affine = np.matrix([
-            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
-            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
-            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
-            [0, 0, 0, 1]
-            ])
+            [rowAxis_orient[0] * voxSize_row, colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row, colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row, colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [0, 0, 0, 1]])
 
         return affine
-
 
     def _determineScanType(self, sliceDcm):
         """
@@ -493,9 +489,10 @@ class GE_BuildNifti():
         in the dicom tags
         """
         # read the dicom file
-        dcm = pydicom.dcmread(join(self.seriesDir, sliceDcm), stop_before_pixels=1)
+        dcm = pydicom.dcmread(join(self.seriesDir, sliceDcm),
+                              stop_before_pixels=1)
 
-        if getattr(dcm,'MRAcquisitionType') == '3D':
+        if getattr(dcm, 'MRAcquisitionType') == '3D':
             scanType = 'anat'
         elif getattr(dcm, 'MRAcquisitionType') == '2D':
             scanType = 'func'
@@ -505,16 +502,13 @@ class GE_BuildNifti():
 
         return scanType
 
-
     def get_scanType(self):
         """ Return the scan type """
         return self.scanType
 
-
     def get_niftiImage(self):
         """ Return the constructed Nifti Image """
         return self.niftiImage
-
 
     def write_nifti(self, output_path):
         """
@@ -540,13 +534,12 @@ class GE_monitorSeriesDir(Thread):
         self.logger = logging.getLogger(__name__)
 
         # initialize class parameters
-        self.interval = interval            # interval for polling for new files (s)
-        self.seriesDir = seriesDir          # full path to series directory
-        self.dicomQ = dicomQ                # queue to store dicom files
-        self.alive = True                   # thread status
-        self.numSlicesAdded = 0             # counter to keep track of # of slices added overall
-        self.queued_dicom_files = set()     # empty set to store names of files placed on queue
-
+        self.interval = interval         # interval for polling for new files (s)
+        self.seriesDir = seriesDir       # full path to series directory
+        self.dicomQ = dicomQ             # queue to store dicom files
+        self.alive = True                # thread status
+        self.numSlicesAdded = 0          # counter to keep track of # of slices added overall
+        self.queued_dicom_files = set()  # empty set to store names of files placed on queue
 
     def run(self):
         # function that loops while the Thead is still alive
@@ -577,10 +570,8 @@ class GE_monitorSeriesDir(Thread):
             # pause
             time.sleep(self.interval)
 
-
     def get_numSlicesAdded(self):
         return self.numSlicesAdded
-
 
     def stop(self):
         # function to stop the Thread
@@ -590,16 +581,16 @@ class GE_monitorSeriesDir(Thread):
 class GE_processSlice(Thread):
     """
     Class to process each dicom slice in the dicom queue. This class is
-    designed to run in a separate thread. While running, it will pull slice file
-    names off of the dicomQ and process each slice.
+    designed to run in a separate thread. While running, it will pull slice
+    file names off of the dicomQ and process each slice.
 
     Processing each slice will include reading the dicom file and extracting
     the pixel array and any relevant header information. The pixel array from
     each slice will be stored in an 4d image matrix. Whenever all of the slices
     from a single volume have arrived, that volume will be reformatted
     so that its axes correspond to RAS+. The volume, along with a JSON header
-    containing metadata on that volume, will be sent out over the socket connection
-    to Pyneal
+    containing metadata on that volume, will be sent out over the socket
+    connection to Pyneal
     """
     def __init__(self, dicomQ, pynealSocket, interval=.2):
         # start the thread upon creation
@@ -623,13 +614,12 @@ class GE_processSlice(Thread):
         self.nVols = None
         self.pixelSpacing = None
 
-        self.completedSlices = None     # store booleans of which slices have arrived
-        self.imageMatrix = None         # 4D image matrix where new slices stored
-        self.affine = None              # var to store RAS+ affine, once created
-        self.firstSlice_IOP = None      # first slice ImageOrientationPatient tag
-        self.firstSlice_IPP = None      # first slice ImagePositionPatient tag
-        self.lastSlice_IPP = None       # last slice ImagePositionPatient tag
-
+        self.completedSlices = None  # store which slices have arrived
+        self.imageMatrix = None      # 4D image matrix where new slices stored
+        self.affine = None           # var to store RAS+ affine, once created
+        self.firstSlice_IOP = None   # first slice ImageOrientationPatient tag
+        self.firstSlice_IPP = None   # first slice ImagePositionPatient tag
+        self.lastSlice_IPP = None    # last slice ImagePositionPatient tag
 
     def run(self):
         self.logger.debug('GE_processSlice thread started')
@@ -645,7 +635,7 @@ class GE_processSlice(Thread):
                 for s in range(numSlicesInQueue):
                     dcm_fname = self.dicomQ.get(True, 2)    # retrieve the filename from the queue
 
-                    #ensure the file has copied completely
+                    # ensure the file has copied completely
                     file_size = 0
                     while True:
                         file_info = os.stat(dcm_fname)
@@ -666,7 +656,6 @@ class GE_processSlice(Thread):
 
             # pause for a bit
             time.sleep(self.interval)
-
 
     def processDcmSlice(self, dcm_fname):
         """
@@ -692,15 +681,18 @@ class GE_processSlice(Thread):
         ### Check if you can build the affine using the information that is
         # currently available. We need info from the dicom tags for the first
         # and last slice from any of the 3D volumes
-        if self.affine is None and sliceIdx in [0, (self.nSlicesPerVol-1)]:
+        if self.affine is None and sliceIdx in [0, (self.nSlicesPerVol - 1)]:
             if sliceIdx == 0:
                 # store the relevent data from the first slice
-                self.firstSlice_IOP = np.array(getattr(dcm, 'ImageOrientationPatient'))
-                self.firstSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+                self.firstSlice_IOP = np.array(getattr(dcm,
+                                               'ImageOrientationPatient'))
+                self.firstSlice_IPP = np.array(getattr(dcm,
+                                               'ImagePositionPatient'))
 
-            if sliceIdx == (self.nSlicesPerVol-1):
+            if sliceIdx == (self.nSlicesPerVol - 1):
                 # store the relevent data from the last slice
-                self.lastSlice_IPP = np.array(getattr(dcm, 'ImagePositionPatient'))
+                self.lastSlice_IPP = np.array(getattr(dcm,
+                                              'ImagePositionPatient'))
 
             # See if you have valid values for all required parameters for the affine
             if all(x is not None for x in [self.firstSlice_IOP, self.firstSlice_IPP, self.lastSlice_IPP, self.pixelSpacing]):
@@ -712,7 +704,7 @@ class GE_processSlice(Thread):
         # the total number of slices.
         # Divide InstanceNumber by ImagesInAcquisition and drop
         # the remainder. Note: InstanceNumber is also one-based index
-        volIdx = int(int(getattr(dcm, 'InstanceNumber')-1)/self.nSlicesPerVol)
+        volIdx = int(int(getattr(dcm, 'InstanceNumber') - 1) / self.nSlicesPerVol)
 
         ### Place pixel data in imageMatrix
         # transpose the data from numpy standard [row,col] to [col,row]
@@ -730,7 +722,6 @@ class GE_processSlice(Thread):
             if self.volCounter >= self.nVols:
                 self.stop()
 
-
     def processFirstSlice(self, dcm_fname):
         """
         Read the dicom header from the supplied slice to get relevant info
@@ -747,31 +738,30 @@ class GE_processSlice(Thread):
 
         # Note: [cols, rows] to match the order of the transposed pixel_array later on
         self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),
-                                    getattr(dcmHdr, 'Rows')])
-
+                                  getattr(dcmHdr, 'Rows')])
 
         ### Build the image matrix and completed slices table
         self.imageMatrix = np.zeros(shape=(self.sliceDims[0],
-                                        self.sliceDims[1],
-                                        self.nSlicesPerVol,
-                                        self.nVols), dtype=np.uint16)
+                                    self.sliceDims[1],
+                                    self.nSlicesPerVol,
+                                    self.nVols), dtype=np.uint16)
         self.completedSlices = np.zeros(shape=(self.nSlicesPerVol,
-                                            self.nVols), dtype=bool)
+                                        self.nVols), dtype=bool)
 
         self.logger.debug('Incoming 4D series dimensions: {}'.format(self.imageMatrix.shape))
 
         ### Update the flow control flag
         self.firstSliceHasArrived = True
 
-
     def buildAffine(self):
         """
         Build the affine matrix that will transform the data to RAS+.
 
         This function should only be called once the required data has been
-        extracted from the dicom tags from the relevant slices. The affine matrix
-        is constructed by using the information in the ImageOrientationPatient
-        and ImagePositionPatient tags from the first and last slices in a volume.
+        extracted from the dicom tags from the relevant slices. The affine
+        matrix is constructed by using the information in the
+        ImageOrientationPatient and ImagePositionPatient tags from the first
+        and last slices in a volume.
 
         However, note that those tags will tell you how to orient the image to
         DICOM reference coordinate space, which is LPS+. In order to to get to
@@ -795,7 +785,7 @@ class GE_processSlice(Thread):
         # ImagePosition of the last slice from the ImagePosition of the first,
         # then dividing by 1/(total number of slices-1), then invert to
         # make it go from LPS+ to RAS+
-        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1 - self.nSlicesPerVol)
         slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
 
         ### Invert the first two values of the firstSlice ImagePositionPatient.
@@ -806,12 +796,10 @@ class GE_processSlice(Thread):
 
         ### Assemble the affine matrix
         self.affine = np.matrix([
-            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
-            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
-            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
-            [0, 0, 0, 1]
-            ])
-
+            [rowAxis_orient[0] * voxSize_row, colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row, colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row, colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [0, 0, 0, 1]])
 
     def processVolume(self, volIdx):
         """
@@ -822,27 +810,23 @@ class GE_processSlice(Thread):
         """
         self.logger.info('Volume {} processing'.format(volIdx))
 
-
         ### Prep the voxel data by extracting this vol from the imageMatrix,
         # and then converting to a Nifti1 object in order to set the voxel
         # order to RAS+, then get the voxel data as contiguous numpy array
-        thisVol = self.imageMatrix[:,:,:,volIdx]
+        thisVol = self.imageMatrix[:, :, :, volIdx]
         thisVol_nii = nib.Nifti1Image(thisVol, self.affine)
         thisVol_RAS = nib.as_closest_canonical(thisVol_nii)     # make RAS+
         thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
 
-
         ### Create a header with metadata info
         volHeader = {
-            'volIdx':volIdx,
-            'dtype':str(thisVol_RAS_data.dtype),
-            'shape':thisVol_RAS_data.shape,
-            'affine':json.dumps(thisVol_RAS.affine.tolist())
-            }
+            'volIdx': volIdx,
+            'dtype': str(thisVol_RAS_data.dtype),
+            'shape': thisVol_RAS_data.shape,
+            'affine': json.dumps(thisVol_RAS.affine.tolist())}
 
         ### Send the voxel array and header to the pynealSocket
         self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
-
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
         """
@@ -855,13 +839,12 @@ class GE_processSlice(Thread):
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.pynealSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.pynealSocket.send_json(volHeader, zmq.SNDMORE)  # header as json
         self.pynealSocket.send(voxelArray, flags=0, copy=False, track=False)
         pynealSocketResponse = self.pynealSocket.recv_string()
 
         # log the success
         self.logger.debug('FROM pynealSocket: {}'.format(pynealSocketResponse))
-
 
     def stop(self):
         # function to stop the Thread
