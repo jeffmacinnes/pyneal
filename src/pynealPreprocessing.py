@@ -28,15 +28,13 @@ class Preprocessor:
     set up and execute preprocessing steps on incoming volumes during
     a real-time scan
     """
-    def __init__(self, settings, mask_img):
+    def __init__(self, settings):
         """
         settings: user settings dictionary
-        mask_img: Nibabel image of the mask specified in the settings file
         """
         # set up logger
         self.logger = logging.getLogger('PynealLog')
 
-        self.mask = mask_img
         self.settings = settings
         self.affine = None
 

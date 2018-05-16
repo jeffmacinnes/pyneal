@@ -26,10 +26,9 @@ class Analyzer:
     Analysis class. The methods of this class can be used to
     run the specified analysis on each volume during a real-time scan
     """
-    def __init__(self, settings, mask_img):
+    def __init__(self, settings):
         """
         settings: user settings dictionary
-        mask_img: Nibabel image of the mask specified in the settings file
         """
         # set up logger
         self.logger = logging.getLogger('PynealLog')
@@ -38,7 +37,9 @@ class Analyzer:
         self.settings = settings
 
         ### Format the mask. If the settings specify that the the mask should
-        # be weighted, create separate vars for the weights and mask
+        # be weighted, create separate vars for the weights and mask. Convert
+        # mask to boolean array
+        mask_img = nib.load(settings['maskFile'])
         if settings['maskIsWeighted'] == True:
             self.weightMask = True
             self.weights = mask_img.get_data().copy()
@@ -60,7 +61,9 @@ class Analyzer:
             customAnalysisModule = importlib.import_module(customAnalysisName.split('.')[0])
 
             # create instance of customAnalysis class, pass in mask reference
-            customAnalysis = customAnalysisModule.CustomAnalysis(mask_img)
+            customAnalysis = customAnalysisModule.CustomAnalysis(settings['maskFile'],
+                                                                 settings['maskIsWeighted'],
+                                                                 settings['numTimepts'])
 
             # define the analysis func for the custom analysis (should be 'compute'
             # method of the customAnaylsis template)

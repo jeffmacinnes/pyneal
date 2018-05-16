@@ -3,8 +3,8 @@ Template for creating customized analyses in Pyneal. This tool allows users
 to design and implement unique analysis routines for use during a real-time
 fMRI scan
 
-The custom analysis routines are contained in a single class (called, weirdly
-enough, CustomAnalysis). There are 2 important components to this class: the
+The custom analysis routines are contained in a single class (called
+CustomAnalysis). There are 2 important components to this class: the
 '__init__' method and the 'compute' method.
 
 The '__init__' method should contain all of the code you want executed BEFORE the
@@ -34,15 +34,33 @@ from os.path import join
 import logger
 
 import numpy as np
+import nibabel as nib
 
 
 class CustomAnalysis:
-    def __init__(self, mask_img):
+    def __init__(self, maskFile, weightMask, numTimepts):
         """
-        Everything in the __init__ class will be executed BEFORE the scan begins
+        Everything in the __init__ method will be executed BEFORE the scan
+        begins. This is a place to run any necessary setup code.
+
+        The __init__ method provides you with the following inputs from the
+        setup GUI:
+            - maskFile: path to the mask specified in the GUI
+            - weightMask: True/False flag for if "weight mask?" was checked
+            - numTimepts: number of timepts in run, as specified in GUI
+
+        You can use or ignore these inputs as needed for your analysis.
         """
-        # local reference to MASK from Pyneal setup GUI
-        self.mask = mask_img
+        # Load masks and weights, and create an within-class reference to
+        # each for use in later methods.
+        mask_img = nib.load(maskFile)
+        if weightMask == True:
+            self.weights = mask_img.get_data().copy()
+
+        self.mask = mask_img.get_data() > 0  # 3D boolean array of mask voxels
+
+        # within-class reference to numTimepts for use in later methods
+        self.numTimepts = numTimepts
 
         # Add the directory that this script lives in to the path. This way it
         # is easy to load any additional files you want to put in the same

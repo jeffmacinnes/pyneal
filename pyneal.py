@@ -92,14 +92,11 @@ def launchPyneal():
     logger.debug('Starting Results Server')
 
     ### Create processing objects --------------------------
-    # Load the mask
-    mask_img = nib.load(settings['maskFile'])
-
     # Class to handle all preprocessing
-    preprocessor = Preprocessor(settings, mask_img)
+    preprocessor = Preprocessor(settings)
 
     # Class to handle all analysis
-    analyzer = Analyzer(settings, mask_img)
+    analyzer = Analyzer(settings)
 
     ### Launch Real-time Scan Monitor GUI
     if settings['launchDashboard']:
@@ -132,7 +129,7 @@ def launchPyneal():
         msg = {'topic': 'configSettings',
                'content': {'mask': os.path.split(settings['maskFile'])[1],
                            'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
-                           'volDims': str(mask_img.shape),
+                           'volDims': str(nib.load(settings['maskFile']).shape),
                            'numTimepts': settings['numTimepts'],
                            'outputPath': outputDir}}
         dashboardSocket.send_json(msg)
