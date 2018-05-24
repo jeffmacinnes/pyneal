@@ -1,22 +1,14 @@
-"""
-(Pyneal-Scanner: Command line function)
-Calling this function will first prompt the user to specify a
-series directory, and an output name for the file. Next, it will construct
-a Nifti-formatted file from the specified series, and transfer it to
-the real-time analyis machine.
+""" Create a Nifti file from specified series data
 
-If the series is an anatomical scan, the output Nifti will be 3D.
-If the series is a functional scan, the output Nifti will be 4D.
+Take the data in the specified series directory and convert it to a 4D
+nifti image in RAS+ orientation, and then save the new data to disk.
 
-In all cases, the output image will have RAS+ orientation, and the affine
-transformation in the Nifti header will simple convert from voxel space
+If the series is an anatomical scan, the output Nifti will be 3D. If the series
+is a functional scan, the output Nifti will be 4D. In all cases, the affine
+transformation in the Nifti header will simply convert from voxel space
 to mm space using the image voxel sizes (and not moving the origin at all)
-"""
-# python 2/3 compatibility
-from __future__ import print_function
-if hasattr(__builtins__, 'raw_input'):
-    input = raw_input
 
+"""
 import os
 import sys
 from os.path import join
@@ -28,11 +20,20 @@ from utils.general_utils import initializeSession
 # the only option)
 pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
+def getSeries_GE(scannerDirs):
+    """ Build nifti image from series data, GE format
 
-def getSeries_GE(scannerSettings, scannerDirs):
-    """
-    Steps for getting offline data from the scanner that are
-    specific to GE environments
+    Assumes series data are represented as dicom files, one per slice. The path
+    to the output Nifti file will be printed to stdOut upon completion (in
+    general, expect to find it in the pyneal_scanner/data directory)
+
+    Parameters:
+    -----------
+    scannerDirs : object
+        instance of `GE_utils.GE_DirStructure`. Has attributes for the relvant
+        paths for the current session. `scannerDirs` is one of the variables
+        returned by running `general_utils.initializeSession()`
+
     """
     from utils.GE_utils import GE_BuildNifti
 
@@ -70,9 +71,19 @@ def getSeries_GE(scannerSettings, scannerDirs):
 
 
 def getSeries_Philips(scannerSettings, scannerDirs):
-    """
-    Steps for getting offline data from the scanner that are
-    specific to Phillips environments
+    """ Build nifti image from series data, Philips format
+
+    Assumes series data are represented as par/rec file pairs, one per volume.
+    The path to the output Nifti file will be printed to stdOut upon completion
+    (in general, expect to find it in the pyneal_scanner/data directory)
+
+    Parameters:
+    -----------
+    scannerDirs : object
+        instance of `Philips_utils.Philips_DirStructure`. Has attributes for
+        the relvant paths for the current session. `scannerDirs` is one of the
+        variables returned by running `general_utils.initializeSession()`
+
     """
     from utils.Philips_utils import Philips_BuildNifti
 
@@ -110,9 +121,19 @@ def getSeries_Philips(scannerSettings, scannerDirs):
 
 
 def getSeries_Siemens(scannerSettings, scannerDirs):
-    """
-    Steps for getting offline data from the scanner that are
-    specific to Siemens environments
+    """ Build nifti image from series data, Siemens format
+
+    Assumes series data are represented as dicom mosaic files, one per volume.
+    The path to the output Nifti file will be printed to stdOut upon completion
+    (in general, expect to find it in the pyneal_scanner/data directory)
+
+    Parameters:
+    -----------
+    scannerDirs : object
+        instance of `Siemens_utils.Siemens_DirStructure`. Has attributes for
+        the relvant paths for the current session. `scannerDirs` is one of the
+        variables returned by running `general_utils.initializeSession()`
+
     """
     from utils.Siemens_utils import Siemens_BuildNifti
 
@@ -147,12 +168,18 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
 
 
 def saveNifti(niftiBuilder, outputPath):
-    """
-    Save the newly created nifti file
-        - niftiBuilder: instance of niftiBuilder class for this scanning env.
-        - outputPath: full path for output nifti file
+    """ Save the nifti file to disk. Path to output file printed to stdOut
+
+    Parameters:
+    -----------
+    niftiBuilder : object
+        instance of the niftiBuilder class for this scannering environment
+    outputPath : string
+        full path to where you want to save nifti file
+
     """
     niftiBuilder.write_nifti(outputPath)
+    print('saved at: {}'.format(outputPath))
 
 
 if __name__ == '__main__':
