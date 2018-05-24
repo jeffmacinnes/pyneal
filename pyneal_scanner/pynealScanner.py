@@ -1,5 +1,5 @@
-"""
-(Pyneal-Scanner: Command line function)
+""" Launch pynealScanner
+
 Call this tool to begin listening for new incoming series data during a
 real-time run. This tool will read the scannerConfig file in an attempt to
 determine the appropriate scanning environment and set the subsequent
@@ -19,10 +19,8 @@ in the pyneal_scanner dir. This file will have verbose information about
 everything that happens while this tool is running, and may be more useful in
 debugging potential issues than what you see printed back to the terminal
 window
+
 """
-
-from __future__ import print_function
-
 import os
 import sys
 
@@ -37,8 +35,8 @@ pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 
 def pynealScanner_GE(scannerSettings, scannerDirs):
-    """
-    Tools for processing a real-time scan in a GE environment
+    """ Launch Pyneal Scanner for real-time scan in a GE environment
+
     """
     from utils.GE_utils import GE_launch_rtfMRI
 
@@ -47,8 +45,8 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
 
 
 def pynealScanner_Phillips(scannerSettings, scannerDirs):
-    """
-    Tools for processing a real-time scan in a Phillips environment
+    """ Launch Pyneal Scanner for real-time scan in a Philips environment
+
     """
     from utils.Philips_utils import Philips_launch_rtfMRI
 
@@ -57,8 +55,8 @@ def pynealScanner_Phillips(scannerSettings, scannerDirs):
 
 
 def pynealScanner_Siemens(scannerSettings, scannerDirs):
-    """
-    Tools for processing a real-time scan in a Siemens environment
+    """ Launch Pyneal Scanner for real-time scan in a Siemens environment
+
     """
     from utils.Siemens_utils import Siemens_launch_rtfMRI
 
@@ -67,9 +65,9 @@ def pynealScanner_Siemens(scannerSettings, scannerDirs):
 
 
 def pynealScanner_sandbox(scannerSettings, scannerDirs):
-    """
-    method for launching a real-time scan using experimental methods.
-    Mainly for debugging and testing
+    """ Simple sandbox method for launching a real-time scan using experimental
+    methods. Use for debugging and testing
+    
     """
     from sandbox.test_GE_utils import test_GE_launch_rtfMRI
 
