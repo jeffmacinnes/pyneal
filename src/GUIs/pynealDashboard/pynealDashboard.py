@@ -66,7 +66,7 @@ class DashboardIPCServer(Thread):
             try:
                 # listen for incoming JSON messages from pyneal
                 msg = self.ipc_socket.recv_json(flags=zmq.NOBLOCK)
-                self.ipc_socket.send_string('got message')
+                self.ipc_socket.send_string('success')
 
                 # process this particular message
                 self.processMsg(msg)

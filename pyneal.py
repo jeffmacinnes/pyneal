@@ -1,5 +1,4 @@
-"""
-Pyneal Real-time fMRI Acquisition and Analysis
+"""Pyneal Real-time fMRI Acquisition and Analysis
 
 This is the main Pyneal application, designed to be called directly from the
 command line on the computer designated as your real-time analysis machine.
@@ -10,6 +9,7 @@ itself)
 Once this application is called, it'll take care of opening the
 GUI, loading settings, launching separate threads for monitoring and analyzing
 incoming data, and hosting the Analysis output server
+
 """
 # python 2/3 compatibility
 from __future__ import print_function
@@ -40,10 +40,11 @@ pynealDir = os.path.abspath(os.path.dirname(__file__))
 
 
 def launchPyneal():
-    """
-    Main Pyneal Loop. This function will launch setup GUI,
-    retrieve settings, initialize all threads, and start processing
-    incoming scans
+    """Main Pyneal Loop.
+
+    This function will launch setup GUI, retrieve settings, initialize all
+    threads, and start processing incoming scans
+
     """
     ### Read Settings ------------------------------------
     # Read the settings file, and launch the setup GUI to give the user
@@ -126,14 +127,14 @@ def launchPyneal():
         # web.open('127.0.0.1:{}'.format(settings['dashboardClientPort']))
 
         # send configuration settings to dashboard
-        msg = {'topic': 'configSettings',
-               'content': {'mask': os.path.split(settings['maskFile'])[1],
-                           'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
-                           'volDims': str(nib.load(settings['maskFile']).shape),
-                           'numTimepts': settings['numTimepts'],
-                           'outputPath': outputDir}}
-        dashboardSocket.send_json(msg)
-        resp = dashboardSocket.recv_string()
+        configDict = {'mask': os.path.split(settings['maskFile'])[1],
+                      'analysisChoice': (settings['analysisChoice'] if settings['analysisChoice'] in ['Average', 'Median'] else 'Custom'),
+                      'volDims': str(nib.load(settings['maskFile']).shape),
+                      'numTimepts': settings['numTimepts'],
+                      'outputPath': outputDir}
+        sendToDashboard(dashboardSocket,
+                        topic='configSettings',
+                        content=configDict)
 
     ### Wait For Scan To Start -----------------------------
     while not scanReceiver.scanStarted:
@@ -192,6 +193,29 @@ def launchPyneal():
 
 
 def sendToDashboard(dashboardSocket, topic=None, content=None):
+    """ Send a message to the dashboard
+
+    Construct a JSON message using the supplied `topic` and `content`, and send
+    it out over the `dashboardSocket` object
+
+    Parameters:
+    -----------
+    dashboardSocket : zmq socket object
+        Instance of dashboard socket class
+    topic : string
+        Topic type of message to send to Pyneal dashboard. Must be one of the
+        expected topic types in order for the dashboard to make sense of it.
+        (See: src/GUIs/pynealDashboard/pynealDashboard.py)
+    content :
+        The actual content you want sent to the dashboard. The `content`
+        dtype will vary depending on topic
+
+    """
+    if topic is None:
+        raise Exception('Dashboard message has topic set to None')
+    if content is None:
+        raise Exception('Dashboard message has content set to None')
+
     # format the message to send to dashboard
     msg = {'topic': topic, 'content': content}
 
@@ -199,20 +223,33 @@ def sendToDashboard(dashboardSocket, topic=None, content=None):
     dashboardSocket.send_json(msg)
     # logger.debug('sent to dashboard: {}'.format(msg))
 
-    # recv
+    # recv the response (should just be 'success')
     response = dashboardSocket.recv_string()
+    if response != 'success':
+        print(response)
+        raise Exception('Could not send this dashboard: {}'.format(msg))
     # logger.debug('response from dashboard: {}'.format(response))
 
 
 def createOutputDir(parentDir):
-    """
-    Create a new output directory in the parent dir. Output directories
-    are named sequentially, starting with pyneal_001.
+    """Create a new output directory
 
-    This function will find all existing pyneal_### directories in the
-    parentDir and name the new output directory accordingly.
+    A new output subdirectory will be created in the supplied parent dir.
+    Output directories are named sequentially, starting with pyneal_001. This
+    function will find all existing pyneal_### directories in the `parentDir`
+    and name the new output directory accordingly.
 
-    returns full path to the new output directory
+    Parameters:
+    -----------
+    parentDir : string
+        full path to the parent directory where you'd like the new output
+        subdirectory to appear
+
+    Returns:
+    --------
+    string
+        full path to the new output subdirectory
+
     """
     # find any existing pyneal_### directories, create the next one in series
     existingDirs = glob.glob(join(parentDir, 'pyneal_*'))
@@ -235,4 +272,5 @@ def cleanup(pid):
 
 ### ----------------------------------------------
 if __name__ == '__main__':
+    # Start Pyneal by calling pyneal.py from the command line
     launchPyneal()
