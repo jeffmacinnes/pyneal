@@ -61,10 +61,12 @@ def GE_sim(dicomDir, outputDir, TR):
 
     To simulate a scan, this function will read all of the dicom slice files
     from a specified `dicomDir`, and will then copy each file, in order of
-    acquisition, to a specified `outputDir`. The `outputDir` therefore serves
-    as the directory for Pyneal Scanner to monitor for new images as though
-    it was a real scan. The rate that dicom slice files are copied from the
-    `dicomDir` to the `outputDir` is determined by the `TR` parameter
+    acquisition, to a specified `outputDir`.
+
+    The `outputDir` therefore serves as the directory for Pyneal Scanner to
+    monitor for new images as though it was a real scan. The rate that dicom
+    slice files are copied from the `dicomDir` to the `outputDir` is determined
+    by the `TR` parameter
 
     Parameters:
     -----------
@@ -156,14 +158,14 @@ if __name__ == "__main__":
     # parse arguments
     parser = argparse.ArgumentParser(description='Simulate a GE scan')
     parser.add_argument('inputDir',
-                        help='path to directory that contains slice DICOMS')
+                        help='full path to directory that contains slice DICOMS')
     parser.add_argument('-o', '--outputDir',
                         default=None,
-                        help='path to output directory where new slices images will appear (i.e. series directory)')
+                        help='full path to output directory where new slices images will appear (i.e. series directory)')
     parser.add_argument('-t', '--TR',
                         type=int,
                         default=1000,
-                        help='TR (ms) [default = 1000ms]')
+                        help='TR (ms) [default = 1000]')
 
     # grab the input args
     args = parser.parse_args()
