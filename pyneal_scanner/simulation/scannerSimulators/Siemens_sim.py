@@ -1,21 +1,22 @@
-"""
-Simulate a Siemens scan [Siemens Prisma 3T]
-Siemens scanners stores reconstructed slices images by taking all of the
-slices for a single volume, and placing them side-by-side in a larger
+""" Simulate a Siemens scan
+
+Siemens scanners export reconstructed volumes by taking all of the
+slices for a single volume, and arranging them in a 2D grid as a so-called
 "mosaic" dicom image. A scan will produce one mosaic image per volume, and
 all mosaic images for all scans across a single session will be stored in the
 same directory. This script simulates the creation of that directory, and will
 pass in real mosaic images.
 
 Usage:
+------
     python Siemens_sim.py inputDir series# [--newSeriesNum] [--TR]
 
 You must specify a local path to the inputDir as well as the series number of
 the series you want to simulate.
 
 The input dir should be the directory that already contains a set of
-reconstructed mosaic images. Let's call that directory the 'sessionDir'. A
-single session dir will hold all of the mosaic files for all of the scans for
+reconstructed mosaic dicom images. Let's call that directory the 'sessionDir'.
+A single session dir will hold all of the mosaic files for all of the scans for
 a given session. Mosaic files are named like:
 
 <session#>_<series#>_<vol#>.dcm
@@ -33,8 +34,8 @@ is 1000ms, and represents the approximate amount of time it should take to copy
 over all of the slices for one volume of data.
 
 e.g. python Siemens_sim.py /Path/To/My/Existing/SessionDir 1 --TR 2000
-"""
 
+"""
 # python 2/3 compatibility
 from __future__ import print_function
 from builtins import input
@@ -56,11 +57,30 @@ Siemens_mosaicSeriesNumberField = re.compile('(?<=\d{3}_)\d{6}(?=_\d{6}.dcm)')
 
 
 def Siemens_sim(inputDir, seriesNum, newSeriesNum, TR):
-    """
-    Read DICOM mosaics from 'dicomDir' with filenames containing seriesNum.
-    Copy and rename with newSeriesNum
-    """
+    """ Simulate a Siemen scanning environment
 
+    To simulate a scan, this function will read all of mosaic dicom files from
+    the specified `inputDir` that have the specified `seriesNum`. Each mosaic
+    file will then be duplicated, renamed with the `newSeriesNum`, and then
+    saved in the same `inputDir`.
+
+    The rate that each mosaic file is duplicated, renamed, and saved is
+    determined by the `TR` parameter
+
+    Parameters
+    ----------
+    inputDir : string
+        full path to directory containing all of the mosaic images for all
+        series within the current session
+    seriesNum : int
+        series number of the series you wish to use for the simulation data
+    newSeriesNum : int
+        series number to assign to the new simulated data
+    TR : int
+        the time it takes to copy each volume in the series.
+        Units: milliseconds
+
+    """
     # build full path to outputDir
     print('-'*25)
     print('Source dir: {}'.format(inputDir))
@@ -105,9 +125,22 @@ def Siemens_sim(inputDir, seriesNum, newSeriesNum, TR):
 
 
 def makeNewFileName(srcFile, oldSeriesNum, newSeriesNum):
-    """
-    swap out the oldSeriesNum with the newSeriesNum and return a full path
-    for the new file
+    """ swap out the oldSeriesNum with the newSeriesNum
+
+    Parameters
+    ----------
+    srcFile : string
+        full path to the source mosaic file
+    oldSeriesNum : int
+        what the seriesNum currently is
+    newSeriesNum : int
+        what you want the new series number to be
+
+    Returns
+    -------
+    string
+        full path to the new filename for the series file
+
     """
     oldSeriesNum = str(oldSeriesNum).zfill(6)
     newSeriesNum = str(newSeriesNum).zfill(6)
@@ -121,7 +154,9 @@ def makeNewFileName(srcFile, oldSeriesNum, newSeriesNum):
 
 
 def rmFiles(seriesDir, seriesNum):
-    """ Remove files with the specified seriesNum from the specified dir"""
+    """ Remove all files with the specified seriesNum from the specified dir
+
+    """
     for f in glob.glob(join(seriesDir, ('*_' + str(seriesNum).zfill(6) + '_*.dcm'))):
         print('Deleting file: {}'.format(f))
         subprocess.call(['rm', f])

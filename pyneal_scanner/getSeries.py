@@ -27,8 +27,8 @@ def getSeries_GE(scannerDirs):
     to the output Nifti file will be printed to stdOut upon completion (in
     general, expect to find it in the pyneal_scanner/data directory)
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     scannerDirs : object
         instance of `GE_utils.GE_DirStructure`. Has attributes for the relvant
         paths for the current session. `scannerDirs` is one of the variables
@@ -77,8 +77,8 @@ def getSeries_Philips(scannerSettings, scannerDirs):
     The path to the output Nifti file will be printed to stdOut upon completion
     (in general, expect to find it in the pyneal_scanner/data directory)
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     scannerDirs : object
         instance of `Philips_utils.Philips_DirStructure`. Has attributes for
         the relvant paths for the current session. `scannerDirs` is one of the
@@ -127,8 +127,8 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
     The path to the output Nifti file will be printed to stdOut upon completion
     (in general, expect to find it in the pyneal_scanner/data directory)
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     scannerDirs : object
         instance of `Siemens_utils.Siemens_DirStructure`. Has attributes for
         the relvant paths for the current session. `scannerDirs` is one of the
@@ -170,8 +170,8 @@ def getSeries_Siemens(scannerSettings, scannerDirs):
 def saveNifti(niftiBuilder, outputPath):
     """ Save the nifti file to disk. Path to output file printed to stdOut
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     niftiBuilder : object
         instance of the niftiBuilder class for this scannering environment
     outputPath : string

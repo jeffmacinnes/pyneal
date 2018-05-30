@@ -68,8 +68,8 @@ def GE_sim(dicomDir, outputDir, TR):
     slice files are copied from the `dicomDir` to the `outputDir` is determined
     by the `TR` parameter
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     dicomDir : string
         full path to directory containing dicom slice files from an existing
         scan

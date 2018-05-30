@@ -4,8 +4,8 @@ Philips scanners export reconstructed 3D volumes as PAR/REC file pairs to a
 specified directory. This script will simulate that directory and copy in
 PAR/REC file pairs for each volume at a rate determined by the specified TR.
 
-Usage:
-------
+Usage
+-----
     python Philips_sim.py inputDir [--outputDir] [--TR]
 
 You must specify a local path to the inputDir. That is, the directory that
@@ -63,8 +63,8 @@ def Philips_sim(inputDir, outputDir, TR):
     PAR/REC file pair is copied from the `inputDir` to the `outputDir` is
     determined by the `TR` parameter
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     inputDir : string
         full path to directory containing PAR/REC file pairs from an existing
         scan

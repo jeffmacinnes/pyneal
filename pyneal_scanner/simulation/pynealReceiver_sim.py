@@ -6,8 +6,8 @@ that Pyneal would use during a real scan. This tool allows you to test
 components of Pyneal Scanner without having to actually run a full Pyneal
 setup.
 
-Usage:
-------
+Usage
+-----
     python pynealReceiver_sim.py [--port] [--nVols]
 
 Defaults:
@@ -36,14 +36,14 @@ def launchPynealReceiver(port, nVols):
     Scanner, enabling you to test Pyneal Scanner without having to run the full
     Pyneal Setup
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     port : int
         port number that will be used to transfer data between Pyneal Scanner
         and Pyneal
     nVols : int
         number of expected volumes in the dataset
-        
+
     """
     ### Set up socket to listen for incoming data
     # Note: since this is designed for testing, it assumes
