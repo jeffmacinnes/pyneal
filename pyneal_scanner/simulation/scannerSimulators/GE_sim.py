@@ -1,10 +1,11 @@
-"""
-Simulate a GE scan [GE MR750 3T].
+""" Simulate a GE scan
+
 GE scanners store reconstructed slice images as individual DICOM files within
 a certain directory on the scanner console. This script will simulate that
 directory and copy in individual slice DICOM images.
 
 Usage:
+------
     python GE_sim.py inputDir [--outputDir] [--TR]
 
 You must specify a local path to the inputDir. That is, the directory that
@@ -34,6 +35,7 @@ is 1000ms, and represents the approximate amount of time it should take to copy
 over all of the slices for one volume of data.
 
 e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --TR 2000
+
 """
 # python 2/3 compatibility
 from __future__ import print_function
@@ -55,9 +57,28 @@ GE_filePattern = re.compile('i\d*.MRDC.\d*')
 
 
 def GE_sim(dicomDir, outputDir, TR):
-    """
-    Read DICOM slices from 'dicomDir',
-    copy to outputDir at a rate set by TR
+    """ Simulate a GE scanning environment
+
+    To simulate a scan, this function will read all of the dicom slice files
+    from a specified `dicomDir`, and will then copy each file, in order of
+    acquisition, to a specified `outputDir`. The `outputDir` therefore serves
+    as the directory for Pyneal Scanner to monitor for new images as though
+    it was a real scan. The rate that dicom slice files are copied from the
+    `dicomDir` to the `outputDir` is determined by the `TR` parameter
+
+    Parameters:
+    -----------
+    dicomDir : string
+        full path to directory containing dicom slice files from an existing
+        scan
+    outputDir : string
+        full path to the directory you want to copy existing slice files to.
+        Pyneal Scanner should be set to monitor this directory as though it was
+        a real scan
+    TR : int
+        the time it takes to copy all of the slices pertaining to a single
+        volume of data. Units: milliseconds
+
     """
 
     # build full path to outputDir
@@ -122,7 +143,9 @@ def GE_sim(dicomDir, outputDir, TR):
 
 
 def rmOutputDir(outputDir):
-    """ Remove the output dir upon exiting"""
+    """ Remove the `outputDir`
+
+    """
     # if outputDir exists, delete
     if os.path.isdir(outputDir):
         print('Deleting output dir: {}'.format(outputDir))
@@ -161,7 +184,7 @@ if __name__ == "__main__":
     else:
         outputDir = args.outputDir
 
-    # set up the cleanup function
+    # set the cleanup function to remove the output directory
     atexit.register(rmOutputDir, outputDir)
 
     # run main function
