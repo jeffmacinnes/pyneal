@@ -1,17 +1,22 @@
-"""
-Basic script to mimic the behavior of Pyneal during an actual scan.
-This is a server to receive incoming slice files
+""" Basic script to mimic the behavior of Pyneal during an actual scan.
+
+This is a quick and dirty server set up to mimic the behavior of Pyneal. It
+will listen for incoming data over an assigned port using the same methods
+that Pyneal would use during a real scan. This tool allows you to test
+components of Pyneal Scanner without having to actually run a full Pyneal
+setup.
 
 Usage:
+------
     python pynealReceiver_sim.py [--port] [--nVols]
 
 Defaults:
     -p/--port: 5555
     -n/--nVols: 60
 
-After the scan is complete and all of the data has arrived, this
-will save the received 4D volume as a nifti image in same
-directory as this script as 'receivedImg.nii.gz'
+After the scan is complete and all of the data has arrived, this will save the
+received 4D volume as a nifti image in same directory as this script (output file named 'receivedImg.nii.gz')
+
 """
 from __future__ import division
 
@@ -24,11 +29,21 @@ import nibabel as nib
 
 
 def launchPynealReceiver(port, nVols):
-    """
-    Launch Pyneal Receiver simulation. This method will simulate
-    the behavior of the scanReceiver thread of Pyneal. That is,
-    it will listen for incoming 3D volumes sent from Pyneal Scanner, enabling
-    you to test Pyneal Scanner without having to run the full Pyneal Setup
+    """ Launch Pyneal Receiver simulation.
+
+    This method will simulate the behavior of the scanReceiver thread of
+    Pyneal. That is, it will listen for incoming 3D volumes sent from Pyneal
+    Scanner, enabling you to test Pyneal Scanner without having to run the full
+    Pyneal Setup
+
+    Parameters:
+    -----------
+    port : int
+        port number that will be used to transfer data between Pyneal Scanner
+        and Pyneal
+    nVols : int
+        number of expected volumes in the dataset
+        
     """
     ### Set up socket to listen for incoming data
     # Note: since this is designed for testing, it assumes
