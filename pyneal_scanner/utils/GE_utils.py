@@ -1,9 +1,6 @@
-"""
-Set of classes and methods specific to GE scanning environments
-"""
-from __future__ import print_function
-from __future__ import division
+""" Set of classes and methods specific to GE scanning environments
 
+"""
 import os
 from os.path import join
 import sys
@@ -28,9 +25,8 @@ GE_filePattern = re.compile('i\d*.MRDC.\d*')
 
 
 class GE_DirStructure():
-    """
-    Methods for finding and returning the names and paths of
-    series directories in a GE scanning environment
+    """ Finding the names and paths of series directories in a GE scanning
+    environment
 
     In GE enviroments, a new folder is created for every series (i.e. each
     unique scan). The series folders are typically named like 's###'. While
@@ -44,12 +40,12 @@ class GE_DirStructure():
     named like 'p###' where the number is unpredictable. The p### directories
     are stored in a baseDir which (thankfully) tends to be a fixed path.
 
-    So, in other words, new series show up in a unique directory with an
-    absolute path like:
+    So, putting this all together, new series show up in a unique directory
+    with an absolute path structured like:
     [baseDir]/p###/e###/s###
 
-    Throughout, we'll sometimes refer to the directory that contains
-    the s### directories as the 'sessionDir'. So,
+    We'll sometimes refer to the directory that contains the s### directories
+    as the 'sessionDir'. So,
 
     sessionDir = [baseDir]/p###/e###
 
@@ -58,8 +54,23 @@ class GE_DirStructure():
     with timestamps and directory sizes. This will hopefully allow users to
     match a particular task scan (e.g. anatomicals, or experimentRun1) with
     the full path to its raw data on the scanner console
+
     """
     def __init__(self, scannerSettings):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        scannerSettings : object
+            class attributes represent all of the settings unique to the
+            current scanning environment (many of them read from
+            `scannerConfig.yaml`)
+
+        See Also
+        --------
+        general_utils.ScannerSettings
+        """
+
         # initialize the class attributes
         if 'scannerBaseDir' in scannerSettings.allSettings:
             self.baseDir = scannerSettings.allSettings['scannerBaseDir']
@@ -76,9 +87,12 @@ class GE_DirStructure():
         self.findSessionDir()
 
     def findSessionDir(self):
-        """
-        Find the most recently modified p###/e### directory in the
-        baseDir
+        """ Find the most recently modified p###/e### directory in the baseDir
+
+        Sets class attributes for the current sessions for:
+            pDir
+            eDir
+            sessionDir
         """
         try:
             # Find the most recent p### dir
@@ -131,9 +145,9 @@ class GE_DirStructure():
         self.sessionDir = sessionDir
 
     def print_currentSeries(self):
-        """
-        Find all of the series dirs in given sessionDir, and print them
+        """ Find all of the series dirs in current sessionDir, and print them
         all, along with time since last modification, and directory size
+
         """
         # find the sessionDir, if not already found
         if self.sessionDir is None:
@@ -174,11 +188,23 @@ class GE_DirStructure():
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
 
     def _findAllSubdirs(self, parentDir):
-        """
-        Return a list of all subdirectories within the specified
+        """ Return a list of all subdirectories within the specified
         parentDir, along with the modification time for each
 
-        output: [[subDir_path, subDir_modTime]]
+        Parameters
+        ----------
+        parentDir : string
+            full path to the parent directory you want to search
+
+        Returns
+        -------
+        subDirs : list
+            each item in `subDirs` is itself a list containing 2-items for each
+            subdirectory in the `parentDir`. Each nested list will contain the
+            path to the subdirectory and the last modification time for that
+            directory. Thus, `subDirs` is structured like:
+                [[subDir_path, subDir_modTime]]
+
         """
         subDirs = [join(parentDir, d) for d in os.listdir(parentDir) if os.path.isdir(join(parentDir, d))]
         if not subDirs:
@@ -191,11 +217,22 @@ class GE_DirStructure():
         return subDirs
 
     def waitForSeriesDir(self, interval=.1):
-        """
-        listen for the creation of a new series directory.
+        """Listen for the creation of a new series directory.
+
         Once a scan starts, a new series directory will be created
-        in the sessionDir. By the time this function is called, this
-        class should already have the sessionDir defined
+        in the `sessionDir`. By the time this function is called, this
+        class should already have the `sessionDir` defined
+
+        Parameters
+        ----------
+        interval : float, optional
+            time, in seconds, to wait between polling for a new directory
+
+        Returns
+        -------
+        seriesDir : string
+            full path to the newly created directory
+
         """
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
@@ -218,8 +255,16 @@ class GE_DirStructure():
         return seriesDir
 
     def get_seriesDirs(self):
-        """
-        build a list that contains the directory names of all of the series
+        """ Build a list that contains the directory names of all of the
+        series directories currently in the `sessionDir`. Set the class
+        attribute for `seriesDirs`
+
+        Returns
+        -------
+        seriesDirs : list
+            list of all series directories (directory names ONLY) found within
+            the current `sessionDir`
+
         """
         # get a list of all sub dirs in the sessionDir
         subDirs = self._findAllSubdirs(self.sessionDir)
@@ -235,32 +280,40 @@ class GE_DirStructure():
         return self.seriesDirs
 
     def get_pDir(self):
+        """ Return the current `pDir` for the current session """
         return self.pDir
 
     def get_eDir(self):
+        """ Return the current `eDir` for the current session """
         return self.eDir
 
     def get_sessionDir(self):
+        """ Return the current `sessionDir` for the current session """
         return self.sessionDir
 
 
 class GE_BuildNifti():
-    """
-    Build a 3D or 4D Nifti image from all of the dicom slice images in a
-    directory.
+    """ Tools to build a 3D or 4D Nifti image from all of the dicom slice
+    images in a directory.
 
     Input is a path to a series directory containing dicom slices. Image
     parameters, like voxel spacing and dimensions, are obtained automatically
     from info in the dicom tags
 
-    Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+
-    orientation
+    End result is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+
+    orientation.
+
     """
     def __init__(self, seriesDir):
-        """
-        Initialize class:
-            - seriesDir needs to be the full path to directory containing
-            raw dicom slices
+        """ Initialize class, and set/obtain basic class attributes like file
+        paths and scan parameters
+
+        Parameters
+        ----------
+        seriesDir : string
+            full path to the directory containing the raw dicom slices you
+            want to build a Nifti image from
+
         """
         # initialize attributes
         self.seriesDir = seriesDir
@@ -284,10 +337,28 @@ class GE_BuildNifti():
             self.niftiImage = self.buildFunc(self.rawDicoms)
 
     def buildAnat(self, dicomFiles):
-        """
-        Given a list of dicomFiles, build a 3D anatomical image from them.
+        """ Build a 3D structural/anatomical image from list of dicom files
+
+        Given a list of `dicomFiles`, build a 3D anatomical image from them.
         Figure out the image dimensions and affine transformation to map
         from voxels to mm from the dicom tags
+
+        Parameters
+        ----------
+        dicomFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            dicom slice images to be used in constructing the final nifti image
+
+        Returns
+        -------
+        anatImage_RAS : Nifti1Image
+            nifti-1 formated image of the 3D anatomical data, oriented in
+            RAS+
+
+        See Also
+        --------
+        nibabel.nifti1.Nifti1Image()
+
         """
         # read the first dicom in the list to get overall image dimensions
         dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]),
@@ -305,7 +376,7 @@ class GE_BuildNifti():
                                self.nSlicesPerVol),
                                dtype='int16')
 
-        # With functional data, the dicom tag 'InStackPositionNumber'
+        # With anatomical data, the dicom tag 'InStackPositionNumber'
         # seems to correspond to the slice index (one-based indexing).
         # But with anatomical data, there are 'InStackPositionNumbers'
         # that may start at 2, and go past the total number of slices.
@@ -361,10 +432,28 @@ class GE_BuildNifti():
         return anatImage_RAS
 
     def buildFunc(self, dicomFiles):
-        """
-        Given a list of dicomFiles, build a 4D functional image from them.
+        """ Build a 4D functional image from list of dicom files
+
+        Given a list of `dicomFiles`, build a 4D functional image from them.
         Figure out the image dimensions and affine transformation to map
         from voxels to mm from the dicom tags
+
+        Parameters
+        ----------
+        dicomFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            dicom slice images to be used in constructing the final nifti image
+
+        Returns
+        -------
+        funcImage_RAS : Nifti1Image
+            nifti-1 formated image of the 4D functional data, oriented in
+            RAS+
+
+        See Also
+        --------
+        nibabel.nifti1.Nifti1Image()
+
         """
         # read the first dicom in the list to get overall image dimensions
         dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]),
@@ -433,8 +522,7 @@ class GE_BuildNifti():
         return funcImage_RAS
 
     def buildAffine(self):
-        """
-        Build the affine matrix that will transform the data to RAS+.
+        """ Build the affine matrix that will transform the data to RAS+.
 
         This function should only be called once the required data has been
         extracted from the dicom tags from the relevant slices. The affine
@@ -446,9 +534,12 @@ class GE_BuildNifti():
         DICOM reference coordinate space, which is LPS+. In order to to get to
         RAS+ we have to invert the first two axes.
 
-        More info on building this affine at:
-        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        Notes
+        -----
+        For more info on building this affine, please see the documentation at:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html
         http://nipy.org/nibabel/coordinate_systems.html
+
         """
         ### Get the ImageOrientation values from the first slice,
         # split the row-axis values (0:3) and col-axis values (3:6)
@@ -483,10 +574,24 @@ class GE_BuildNifti():
         return affine
 
     def _determineScanType(self, sliceDcm):
-        """
-        Figure out what type of scan this is, single 3D volume (anat), or
-        a 4D dataset built up of 2D slices (func) based on info found
-        in the dicom tags
+        """ Figure out what type of scan this is, anat or func
+
+        This tool will determine the scan type from a given dicom file.
+        Possible scan types are either single 3D volume (anat), or a 4D dataset
+        built up of 2D slices (func). The scan type is determined by reading
+        the `MRAcquisitionType` tag from the dicom file
+
+        Parameters
+        ----------
+        sliceDcm : string
+            file name of slice dicom file from the current session that you
+            would like to open to read the imaging parameters from
+
+        Returns
+        -------
+        scanType : string
+            either 'anat' or 'func' depending on scan type stored in dicom tag
+
         """
         # read the dicom file
         dcm = pydicom.dcmread(join(self.seriesDir, sliceDcm),
@@ -510,23 +615,44 @@ class GE_BuildNifti():
         """ Return the constructed Nifti Image """
         return self.niftiImage
 
-    def write_nifti(self, output_path):
+    def write_nifti(self, outputPath):
+        """ Write the nifti file to disk
+
+        Parameters
+        ----------
+        outputPath : string
+            full path, including filename, you want to use to save the nifti
+            image
+
         """
-        write the nifti file to disk using the abs path
-        specified by output_fName
-        """
-        nib.save(self.niftiImage, output_path)
-        print('Image saved at: {}'.format(output_path))
+        nib.save(self.niftiImage, outputPath)
+        print('Image saved at: {}'.format(outputPath))
 
 
 class GE_monitorSeriesDir(Thread):
-    """
-    Class to monitor for new slices images to appear in the seriesDir.
-    This class will run indpendently in a separate thread.
-    Each new dicom file that appears will be added to the Queue
-    for further processing
+    """ Class to monitor for new slices images to appear in the seriesDir.
+
+    This class will run independently in a separate thread, monitoring a
+    specified directory for the appearance of new dicom slice files. Each new
+    dicom slice file that appears will be added to the Queue for further
+    processing
+
     """
     def __init__(self, seriesDir, dicomQ, interval=.2):
+        """ Initialize the class, and set basic class attributes
+
+        Parameters
+        ----------
+        seriesDir : string
+            full path to the series directory where new dicom files will appear
+        dicomQ : object
+            instance of python queue class to hold new dicom files before they have
+            been processed. This class will add items to that queue.
+        interval : float, optional
+            time, in seconds, to wait before repolling the seriesDir to check for
+            any new files
+
+        """
         # start the thead upon creation
         Thread.__init__(self)
 
@@ -571,18 +697,19 @@ class GE_monitorSeriesDir(Thread):
             time.sleep(self.interval)
 
     def get_numSlicesAdded(self):
+        """ Return the cumulative number of slices added to the queue thus far """
         return self.numSlicesAdded
 
     def stop(self):
-        # function to stop the Thread
+        """ Set the `alive` flag to False, stopping thread """
         self.alive = False
 
 
 class GE_processSlice(Thread):
-    """
-    Class to process each dicom slice in the dicom queue. This class is
-    designed to run in a separate thread. While running, it will pull slice
-    file names off of the dicomQ and process each slice.
+    """ Class to process each dicom slice in the dicom queue.
+
+    This class will run in it's own separate thread. While running, it will
+    pull slice file names off of the `dicomQ` and process each slice.
 
     Processing each slice will include reading the dicom file and extracting
     the pixel array and any relevant header information. The pixel array from
@@ -591,6 +718,21 @@ class GE_processSlice(Thread):
     so that its axes correspond to RAS+. The volume, along with a JSON header
     containing metadata on that volume, will be sent out over the socket
     connection to Pyneal
+
+    Parameters
+    ----------
+    dicomQ : object
+        instance of python queue class that will store the dicom slice file
+        names. This class will pull items from that queue.
+    pynealSocket : object
+        instance of ZMQ style socket that will be used to communicate with
+        Pyneal. This class will use this socket to send image data and headers
+        to Pyneal during the real-time scan.
+        See also: general_utils.create_pynealSocket()
+    interval : float, optional
+        time, in seconds, to wait before repolling the queue to see if there
+        are any new file names to process
+
     """
     def __init__(self, dicomQ, pynealSocket, interval=.2):
         # start the thread upon creation
@@ -658,9 +800,17 @@ class GE_processSlice(Thread):
             time.sleep(self.interval)
 
     def processDcmSlice(self, dcm_fname):
-        """
-        read the slice dicom. Format the data and header.
-        Send data and header out over the socket connection
+        """ Process a given dicom slice file
+
+        This method will read the slice dicom file, extract the data and
+        relevant image parameters, and add the image data to the master image
+        matrix.
+
+        Parameters
+        ----------
+        dcm_fname : string
+            full path to the dicom slice file that you want to process
+
         """
         # if this is the first slice to have arrived, read the dcm header
         # to get relevent information about the series, and to construct
@@ -723,10 +873,19 @@ class GE_processSlice(Thread):
                 self.stop()
 
     def processFirstSlice(self, dcm_fname):
-        """
+        """ Extract relevant scanning parameters from the first slice to arrive
+
         Read the dicom header from the supplied slice to get relevant info
-        that pertains to the whole scan series. Build the imageMatrix and
-        completedSlice table to store subsequent slice data as it arrives
+        that pertains to the whole scan series. This only needs to be done once
+        per series. Build the imageMatrix and completedSlice table to store
+        subsequent slice data as it arrives
+
+        Parameters
+        ----------
+        dcm_fname : string
+            full path to the dicom slice file you want to read to extract info
+            from
+
         """
         # Read the header dicom tags only
         dcmHdr = pydicom.dcmread(dcm_fname, stop_before_pixels=True)
@@ -754,8 +913,7 @@ class GE_processSlice(Thread):
         self.firstSliceHasArrived = True
 
     def buildAffine(self):
-        """
-        Build the affine matrix that will transform the data to RAS+.
+        """ Build the affine matrix that will transform the data to RAS+.
 
         This function should only be called once the required data has been
         extracted from the dicom tags from the relevant slices. The affine
@@ -767,9 +925,12 @@ class GE_processSlice(Thread):
         DICOM reference coordinate space, which is LPS+. In order to to get to
         RAS+ we have to invert the first two axes.
 
-        More info on building this affine at:
-        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        Notes
+        -----
+        For more info on building this affine, please see the documentation at:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html
         http://nipy.org/nibabel/coordinate_systems.html
+
         """
         ### Get the ImageOrientation values from the first slice,
         # split the row-axis values (0:3) and col-axis values (3:6)
@@ -802,11 +963,17 @@ class GE_processSlice(Thread):
             [0, 0, 0, 1]])
 
     def processVolume(self, volIdx):
-        """
+        """ Process a single 3D timepoint from the series
+
         Extract the 3D numpy array of voxel data for the current volume (set by
         self.volCounter attribute). Reorder the voxel data so that it is RAS+,
         build a header JSON object, and then send both the header and the voxel
         data out over the socket connection to Pyneal
+
+        Parameters
+        ----------
+        volIdx : int
+            index (0-based) of the volume you want to process
         """
         self.logger.info('Volume {} processing'.format(volIdx))
 
@@ -829,12 +996,18 @@ class GE_processSlice(Thread):
         self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
-        """
-        Send the volume data over the pynealSocket.
-            - 'volHeader' is expected to be a dictionary with key:value
-            pairs for relevant metadata like 'volIdx' and 'affine'
-            - 'voxelArray' is expected to be a 3D numpy array of voxel
-            data from the volume reoriented to RAS+
+        """ Send the volume data to Pyneal
+
+        Send the image data and header information for the specified volume to
+        Pyneal via the `pynealSocket`.
+
+        Parameters
+        ----------
+        volHeader : dict
+            key:value pairs for all of the relevant metadata for this volume
+        voxelArray : numpy array
+            3D numpy array of voxel data from the volume, reoriented to RAS+
+
         """
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
@@ -847,21 +1020,39 @@ class GE_processSlice(Thread):
         self.logger.debug('FROM pynealSocket: {}'.format(pynealSocketResponse))
 
     def stop(self):
-        # function to stop the Thread
+        """ set the `alive` flag to False, stopping the thread """
         self.alive = False
 
 
 def GE_launch_rtfMRI(scannerSettings, scannerDirs):
-    """
-    launch a real-time session in a GE environment. This should be called
-    from pynealScanner.py before starting the scanner. Once called, this
-    method will take care of:
-        - monitoring the sessionDir for a new series directory to appear (and
+    """ Launch a real-time session in a GE environment.
+
+    This method should be called from pynealScanner.py before starting the
+    scanner. Once called, this method will take care of:
+        - monitoring the `sessionDir` for a new series directory to appear (and
         then returing the name of the new series dir)
-        - set up the socket connection to send volume data over
+        - set up the `pynealSocket` -- socket connection to send volume data to
+        Pyneal
         - creating a Queue to store newly arriving DICOM files
-        - start a separate thread to monitor the new seriesDir
+        - start a separate thread to monitor the new `seriesDir`
         - start a separate thread to process DICOMs that are in the Queue
+
+    Parameters
+    ----------
+    scannerSettings : object
+        class attributes represent all of the settings unique to the
+        current scanning environment (many of them read from
+        `scannerConfig.yaml`). Returned from `general_utils.ScannerSettings()``
+    scannerDirs : object
+        instance of `GE_utils.GE_DirStructure`. Has attributes for the relvant
+        paths for the current session. `scannerDirs` is one of the variables
+        returned by running `general_utils.initializeSession()`
+
+    See Also
+    --------
+    general_utils.ScannerSettings()
+    general_utils.initializeSession()
+    
     """
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py
