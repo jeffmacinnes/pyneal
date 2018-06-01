@@ -217,7 +217,7 @@ class GE_DirStructure():
         return subDirs
 
     def waitForSeriesDir(self, interval=.1):
-        """Listen for the creation of a new series directory.
+        """ Listen for the creation of a new series directory.
 
         Once a scan starts, a new series directory will be created
         in the `sessionDir`. By the time this function is called, this
@@ -1052,7 +1052,7 @@ def GE_launch_rtfMRI(scannerSettings, scannerDirs):
     --------
     general_utils.ScannerSettings()
     general_utils.initializeSession()
-    
+
     """
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py

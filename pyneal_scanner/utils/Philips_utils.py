@@ -1,6 +1,5 @@
-"""
-Set of classes and methods specific to Philips scanning environments
-that use PAR/REC file formats
+""" Set of classes and methods specific to Philips scanning environments
+
 """
 from __future__ import print_function
 from __future__ import division
@@ -24,12 +23,43 @@ import zmq
 
 
 class Philips_DirStructure():
-    """
-    Methods for finding and returning the names and paths of series directories
-    in a Philips Scanning Environment
-    """
+    """ Finding the names and paths of series directories in a Philips scanning
+    environment
 
+    In Philips environments, using the XTC module for exporting data in
+    real-time, data will be exported to a shared directory that is accessible
+    from the Pyneal workstation. We'll refer to this shared directory as the
+    session directory, and the `sessionDir` variable will refer to the full
+    path of that directory.
+
+    Within the `sessionDir` each new series will be assigned it's own
+    subdirectory, which we'll refer to as the series dir (`seriesDir`). The
+    series dirs will be numbered sequentially in order of creation, starting
+    with '0000'.
+
+    Each `seriesDir` will contain Par/Rec file pairs for each volume in the
+    series. These file pairs will appear in real-time as the scan progresses.
+
+    This class contains methods to retrieve the most recently modified series
+    directories, as well as monitor for the creation of new series directories,
+    and stores attributes referring to the directory structure for the current
+    scanning session.
+
+    """
     def __init__(self, scannerSettings):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        scannerSettings : object
+            class attributes represent all of the settings unique to the
+            current scanning environment (many of them read from
+            `scannerConfig.yaml`)
+
+        See Also
+        --------
+        general_utils.ScannerSettings
+        """
         # initialize class attributes
         if 'scannerBaseDir' in scannerSettings.allSettings:
             self.baseDir = scannerSettings.allSettings['scannerBaseDir']
@@ -41,9 +71,9 @@ class Philips_DirStructure():
 
 
     def print_currentSeries(self):
-        """
-        Find all of the series dirs in given sessionDir, and print them
+        """ Find all of the series dirs in given sessionDir, and print them
         all, along with time since last modification, and directory size
+
         """
         # find the sessionDir, if not already found
         if self.sessionDir is None:
@@ -87,11 +117,23 @@ class Philips_DirStructure():
 
 
     def _findAllSubdirs(self, parentDir):
-        """
-        Return a list of all subdirectories within the specified
+        """ Return a list of all subdirectories within the specified
         parentDir, along with the modification time for each
 
-        output: [[subDir_path, subDir_modTime]]
+        Parameters
+        ----------
+        parentDir : string
+            full path to the parent directory you want to search
+
+        Returns
+        -------
+        subDirs : list
+            each item in `subDirs` is itself a list containing 2-items for each
+            subdirectory in the `parentDir`. Each nested list will contain the
+            path to the subdirectory and the last modification time for that
+            directory. Thus, `subDirs` is structured like:
+                [[subDir_path, subDir_modTime]]
+
         """
         subDirs = [join(parentDir, d) for d in os.listdir(parentDir) if os.path.isdir(join(parentDir, d))]
         if not subDirs:
@@ -105,11 +147,22 @@ class Philips_DirStructure():
 
 
     def waitForSeriesDir(self, interval=.1):
-        """
-        listen for the creation of a new series directory.
+        """ Listen for the creation of a new series directory.
+
         Once a scan starts, a new series directory will be created
-        in the sessionDir. By the time this function is called, this
-        class should already have the sessionDir defined
+        in the `sessionDir`. By the time this function is called, this
+        class should already have the `sessionDir` defined
+
+        Parameters
+        ----------
+        interval : float, optional
+            time, in seconds, to wait between polling for a new directory
+
+        Returns
+        -------
+        seriesDir : string
+            full path to the newly created directory
+
         """
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
@@ -133,8 +186,16 @@ class Philips_DirStructure():
 
 
     def get_seriesDirs(self):
-        """
-        build a list that contains the directory names of all of the series
+        """ Build a list that contains the directory names of all of the
+        series directories currently in the `sessionDir`. Set the class
+        attribute for `seriesDirs`
+
+        Returns
+        -------
+        seriesDirs : list
+            list of all series directories (directory names ONLY) found within
+            the current `sessionDir`
+
         """
         # get a list of all sub dirs in the sessionDir
         subDirs = self._findAllSubdirs(self.sessionDir)
