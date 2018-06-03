@@ -28,9 +28,9 @@ class Philips_DirStructure():
 
     In Philips environments, using the XTC module for exporting data in
     real-time, data will be exported to a shared directory that is accessible
-    from the Pyneal workstation. We'll refer to this shared directory as the
-    session directory, and the `sessionDir` variable will refer to the full
-    path of that directory.
+    from a remote workstation (running Pyneal Scanner). We'll refer to this
+    shared directory as the session directory, and the `sessionDir` variable
+    will refer to the full path of that directory.
 
     Within the `sessionDir` each new series will be assigned it's own
     subdirectory, which we'll refer to as the series dir (`seriesDir`). The
@@ -68,7 +68,6 @@ class Philips_DirStructure():
             sys.exit()
 
         self.sessionDir = self.baseDir
-
 
     def print_currentSeries(self):
         """ Find all of the series dirs in given sessionDir, and print them
@@ -115,7 +114,6 @@ class Philips_DirStructure():
 
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
 
-
     def _findAllSubdirs(self, parentDir):
         """ Return a list of all subdirectories within the specified
         parentDir, along with the modification time for each
@@ -144,7 +142,6 @@ class Philips_DirStructure():
 
         # return the subdirectories
         return subDirs
-
 
     def waitForSeriesDir(self, interval=.1):
         """ Listen for the creation of a new series directory.
@@ -183,7 +180,6 @@ class Philips_DirStructure():
 
         # return the found series directory
         return seriesDir
-
 
     def get_seriesDirs(self):
         """ Build a list that contains the directory names of all of the
@@ -250,7 +246,6 @@ class Philips_BuildNifti():
             self.niftiImage = self.buildAnat(parFiles)
         elif self.scanType == 'func':
             self.niftiImage = self.buildFunc(parFiles)
-
 
     def buildAnat(self, parFiles):
         """ Build a 3D structural/anatomical Nifti image from the par/rec file
@@ -359,7 +354,6 @@ class Philips_BuildNifti():
 
         return funcImage
 
-
     def _determineScanType(self, parFile):
         """ Figure out what type of scan this is, anat or func
 
@@ -392,16 +386,13 @@ class Philips_BuildNifti():
 
         return scanType
 
-
     def get_scanType(self):
         """ Return the scan type """
         return self.scanType
 
-
     def get_niftiImage(self):
         """ Return the constructed Nifti Image """
         return self.niftiImage
-
 
     def write_nifti(self, output_path):
         """ Write the nifti file to disk
@@ -486,11 +477,9 @@ class Philips_monitorSeriesDir(Thread):
             # pause
             time.sleep(self.interval)
 
-
     def get_numParsAdded(self):
         """ Return the cumulative number of par files added to the queue thus far """
         return self.numParsAdded
-
 
     def stop(self):
         """ Set the `alive` flag to False, stopping thread """
@@ -538,7 +527,6 @@ class Philips_processVolume(Thread):
         self.pynealSocket = pynealSocket
         self.totalProcessed = 0         # counter for total number of slices processed
 
-
     def run(self):
         self.logger.debug('Philips_processVolume started')
 
@@ -575,7 +563,6 @@ class Philips_processVolume(Thread):
 
             # pause for a bit
             time.sleep(self.interval)
-
 
     def processParFile(self, par_fname):
         """ Process a given par header file
@@ -621,7 +608,6 @@ class Philips_processVolume(Thread):
 
         ### Send the voxel array and header to the pynealSocket
         self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
-
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
         """ Send the volume data to Pyneal

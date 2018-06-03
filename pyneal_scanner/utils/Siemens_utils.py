@@ -1,5 +1,4 @@
-"""
-Set of classes and methods specific to Siemens scanning environments
+""" Set of classes and methods specific to Siemens scanning environments
 """
 from __future__ import print_function
 from __future__ import division
@@ -31,12 +30,45 @@ Siemens_mosaicSeriesNumberField = re.compile('(?<=\d{3}_)\d{6}(?=_\d{6}.dcm)')
 
 
 class Siemens_DirStructure():
-    """
-    Methods for finding and returning the names and paths of series files
-    in a Siemens Scanning Environment
-    """
+    """ Finding the names and paths of series directories in a Siemens scanning
+    environment.
 
+    In Siemens environments, using the ideacmdtool, the scanner is set up to
+    export data in real-time to a shared directory that is accessible from a
+    remote workstation (running Pyneal Scanner). Siemens scanners store
+    reconstructed slices images by taking all of the slices for a single
+    volume, and placing them side-by-side in a larger "mosaic" dicom image.
+    A scan will produce one mosaic image per volume, and all mosaic images for
+    all scans across a single session will be stored in the same directory.
+    We'll call this directory the `sessionDir`.
+
+    A single `sessionDir` will hold all of the mosaic files for all of the
+    series for the current session. The series number is contained in the
+    filename, which follows the pattern:
+
+    [session#]_[series#]_[vol#].dcm
+
+    These files will appear in real-time as the scan progresses.
+
+    This class contains methods to retrieve the current `sessionDir`, show the
+    current series that are present, and monitor the `sessionDir` for the
+    appearance of new series files.
+
+    """
     def __init__(self, scannerSettings):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        scannerSettings : object
+            class attributes represent all of the settings unique to the
+            current scanning environment (many of them read from
+            `scannerConfig.yaml`)
+
+        See Also
+        --------
+        general_utils.ScannerSettings
+        """
         # initialize class attributes
         if 'scannerBaseDir' in scannerSettings.allSettings:
             self.baseDir = scannerSettings.allSettings['scannerBaseDir']
@@ -46,11 +78,10 @@ class Siemens_DirStructure():
 
         self.sessionDir = self.baseDir
 
-
     def print_currentSeries(self):
-        """
-        Find all of the series present in given sessionDir, and print them
+        """ Find all of the series present in given sessionDir, and print them
         all, along with time since last modification, and directory size
+
         """
         # find the sessionDir, if not already found
         if self.sessionDir is None:
@@ -78,11 +109,10 @@ class Siemens_DirStructure():
 
                 print('    {}\t{} files \t{}'.format(series, len(thisSeriesDicoms), time_string))
 
-
     def getUniqueSeries(self):
-        """
-        return a list of unique series numbers from the filenames of the files
+        """ Return a list of unique series numbers from the filenames of the files
         found in the sessionDir
+
         """
         uniqueSeries = []
         self.allMosaics = [f for f in os.listdir(self.sessionDir) if Siemens_filePattern.match(f)]
@@ -95,13 +125,23 @@ class Siemens_DirStructure():
 
         return uniqueSeries
 
-
     def waitForNewSeries(self, interval=.1):
-        """
-        listen for the arrival of new series images.
-        Once a scan starts, new series mosaic files will be created
-        in the sessionDir. By the time this function is called, this
-        class should already have the sessionDir defined
+        """ Listen for the appearance of new series files
+
+        Once a scan starts, new series mosaic files will be created in the
+        `sessionDir`. By the time this function is called, this class should
+        already have the `sessionDir` defined
+
+        Parameters
+        ----------
+        interval : float, optional
+            time, in seconds, to wait between polling for a new directory
+
+        Returns
+        -------
+        newSeries : string
+            seriesNum of the new series
+
         """
         startTime = int(time.time())    # tag the start time
         keepWaiting = True
