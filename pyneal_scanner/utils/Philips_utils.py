@@ -212,20 +212,27 @@ class Philips_DirStructure():
 
 
 class Philips_BuildNifti():
-    """
-    Build a 3D or 4D Nifti image from all of the par/rec files in a
-    directory.
+    """ Tools to build a 3D or 4D Nifti image from all of the par/rec file
+    pairs for a given series
 
-    Input is a path to a series directory containing par/rec files.
+    Input is a path to a series directory containing par/rec file pairs for
+    each volume in the series. Image parameters, like voxel spacing and
+    dimensions, are obtained automatically from info in the dicom tags
 
-    Output is a Nifti1 formatted 3D (anat) or 4D (func) file with the
-    voxels ordered as RAS+
+    End result is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+
+    orientation.
+
     """
     def __init__(self, seriesDir):
-        """
-        Initialize class:
-            - seriesDir needs to be the full path to a directory containing
-            all of the par/rec files
+        """ Initialize class, and set/obtain basic class attributes like file
+        paths and scan parameters
+
+        Parameters
+        ----------
+        seriesDir : string
+            full path to the directory containing the raw par/rec file pairs
+            for each volume in the series
+
         """
         # initialize attributes
         self.seriesDir = seriesDir
@@ -233,10 +240,9 @@ class Philips_BuildNifti():
 
         # make a list of all of the par files in this dir
         par_pattern = re.compile(fnmatch.translate('*.par'), re.IGNORECASE)
-        parFiles = [join(self.seriesDir, x) for x in os.listdir(self.seriesDir) if par_pattern.match(x)]
+        parFiles = [x for x in os.listdir(self.seriesDir) if par_pattern.match(x)]
 
         # figure out what type of image this is, 4d or 3d
-        # NEED TO FIGURE OUT HOW TO DO THIS WITH PHILIPS DATA
         self.scanType = self._determineScanType(parFiles[0])
 
         # build nifti image
@@ -247,12 +253,32 @@ class Philips_BuildNifti():
 
 
     def buildAnat(self, parFiles):
-        """
-        On Philip's scanner, entire anat image is assumed to be contained in single par/rec file pair. Open that file, extract the image data, realign to RAS+ and build a nifti object
-        """
+        """ Build a 3D structural/anatomical Nifti image from the par/rec file
 
+        On Philip's scanner, entire anat image is assumed to be contained in
+        single par/rec file pair. Open the par file, extract the image data,
+        realign to RAS+ and build a nifti object
+
+        Parameters
+        ----------
+        parFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            par files in a the series directory. If this is an anatomical image
+            there should only be a single file in the list
+
+        Returns
+        -------
+        anatImage_RAS : Nifti1Image
+            nifti-1 formated image of the 3D anatomical data, oriented in
+            RAS+
+
+        See Also
+        --------
+        nibabel.nifti1.Nifti1Image()
+
+        """
         # should only be a single parFile in the list
-        anatImage = nib.load(parFiles[0], strict_sort=True)
+        anatImage = nib.load(join(self.seriesDir,parFiles[0]), strict_sort=True)
 
         # convert to RAS+
         anatImage_RAS = nib.as_closest_canonical(anatImage)
@@ -261,15 +287,32 @@ class Philips_BuildNifti():
 
         return anatImage_RAS
 
-
     def buildFunc(self, parFiles):
-        """
-        Given a list of parFile paths, build a 4d functional image. For
-        Philips output, there should be a par header file and corresponding
-        rec image file for each volume. This tool will read each header/image
-        pair and construct a 4D nifti object. The 4D nifti object
-        contain a voxel array ordered like RAS+ as well the affine transformation
-        to map between vox and mm space
+        """ Build a 4D functional image from list of par files
+
+        Given a list of `parFiles`, build a 4D functional image from them. For
+        Philips scanners, there should be a par header file and corresponding
+        rec image file for each volume in the series. This function will read
+        each header/image pair and construct a 4D nifti object. The 4D nifti
+        object contain a voxel array ordered like RAS+ as well the affine
+        transformation to map between vox and mm space
+
+        Parameters
+        ----------
+        parFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            par files to be used in constructing the final nifti image
+
+        Returns
+        -------
+        funcImage_RAS : Nifti1Image
+            nifti-1 formated image of the 4D functional data, oriented in
+            RAS+
+
+        See Also
+        --------
+        nibabel.nifti1.Nifti1Image()
+
         """
         imageMatrix = None
         affine = None
@@ -277,6 +320,8 @@ class Philips_BuildNifti():
         ### Loop over all of the par files
         nVols = len(parFiles)
         for par_fname in parFiles:
+            # build full path to this par file
+            par_fname = join(self.seriesDir, par_fname)
 
             # make sure there is a corresponding .rec file
             if not os.path.isfile(par_fname.replace('.par', '.rec')):
@@ -316,12 +361,27 @@ class Philips_BuildNifti():
 
 
     def _determineScanType(self, parFile):
-        """
-        Figure out what type of scan this is, single 3D volume (anat), or a 4D
-        dataset built up of 2D slices (func) based on info found in the PAR header
+        """ Figure out what type of scan this is, anat or func
+
+        This tool will determine the scan type from a given par file.
+        Possible scan types are either single 3D volume (anat), or a 4D dataset
+        built up of 2D slices (func). The scan type is determined by reading
+        the `scan_mode` variable within the par header
+
+        Parameters
+        ----------
+        parFile : string
+            file name (not full path) of par file from the current session that
+            you would like to open to read the imaging parameters from
+
+        Returns
+        -------
+        scanType : string
+            either 'anat' or 'func' depending on scan type stored in dicom tag
+
         """
         # read the parfile
-        par = nib.load(parFile, strict_sort=True)
+        par = nib.load(join(self.seriesDir, parFile), strict_sort=True)
         if par.header.general_info['scan_mode'] == '3D':
             scanType = 'anat'
         elif par.header.general_info['scan_mode'] == '2D':
@@ -344,21 +404,42 @@ class Philips_BuildNifti():
 
 
     def write_nifti(self, output_path):
-        """
-        write the nifti file to disk using the abs path
-        specified by output_fName
+        """ Write the nifti file to disk
+
+        Parameters
+        ----------
+        outputPath : string
+            full path, including filename, you want to use to save the nifti
+            image
+
         """
         nib.save(self.niftiImage, output_path)
         print('Image saved at: {}'.format(output_path))
 
 
 class Philips_monitorSeriesDir(Thread):
+    """ Class to monitor for new par/rec images to appear in the seriesDir.
+
+    This class will run independently in a separate thread, monitoring a
+    specified directory for the appearance of new par files. Each new par
+    header file that appears will be added to the Queue for further processing
+
     """
-    Class to monitor for new par/rec images to appear in the seriesDir. This
-    class will run independently in a separate thread. Each new par header file
-    that appears will be added to the Queue for further processing
-    """
-    def __init__(self, seriesDir, parQ, interval=.5):
+    def __init__(self, seriesDir, parQ, interval=.2):
+        """ Initialize the class, and set basic class attributes
+
+        Parameters
+        ----------
+        seriesDir : string
+            full path to the series directory where new dicom files will appear
+        parQ : object
+            instance of python queue class to hold new par files before they
+            have been processed. This class will add items to that queue.
+        interval : float, optional
+            time, in seconds, to wait before repolling the seriesDir to check
+            for any new files
+
+        """
         # start the thread upon completion
         Thread.__init__(self)
 
@@ -407,24 +488,43 @@ class Philips_monitorSeriesDir(Thread):
 
 
     def get_numParsAdded(self):
+        """ Return the cumulative number of par files added to the queue thus far """
         return self.numParsAdded
 
 
     def stop(self):
-        # function to stop the thread
+        """ Set the `alive` flag to False, stopping thread """
         self.alive = False
 
 
 class Philips_processVolume(Thread):
-    """
-    Class to process each par header file in the queue. This class will run in a
-    separate thread. While running, it will pull 'tasks' off of the queue and
-    process each one. Processing each task involves reading the par header file
-    and the corresponding rec binary file, extracting the voxel data and relevant
-    header information, reordering it to RAS+, and then sending the volume and
-    header out over the pynealSocket
+    """ Class to process each par header file in the queue.
+
+    This class will run in a separate thread. While running, it will pull
+    'tasks' off of the queue and process each one. Processing each task
+    involves reading the par header file and the corresponding rec binary file,
+    extracting the voxel data and relevant header information, reordering it to
+    RAS+, and then sending the volume and header out over the pynealSocket
+
     """
     def __init__(self, parQ, pynealSocket, interval=.2):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        parQ : object
+            instance of python queue class that will store the par header file
+            names. This class will pull items from that queue.
+        pynealSocket : object
+            instance of ZMQ style socket that will be used to communicate with
+            Pyneal. This class will use this socket to send image data and headers
+            to Pyneal during the real-time scan.
+            See also: general_utils.create_pynealSocket()
+        interval : float, optional
+            time, in seconds, to wait before repolling the queue to see if there
+            are any new file names to process
+
+        """
         # start the threat upon creation
         Thread.__init__(self)
 
@@ -478,12 +578,16 @@ class Philips_processVolume(Thread):
 
 
     def processParFile(self, par_fname):
-        """
-        Read the par header file and correspondind rec image file. Read in as
+        """ Process a given par header file
+
+        Read the par header file and corresponding rec image file. Read in as
         a nifti object that will provide the 3D voxel array for this volume.
         Reorder to RAS+, and then send to the pynealSocket
 
-        par_fname: full path to the par file
+        Parameters
+        ----------
+        par_fname : string
+            full path to the par file that you want to process
         """
         # make sure the corresponding rec file exists
         while not os.path.isfile(par_fname.replace('.par', '.rec')):
@@ -520,12 +624,18 @@ class Philips_processVolume(Thread):
 
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
-        """
-        Send the volume data over the pynealSocket.
-            - 'volHeader' is expected to be a dictionary with key:value
-            pairs for relevant metadata like 'volIdx' and 'affine'
-            - 'voxelArray' is expected to be a 3D numpy array of voxel
-            data from the volume reoriented to RAS+
+        """ Send the volume data to Pyneal
+
+        Send the image data and header information for the specified volume to
+        Pyneal via the `pynealSocket`.
+
+        Parameters
+        ----------
+        volHeader : dict
+            key:value pairs for all of the relevant metadata for this volume
+        voxelArray : numpy array
+            3D numpy array of voxel data from the volume, reoriented to RAS+
+
         """
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
@@ -542,21 +652,38 @@ class Philips_processVolume(Thread):
             self.stop()
 
     def stop(self):
-        # function to stop the Thread
+        """ set the `alive` flag to False, stopping the thread """
         self.alive = False
 
 
 def Philips_launch_rtfMRI(scannerSettings, scannerDirs):
-    """
-    launch a real-time session in a Philips environment. This should be called
-    from pynealScanner.py before starting the scanner. Once called, this
-    method will take care of:
+    """ Launch a real-time session in a Philips environment.
+
+    This method should be called from pynealScanner.py before starting the
+    scanner. Once called, this method will take care of:
         - monitoring the sessionDir for a new series directory to appear (and
         then returing the name of the new series dir)
         - set up the socket connection to send volume data over
         - creating a Queue to store newly arriving PAR/REC files
         - start a separate thread to monitor the new seriesDir
         - start a separate thread to process PAR/RECs that are in the Queue
+
+    Parameters
+    ----------
+    scannerSettings : object
+        class attributes represent all of the settings unique to the
+        current scanning environment (many of them read from
+        `scannerConfig.yaml`). Returned from `general_utils.ScannerSettings()``
+    scannerDirs : object
+        instance of `GE_utils.GE_DirStructure`. Has attributes for the relvant
+        paths for the current session. `scannerDirs` is one of the variables
+        returned by running `general_utils.initializeSession()`
+
+    See Also
+    --------
+    general_utils.ScannerSettings()
+    general_utils.initializeSession()
+
     """
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py

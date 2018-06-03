@@ -646,11 +646,11 @@ class GE_monitorSeriesDir(Thread):
         seriesDir : string
             full path to the series directory where new dicom files will appear
         dicomQ : object
-            instance of python queue class to hold new dicom files before they have
-            been processed. This class will add items to that queue.
+            instance of python queue class to hold new dicom files before they
+            have been processed. This class will add items to that queue.
         interval : float, optional
-            time, in seconds, to wait before repolling the seriesDir to check for
-            any new files
+            time, in seconds, to wait before repolling the seriesDir to check
+            for any new files
 
         """
         # start the thead upon creation
@@ -719,22 +719,25 @@ class GE_processSlice(Thread):
     containing metadata on that volume, will be sent out over the socket
     connection to Pyneal
 
-    Parameters
-    ----------
-    dicomQ : object
-        instance of python queue class that will store the dicom slice file
-        names. This class will pull items from that queue.
-    pynealSocket : object
-        instance of ZMQ style socket that will be used to communicate with
-        Pyneal. This class will use this socket to send image data and headers
-        to Pyneal during the real-time scan.
-        See also: general_utils.create_pynealSocket()
-    interval : float, optional
-        time, in seconds, to wait before repolling the queue to see if there
-        are any new file names to process
-
     """
     def __init__(self, dicomQ, pynealSocket, interval=.2):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        dicomQ : object
+            instance of python queue class that will store the dicom slice file
+            names. This class will pull items from that queue.
+        pynealSocket : object
+            instance of ZMQ style socket that will be used to communicate with
+            Pyneal. This class will use this socket to send image data and headers
+            to Pyneal during the real-time scan.
+            See also: general_utils.create_pynealSocket()
+        interval : float, optional
+            time, in seconds, to wait before repolling the queue to see if there
+            are any new file names to process
+
+        """
         # start the thread upon creation
         Thread.__init__(self)
 
