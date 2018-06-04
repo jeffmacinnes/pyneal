@@ -730,12 +730,12 @@ class GE_processSlice(Thread):
             names. This class will pull items from that queue.
         pynealSocket : object
             instance of ZMQ style socket that will be used to communicate with
-            Pyneal. This class will use this socket to send image data and headers
-            to Pyneal during the real-time scan.
+            Pyneal. This class will use this socket to send image data and
+            headers to Pyneal during the real-time scan.
             See also: general_utils.create_pynealSocket()
         interval : float, optional
-            time, in seconds, to wait before repolling the queue to see if there
-            are any new file names to process
+            time, in seconds, to wait before repolling the queue to see if
+            there are any new file names to process
 
         """
         # start the thread upon creation

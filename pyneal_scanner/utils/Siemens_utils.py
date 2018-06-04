@@ -1,4 +1,5 @@
 """ Set of classes and methods specific to Siemens scanning environments
+
 """
 from __future__ import print_function
 from __future__ import division
@@ -35,12 +36,16 @@ class Siemens_DirStructure():
 
     In Siemens environments, using the ideacmdtool, the scanner is set up to
     export data in real-time to a shared directory that is accessible from a
-    remote workstation (running Pyneal Scanner). Siemens scanners store
-    reconstructed slices images by taking all of the slices for a single
-    volume, and placing them side-by-side in a larger "mosaic" dicom image.
-    A scan will produce one mosaic image per volume, and all mosaic images for
-    all scans across a single session will be stored in the same directory.
-    We'll call this directory the `sessionDir`.
+    remote workstation (running Pyneal Scanner). For functional data, Siemens
+    scanners store reconstructed slices images by taking all of the slices for
+    a single volume, and placing them side-by-side in a larger "mosaic" dicom
+    image. A scan will produce one mosaic image per volume.
+
+    For anatomical data, dicom images for each 2D slice will be written as
+    separate files, numbered sequentially, and saved in the `sessionDir`.
+
+    All dicom images for all scans across a single session will be stored in
+    the same directory. We'll call this directory the `sessionDir`.
 
     A single `sessionDir` will hold all of the mosaic files for all of the
     series for the current session. The series number is contained in the
@@ -166,22 +171,31 @@ class Siemens_DirStructure():
 
 
 class Siemens_BuildNifti():
-    """
-    Build a 3D or 4D Nifti image from all of the dicom mosaic images in a
-    directory.
+    """ Tools to build a 3D or 4D Nifti image from all of the dicom mosaic
+    images in a directory.
 
-    Input is a path to a series directory containing dicom mosaic images. Image
-    parameters, like voxel spacing and dimensions, are obtained automatically
-    from the info in the dicom tags
+    Input is a path to a series directory containing dicom images (either
+    mosaic images for functional data, or 2D slice image for anatomical data).
+    Image parameters, like voxel spacing and dimensions, are obtained
+    automatically from the info in the dicom tags
 
-    Output is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+ orientation
+    End result is a Nifti1 formatted 3D (anat) or 4D (func) file in RAS+
+    orientation
+
     """
     def __init__(self, seriesDir, seriesNum):
-        """
-        Initialize class:
-            - seriesDir: the path to directory containing all dicom files. Note
-                that for Siemens, this dir can contain multiple series
-            - seriesNum: the seriesNum of the dicoms you want to use to build file
+        """ Initialize class, and set/obtain basic class attributes like file
+        paths and scan parameters
+
+        Parameters
+        ----------
+        seriesDir : string
+            full path to the directory containing the raw dicom mosaic files
+            for each volume in the series
+        seriesNum : string
+            series number of the series that you'd like to build the nifti
+            image from
+
         """
         # initialize attributes
         self.seriesDir = seriesDir
@@ -202,10 +216,28 @@ class Siemens_BuildNifti():
 
 
     def buildAnat(self, dicomFiles):
-        """
-        Given a list of dicomFiles, build a 3D anatomical image from them.
+        """ Build a 3D structural/anatomical image from list of dicom files
+
+        Given a list of `dicomFiles`, build a 3D anatomical image from them.
         Figure out the image dimensions and affine transformation to map
         from voxels to mm from the dicom tags
+
+        Parameters
+        ----------
+        dicomFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            dicom slice images to be used in constructing the final nifti image
+
+        Returns
+        -------
+        anatImage_RAS : Nifti1Image
+            nifti-1 formated image of the 3D anatomical data, oriented in
+            RAS+
+
+        See Also
+        --------
+        nibabel.nifti1.Nifti1Image()
+
         """
         # read the first dicom in the list to get overall image dimensions
         dcm = pydicom.dcmread(join(self.seriesDir, dicomFiles[0]), stop_before_pixels=1)
@@ -272,13 +304,22 @@ class Siemens_BuildNifti():
 
 
     def buildFunc(self, dicomFiles):
-        """
+        """ Build a 4D functional image from list of dicom files
+
         Given a list of dicomFile paths, build a 4d functional image. For
         Siemens scanners, each dicom file is assumed to represent a mosaic
         image comprised of mulitple slices. This tool will split apart the
         mosaic images, and construct a 4D nifti object. The 4D nifti object
         contain a voxel array ordered like RAS+ as well the affine transformation
         to map between vox and mm space
+
+        Parameters
+        ----------
+        dicomFiles : list
+            list containing the file names (file names ONLY, no path) of all
+            dicom mosaic images to be used in constructing the final nifti
+            image
+
         """
         imageMatrix = None
         affine = None
@@ -326,21 +367,24 @@ class Siemens_BuildNifti():
 
 
     def buildAffine(self):
-        """
-        Build the affine matrix that will transform the data to RAS+.
+        """ Build the affine matrix that will transform the data to RAS+.
 
         This function should only be called once the required data has been
-        extracted from the dicom tags from the relevant slices. The affine matrix
-        is constructed by using the information in the ImageOrientationPatient
-        and ImagePositionPatient tags from the first and last slices in a volume.
+        extracted from the dicom tags from the relevant slices. The affine
+        matrix is constructed by using the information in the
+        ImageOrientationPatient and ImagePositionPatient tags from the first
+        and last slices in a volume.
 
         However, note that those tags will tell you how to orient the image to
         DICOM reference coordinate space, which is LPS+. In order to to get to
         RAS+ we have to invert the first two axes.
 
-        More info on building this affine at:
-        http://nipy.org/nibabel/dicom/dicom_orientation.html &
+        Notes
+        -----
+        For more info on building this affine, please see the documentation at:
+        http://nipy.org/nibabel/dicom/dicom_orientation.html
         http://nipy.org/nibabel/coordinate_systems.html
+
         """
         ### Get the ImageOrientation values from the first slice,
         # split the row-axis values (0:3) and col-axis values (3:6)
@@ -377,10 +421,24 @@ class Siemens_BuildNifti():
 
 
     def _determineScanType(self, dicomFile):
-        """
-        Figure out what type of scan this is, single 3D volume (anat), or
-        a 4D dataset built up of 2D slices (func) based on info found
-        in the dicom tags
+        """ Figure out what type of scan this is, anat or func
+
+        This tool will determine the scan type from a given dicom file.
+        Possible scan types are either single 3D volume (anat), or a 4D dataset
+        built up of 2D slices (func). The scan type is determined by reading
+        the `MRAcquisitionType` tag from the dicom file
+
+        Parameters
+        ----------
+        dcmFile : string
+            file name of dicom file from the current series that you would like
+            to open to read the imaging parameters from
+
+        Returns
+        -------
+        scanType : string
+            either 'anat' or 'func' depending on scan type stored in dicom tag
+
         """
         # read the dicom file
         dcm = pydicom.dcmread(join(self.seriesDir, dicomFile), stop_before_pixels=1)
@@ -407,22 +465,45 @@ class Siemens_BuildNifti():
 
 
     def write_nifti(self, output_path):
-        """
-        write the nifti file to disk using the abs path
-        specified by output_fName
+        """ Write the nifti file to disk
+
+        Parameters
+        ----------
+        outputPath : string
+            full path, including filename, you want to use to save the nifti
+            image
+
         """
         nib.save(self.niftiImage, output_path)
         print('Image saved at: {}'.format(output_path))
 
 
 class Siemens_monitorSessionDir(Thread):
+    """ Class to monitor for new mosaic images to appear in the sessionDir.
+
+    This class will run independently in a separate thread. Each new mosaic
+    file that appears and matches the current series number will be added to
+    the Queue for further processing
+
     """
-    Class to monitor for new mosaic images to appear in the sessionDir. This
-    class will run independently in a separate thread. Each new mosaic file
-    that appears and matches the current series number will be added to the
-    Queue for further processing
-    """
-    def __init__(self, sessionDir, seriesNum, dicomQ, interval=.5):
+    def __init__(self, sessionDir, seriesNum, dicomQ, interval=.2):
+        """ Initialize the class, and set basic class attributes
+
+        Parameters
+        ----------
+        sessionDir : string
+            full path to the session directory where new dicom mosaic files
+            will appear
+        seriesNum : string
+            series number assigned to the new series
+        dicomQ : object
+            instance of python queue class to hold new dicom files before they
+            have been processed. This class will add items to that queue.
+        interval : float, optional
+            time, in seconds, to wait before repolling the seriesDir to check
+            for any new files
+
+        """
         # start the thread upon completion
         Thread.__init__(self)
 
@@ -471,23 +552,43 @@ class Siemens_monitorSessionDir(Thread):
 
 
     def get_numMosaicsAdded(self):
+        """ Return the cumulative number of mosaic files added to the queue thus far """
         return self.numMosaicsAdded
 
 
     def stop(self):
-        # function to stop the thread
+        """ Set the `alive` flag to False, stopping thread """
         self.alive = False
 
 
 class Siemens_processMosaic(Thread):
-    """
-    Class to process each mosaic file in the queue. This class will run in a
-    separate thread. While running, it will pull 'tasks' off of the queue and
-    process each one. Processing each task involves reading the mosaic file,
-    converting it to a 3D Nifti object, reordering it to RAS+, and then sending
-    the volume out over the pynealSocket
+    """ Class to process each mosaic file in the queue.
+
+    This class will run in a separate thread. While running, it will pull
+    'tasks' off of the queue and process each one. Processing each task
+    involves reading the mosaic file, converting it to a 3D Nifti object,
+    reordering it to RAS+, and then sending the volume out over the
+    pynealSocket
+
     """
     def __init__(self, dicomQ, pynealSocket, interval=.2):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        dicomQ : object
+            instance of python queue class that will store the dicom slice file
+            names. This class will pull items from that queue.
+        pynealSocket : object
+            instance of ZMQ style socket that will be used to communicate with
+            Pyneal. This class will use this socket to send image data and
+            headers to Pyneal during the real-time scan.
+            See also: general_utils.create_pynealSocket()
+        interval : float, optional
+            time, in seconds, to wait before repolling the queue to see if
+            there are any new file names to process
+
+        """
         # start the threat upon creation
         Thread.__init__(self)
 
@@ -541,19 +642,23 @@ class Siemens_processMosaic(Thread):
 
 
     def processMosaicFile(self, mosaic_dcm_fname):
-        """
-        Read the dicom mosaic file. Convert to a nifti object that will
-        provide the 3D voxel array for this mosaic. Reorder to RAS+, and
-        then send to the pynealSocket
+        """ Process a given mosaic dicom file
 
-        mosaic_dcm_fname: full path to the mosaic file
+        This method will read the dicom mosaic file. Convert to a nifti object
+        that will provide the 3D voxel array for this mosaic. Reorder to RAS+,
+        and then send to the pynealSocket
+
+        Parameters
+        ----------
+        mosaic_dcm_fname : string
+            full path to the dicom mosaic file that you want to process
+
         """
         ### Figure out the volume index for this mosaic by reading
         # the field from the file name itself
         mosaicFile_root, mosaicFile_name = os.path.split(mosaic_dcm_fname)
         volIdx = int(Siemens_mosaicVolumeNumberField.search(mosaicFile_name).group(0))-1
         self.logger.info('Volume {} processing'.format(volIdx))
-
 
         ### Parse the mosaic image into a 3D volume
         # we use the nibabel mosaic_to_nii() method which does a lot of the
@@ -581,12 +686,18 @@ class Siemens_processMosaic(Thread):
 
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
-        """
-        Send the volume data over the pynealSocket.
-            - 'volHeader' is expected to be a dictionary with key:value
-            pairs for relevant metadata like 'volIdx' and 'affine'
-            - 'voxelArray' is expected to be a 3D numpy array of voxel
-            data from the volume reoriented to RAS+
+        """ Send the volume data to Pyneal
+
+        Send the image data and header information for the specified volume to
+        Pyneal via the `pynealSocket`.
+
+        Parameters
+        ----------
+        volHeader : dict
+            key:value pairs for all of the relevant metadata for this volume
+        voxelArray : numpy array
+            3D numpy array of voxel data from the volume, reoriented to RAS+
+
         """
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
@@ -603,21 +714,21 @@ class Siemens_processMosaic(Thread):
             self.stop()
 
     def stop(self):
-        # function to stop the Thread
+        """ set the `alive` flag to False, stopping the thread """
         self.alive = False
 
 
 def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
-    """
-    launch a real-time session in a Siemens environment. This should be called
-    from pynealScanner.py before starting the scanner. Once called, this
-    method will take care of:
+    """ Launch a real-time session in a Siemens environment.
+    This method should be called from pynealScanner.py before starting the
+    scanner. Once called, this method will take care of:
         - monitoring the sessionDir for new series files to appear (and
         then returing the new series number)
         - set up the socket connection to send volume data over
         - creating a Queue to store newly arriving DICOM files
         - start a separate thread to monitor the new series appearing
         - start a separate thread to process DICOMs that are in the Queue
+        
     """
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py

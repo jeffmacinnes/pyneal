@@ -102,15 +102,15 @@ class Philips_DirStructure():
                 if dirSize < 1000:
                     size_string = '{:5.1f} bytes'.format(dirSize)
                 elif 1000 <= dirSize < 1000000:
-                    size_string = '{:5.1f} kB'.format(dirSize/1000)
+                    size_string = '{:5.1f} kB'.format(dirSize / 1000)
                 elif 1000000 <= dirSize:
-                    size_string = '{:5.1f} MB'.format(dirSize/1000000)
+                    size_string = '{:5.1f} MB'.format(dirSize / 1000000)
 
                 # calculate time (in mins/secs) since it was modified
                 mTime = s[1]
                 timeElapsed = currentTime - mTime
-                m,s = divmod(timeElapsed,60)
-                time_string = '{} min, {} s ago'.format(int(m),int(s))
+                m, s = divmod(timeElapsed, 60)
+                time_string = '{} min, {} s ago'.format(int(m), int(s))
 
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
 
@@ -273,7 +273,7 @@ class Philips_BuildNifti():
 
         """
         # should only be a single parFile in the list
-        anatImage = nib.load(join(self.seriesDir,parFiles[0]), strict_sort=True)
+        anatImage = nib.load(join(self.seriesDir, parFiles[0]), strict_sort=True)
 
         # convert to RAS+
         anatImage_RAS = nib.as_closest_canonical(anatImage)
@@ -323,10 +323,11 @@ class Philips_BuildNifti():
                 print('No REC file found to match par: {}', par_fname)
 
             ### Build the 3d voxel array for this volume and reorder to RAS+
-            # nibabel will load the par/rec, but there can be multiple images (mag,
-            # phase, etc...) concatenated into the 4th dimension. Loading with the
-            # strict_sort option (I think) will make sure the first image is the data
-            # we want. Extract this data, then reorder the voxel array to RAS+
+            # nibabel will load the par/rec, but there can be multiple images
+            # (mag, phase, etc...) concatenated into the 4th dimension. Loading
+            # with the strict_sort option (I think) will make sure the first
+            # image is the data we want. Extract this data, then reorder the
+            # voxel array to RAS+
             thisVol = nib.load(par_fname, strict_sort=True)
 
             # get the vol index from the acq_nr field of the header (1-based index)
@@ -338,16 +339,16 @@ class Philips_BuildNifti():
             # construct the imageMatrix if it hasn't been made yet
             if imageMatrix is None:
                 imageMatrix = np.zeros(shape=(thisVol_RAS.shape[0],
-                                            thisVol_RAS.shape[1],
-                                            thisVol_RAS.shape[2],
-                                            nVols), dtype=np.uint16)
+                                              thisVol_RAS.shape[1],
+                                              thisVol_RAS.shape[2],
+                                              nVols), dtype=np.uint16)
 
             # construct the affine if it isn't made yet
             if affine is None:
                 affine = thisVol_RAS.affine
 
             # Add this data to the image matrix
-            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()[:,:,:,0].astype('uint16')
+            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()[:, :, :, 0].astype('uint16')
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
@@ -445,7 +446,6 @@ class Philips_monitorSeriesDir(Thread):
         self.numParsAdded = 0               # counter to keep track of # mosaics
         self.queued_par_files = set()       # empty set to store names of queued mosaic
         self.par_pattern = re.compile(fnmatch.translate('*.par'), re.IGNORECASE)
-        parFiles =
 
     def run(self):
         # function that runs while the Thread is still alive
