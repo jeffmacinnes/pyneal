@@ -18,7 +18,6 @@ from queue import Queue
 
 import numpy as np
 import nibabel as nib
-import argparse
 import zmq
 
 
@@ -330,7 +329,8 @@ class Philips_BuildNifti():
             # voxel array to RAS+
             thisVol = nib.load(par_fname, strict_sort=True)
 
-            # get the vol index from the acq_nr field of the header (1-based index)
+            # get the vol index (0-based index) from the acq_nr field of the
+            # header (1-based index)
             volIdx = int(thisVol.header.general_info['acq_nr']) - 1
 
             # convert to RAS+
@@ -456,7 +456,7 @@ class Philips_monitorSeriesDir(Thread):
             currentPars = set([join(self.seriesDir, x) for x in os.listdir(self.seriesDir) if self.par_pattern.match(x)])
 
             # grab only the ones that haven't already been added to the queue
-            newPars= [f for f in currentPars if f not in self.queued_par_files]
+            newPars = [f for f in currentPars if f not in self.queued_par_files]
 
             # loop over each of the new mosaic files, add each to queue
             for f in newPars:
@@ -506,12 +506,12 @@ class Philips_processVolume(Thread):
             names. This class will pull items from that queue.
         pynealSocket : object
             instance of ZMQ style socket that will be used to communicate with
-            Pyneal. This class will use this socket to send image data and headers
-            to Pyneal during the real-time scan.
+            Pyneal. This class will use this socket to send image data and
+            headers to Pyneal during the real-time scan.
             See also: general_utils.create_pynealSocket()
         interval : float, optional
-            time, in seconds, to wait before repolling the queue to see if there
-            are any new file names to process
+            time, in seconds, to wait before repolling the queue to see if
+            there are any new file names to process
 
         """
         # start the threat upon creation
@@ -583,8 +583,8 @@ class Philips_processVolume(Thread):
         ### Build the 3D voxel array and reorder to RAS+
         # nibabel will load the par/rec, but there can be multiple images (mag,
         # phase, etc...) concatenated into the 4th dimension. Loading with the
-        # strict_sort option (I think) will make sure the first image is the data
-        # we want. Extract this data, then reorder the voxel array to RAS+
+        # strict_sort option (I think) will make sure the first image is the
+        # data we want. Extract this data, then reorder the voxel array to RAS+
         thisVol = nib.load(par_fname, strict_sort=True)
 
         # get the volume index from the acq_nr field of the header (1-based index)
@@ -596,7 +596,7 @@ class Philips_processVolume(Thread):
 
         # grab the data for the first volume along the 4th dimension
         # and store as contiguous array (required for ZMQ)
-        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data()[:,:,:,0].astype('uint16'))
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data()[:, :, :, 0].astype('uint16'))
 
         ### Create a header with metadata info
         volHeader = {
@@ -626,7 +626,7 @@ class Philips_processVolume(Thread):
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.pynealSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.pynealSocket.send_json(volHeader, zmq.SNDMORE)  # header as json
         self.pynealSocket.send(voxelArray, flags=0, copy=False, track=False)
         pynealSocketResponse = self.pynealSocket.recv_string()
 

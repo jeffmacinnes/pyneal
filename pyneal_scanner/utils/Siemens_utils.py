@@ -19,7 +19,6 @@ import numpy as np
 import pydicom
 import nibabel as nib
 from nibabel.nicom import dicomreaders
-import argparse
 import zmq
 
 # regEx for Siemens style file naming
@@ -109,14 +108,14 @@ class Siemens_DirStructure():
                 # get time since last modification for last dicom in list
                 lastModifiedTime = os.stat(thisSeriesDicoms[-1]).st_mtime
                 timeElapsed = currentTime - lastModifiedTime
-                m,s = divmod(timeElapsed,60)
-                time_string = '{} min, {} s ago'.format(int(m),int(s))
+                m, s = divmod(timeElapsed, 60)
+                time_string = '{} min, {} s ago'.format(int(m), int(s))
 
                 print('    {}\t{} files \t{}'.format(series, len(thisSeriesDicoms), time_string))
 
     def getUniqueSeries(self):
-        """ Return a list of unique series numbers from the filenames of the files
-        found in the sessionDir
+        """ Return a list of unique series numbers from the filenames of the
+        files found in the sessionDir
 
         """
         uniqueSeries = []
@@ -148,9 +147,7 @@ class Siemens_DirStructure():
             seriesNum of the new series
 
         """
-        startTime = int(time.time())    # tag the start time
         keepWaiting = True
-
         existingSeries = self.getUniqueSeries()
 
         while keepWaiting:
@@ -214,7 +211,6 @@ class Siemens_BuildNifti():
         elif self.scanType == 'func':
             self.niftiImage = self.buildFunc(rawDicoms)
 
-
     def buildAnat(self, dicomFiles):
         """ Build a 3D structural/anatomical image from list of dicom files
 
@@ -244,15 +240,13 @@ class Siemens_BuildNifti():
         sliceDims = (getattr(dcm, 'Columns'), getattr(dcm, 'Rows'))
         self.nSlicesPerVol = len(dicomFiles)
         sliceThickness = getattr(dcm, 'SliceThickness')
-        voxSize = getattr(dcm, 'PixelSpacing')
 
         ### Build 3D array of voxel data
         # create an empty array to store the slice data
         imageMatrix = np.zeros(shape=(
-                                sliceDims[0],
-                                sliceDims[1],
-                                self.nSlicesPerVol),
-                                dtype='int16')
+                               sliceDims[0],
+                               sliceDims[1],
+                               self.nSlicesPerVol), dtype='int16')
 
         # Use the InstanceNumber tag to order the slices. This works for anat
         # 3D images only, since the instance numbers do not repeat as they would
@@ -263,14 +257,8 @@ class Siemens_BuildNifti():
             sliceDict[dcm.InstanceNumber] = join(self.seriesDir, s)
 
         # sort by InStackPositionNumber and assemble the image
-        for sliceIdx,ISPN in enumerate(sorted(sliceDict.keys())):
+        for sliceIdx, ISPN in enumerate(sorted(sliceDict.keys())):
             dcm = pydicom.dcmread(sliceDict[ISPN])
-
-            # grab the slices necessary for creating the affine transformation
-            if sliceIdx == 0:
-                firstSliceDcm = dcm
-            if sliceIdx == self.nSlicesPerVol-1:
-                lastSliceDcm = dcm
 
             # extract the pixel data as a numpy array. Transpose
             # so that the axes order go [cols, rows]
@@ -302,7 +290,6 @@ class Siemens_BuildNifti():
 
         return anatImage_RAS
 
-
     def buildFunc(self, dicomFiles):
         """ Build a 4D functional image from list of dicom files
 
@@ -310,8 +297,8 @@ class Siemens_BuildNifti():
         Siemens scanners, each dicom file is assumed to represent a mosaic
         image comprised of mulitple slices. This tool will split apart the
         mosaic images, and construct a 4D nifti object. The 4D nifti object
-        contain a voxel array ordered like RAS+ as well the affine transformation
-        to map between vox and mm space
+        contain a voxel array ordered like RAS+ as well the affine
+        transformation to map between vox and mm space
 
         Parameters
         ----------
@@ -332,8 +319,8 @@ class Siemens_BuildNifti():
         for mosaic_dcm_fname in dicomFiles:
             ### Parse the mosaic image into a 3D volume
             # we use the nibabel mosaic_to_nii() method which does a lot of the
-            # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
-            # the affine
+            # heavy-lifting of extracting slices, arranging in a 3D array, and
+            # grabbing the affine
             dcm = pydicom.dcmread(mosaic_dcm_fname)     # create dicom object
 
             # for mosaic files, the instanceNumber tag will correspond to the
@@ -349,9 +336,9 @@ class Siemens_BuildNifti():
             # construct the imageMatrix if it hasn't been made yet
             if imageMatrix is None:
                 imageMatrix = np.zeros(shape=(thisVol_RAS.shape[0],
-                                            thisVol_RAS.shape[1],
-                                            thisVol_RAS.shape[2],
-                                            nVols), dtype=np.uint16)
+                                              thisVol_RAS.shape[1],
+                                              thisVol_RAS.shape[2],
+                                              nVols), dtype=np.uint16)
 
             # construct the affine if it isn't made yet
             if affine is None:
@@ -364,7 +351,6 @@ class Siemens_BuildNifti():
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
 
         return funcImage
-
 
     def buildAffine(self):
         """ Build the affine matrix that will transform the data to RAS+.
@@ -400,7 +386,7 @@ class Siemens_BuildNifti():
         # ImagePosition of the last slice from the ImagePosition of the first,
         # then dividing by 1/(total number of slices-1), then invert to
         # make it go from LPS+ to RAS+
-        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1-self.nSlicesPerVol)
+        slAxis_orient = (self.firstSlice_IPP - self.lastSlice_IPP) / (1 - self.nSlicesPerVol)
         slAxis_orient = slAxis_orient * np.array([-1, -1, 1])
 
         ### Invert the first two values of the firstSlice ImagePositionPatient.
@@ -411,14 +397,13 @@ class Siemens_BuildNifti():
 
         ### Assemble the affine matrix
         affine = np.matrix([
-            [rowAxis_orient[0] * voxSize_row,  colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
-            [rowAxis_orient[1] * voxSize_row,  colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
-            [rowAxis_orient[2] * voxSize_row,  colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
+            [rowAxis_orient[0] * voxSize_row, colAxis_orient[0] * voxSize_col, slAxis_orient[0], voxTranslations[0]],
+            [rowAxis_orient[1] * voxSize_row, colAxis_orient[1] * voxSize_col, slAxis_orient[1], voxTranslations[1]],
+            [rowAxis_orient[2] * voxSize_row, colAxis_orient[2] * voxSize_col, slAxis_orient[2], voxTranslations[2]],
             [0, 0, 0, 1]
             ])
 
         return affine
-
 
     def _determineScanType(self, dicomFile):
         """ Figure out what type of scan this is, anat or func
@@ -443,7 +428,7 @@ class Siemens_BuildNifti():
         # read the dicom file
         dcm = pydicom.dcmread(join(self.seriesDir, dicomFile), stop_before_pixels=1)
 
-        if getattr(dcm,'MRAcquisitionType') == '3D':
+        if getattr(dcm, 'MRAcquisitionType') == '3D':
             scanType = 'anat'
         elif getattr(dcm, 'MRAcquisitionType') == '2D':
             scanType = 'func'
@@ -453,16 +438,13 @@ class Siemens_BuildNifti():
 
         return scanType
 
-
     def get_scanType(self):
         """ Return the scan type """
         return self.scanType
 
-
     def get_niftiImage(self):
         """ Return the constructed Nifti Image """
         return self.niftiImage
-
 
     def write_nifti(self, output_path):
         """ Write the nifti file to disk
@@ -519,7 +501,6 @@ class Siemens_monitorSessionDir(Thread):
         self.numMosaicsAdded = 0            # counter to keep track of # mosaics
         self.queued_mosaic_files = set()    # empty set to store names of queued mosaic
 
-
     def run(self):
         # function that runs while the Thread is still alive
         while self.alive:
@@ -550,11 +531,9 @@ class Siemens_monitorSessionDir(Thread):
             # pause
             time.sleep(self.interval)
 
-
     def get_numMosaicsAdded(self):
         """ Return the cumulative number of mosaic files added to the queue thus far """
         return self.numMosaicsAdded
-
 
     def stop(self):
         """ Set the `alive` flag to False, stopping thread """
@@ -602,7 +581,6 @@ class Siemens_processMosaic(Thread):
         self.pynealSocket = pynealSocket
         self.totalProcessed = 0         # counter for total number of slices processed
 
-
     def run(self):
         self.logger.debug('Siemens_processMosaic started')
 
@@ -640,7 +618,6 @@ class Siemens_processMosaic(Thread):
             # pause for a bit
             time.sleep(self.interval)
 
-
     def processMosaicFile(self, mosaic_dcm_fname):
         """ Process a given mosaic dicom file
 
@@ -657,13 +634,13 @@ class Siemens_processMosaic(Thread):
         ### Figure out the volume index for this mosaic by reading
         # the field from the file name itself
         mosaicFile_root, mosaicFile_name = os.path.split(mosaic_dcm_fname)
-        volIdx = int(Siemens_mosaicVolumeNumberField.search(mosaicFile_name).group(0))-1
+        volIdx = int(Siemens_mosaicVolumeNumberField.search(mosaicFile_name).group(0)) - 1
         self.logger.info('Volume {} processing'.format(volIdx))
 
         ### Parse the mosaic image into a 3D volume
         # we use the nibabel mosaic_to_nii() method which does a lot of the
-        # heavy-lifting of extracting slices, arranging in a 3D array, and grabbing
-        # the affine
+        # heavy-lifting of extracting slices, arranging in a 3D array, and
+        # grabbing the affine
         dcm = pydicom.dcmread(mosaic_dcm_fname)     # create dicom object
         thisVol = dicomreaders.mosaic_to_nii(dcm)   # convert to nifti
 
@@ -675,15 +652,13 @@ class Siemens_processMosaic(Thread):
 
         ### Create a header with metadata info
         volHeader = {
-            'volIdx':volIdx,
-            'dtype':str(thisVol_RAS_data.dtype),
-            'shape':thisVol_RAS_data.shape,
-            'affine':json.dumps(thisVol_RAS.affine.tolist())
-            }
+            'volIdx': volIdx,
+            'dtype': str(thisVol_RAS_data.dtype),
+            'shape': thisVol_RAS_data.shape,
+            'affine': json.dumps(thisVol_RAS.affine.tolist())}
 
         ### Send the voxel array and header to the pynealSocket
         self.sendVolToPynealSocket(volHeader, thisVol_RAS_data)
-
 
     def sendVolToPynealSocket(self, volHeader, voxelArray):
         """ Send the volume data to Pyneal
@@ -702,7 +677,7 @@ class Siemens_processMosaic(Thread):
         self.logger.debug('TO pynealSocket: vol {}'.format(volHeader['volIdx']))
 
         ### Send data out the socket, listen for response
-        self.pynealSocket.send_json(volHeader, zmq.SNDMORE) # header as json
+        self.pynealSocket.send_json(volHeader, zmq.SNDMORE)  # header as json
         self.pynealSocket.send(voxelArray, flags=0, copy=False, track=False)
         pynealSocketResponse = self.pynealSocket.recv_string()
 
@@ -728,7 +703,7 @@ def Siemens_launch_rtfMRI(scannerSettings, scannerDirs):
         - creating a Queue to store newly arriving DICOM files
         - start a separate thread to monitor the new series appearing
         - start a separate thread to process DICOMs that are in the Queue
-        
+
     """
     # Create a reference to the logger. This assumes the logger has already
     # been created and customized by pynealScanner.py
