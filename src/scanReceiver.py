@@ -1,21 +1,21 @@
-"""
-Class to listen for incoming data from the scanner.
+""" Class to listen for incoming data from the scanner.
 
 This tool is designed to be run in a separate thread, where it will:
-    - establish a socket connection to pynealScanner (which will be sending volume
-data from the scanner)
+    - establish a socket connection to pynealScanner (which will be sending
+    volume data from the scanner)
     - listen for incoming volume data (preceded by a header)
     - format the incoming data, and assign it to the proper location in a
     4D matrix for the entire san
+
 In additiona, it also includes various methods for accessing the progress of an
 on-going scan, and returning data that has successfully arrived, etc.
 
---- Notes for setting up:
+Notes for setting up:
 ** Socket Connection:
-This tool uses the ZeroMQ library, instead of the standard python socket library.
-ZMQ takes care of a lot of the backend work, is incredibily reliable, and offers
-methods for easily sending pre-formatted types of data, including JSON dicts,
-and numpy arrays.
+This tool uses the ZeroMQ library, instead of the standard python socket
+library. ZMQ takes care of a lot of the backend work, is incredibily reliable,
+and offers methods for easily sending pre-formatted types of data, including
+JSON dicts, and numpy arrays.
 
 ** Expectations for data formatting:
 Once a scan has begun, this tool expects data to arrive over the socket
@@ -26,7 +26,8 @@ There should be two parts to each volume transmission:
         - volIdx: within-volume index of the volume (0-based)
         - dtype: datatype of the voxel array (e.g. int16)
         - shape: voxel array dimensions  (e.g. (64, 64, 18))
-        - affine: affine matrix to transform the voxel data from vox to mm space
+        - affine: affine matrix to transform the voxel data from vox to mm
+        space
     2. Next, the voxel array, as a string buffer that can be converted into a
         numpy array.
 
@@ -39,17 +40,14 @@ voxel array ordered like RAS+, and that the accompanying affine will provide
 a transform from voxel space RAS+ to mm space RAS+. In order to any mask-based
 analysis in Pyneal to work, we need to make sure that the incoming data and the
 mask data are reprsented in the same way. The pyneal_scanner utilities have all
-been configured to ensure that each volume that is transmitted is in RAS+ space.
+been configured to ensure that each volume that is transmitted is in RAS+
+space.
 
 Along those same lines, the affine that gets transmitted in the header for each
 volume should be the same for all volumes in the series.
-"""
-# python2/3 compatibility
-from __future__ import print_function
 
-import os
+"""
 from os.path import join
-import sys
 from threading import Thread
 import logging
 import json
@@ -59,18 +57,33 @@ import numpy as np
 import nibabel as nib
 import zmq
 
+
 class ScanReceiver(Thread):
-    """
-    Class to listen in for incoming scan data. As new volumes
-    arrive, the header is decoded, and the volume is added to
+    """ Class to listen in for incoming scan data.
+
+    As new volumes arrive, the header is decoded, and the volume is added to
     the appropriate place in the 4D data matrix
 
     Input a dictionary called 'settings' that has (at least) the following keys:
         numTimepts: number of expected timepoints in series [500]
         pynealHost: ip address for the computer running Pyneal
         pynealScannerPort: port # for scanner socket [e.g. 5555]
+
     """
     def __init__(self, settings):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        settings : dict
+            dictionary that contains all of the Pyneal settings for the current
+            session. This dictionary is loaded by Pyneal is first launched. At
+            a minumum, this dictionary must have the following keys:
+                numTimepts: number of expected timepoints in series
+                pynealHost: ip address for the computer running Pyneal
+                pynealScannerPort: port # for scanner socket [e.g. 5555]
+
+        """
         # start the thread upon creation
         Thread.__init__(self)
 
@@ -109,7 +122,6 @@ class ScanReceiver(Thread):
             self.dashboardSocket = context.socket(zmq.REQ)
             self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
 
-
     def run(self):
         # Once this thread is up and running, confirm that the scanner socket
         # is alive and working before proceeding.
@@ -147,7 +159,7 @@ class ScanReceiver(Thread):
 
             # add the volume to the appropriate location in the image matrix
             volIdx = volHeader['volIdx']
-            self.imageMatrix[:,:, :, volIdx] = voxelArray
+            self.imageMatrix[:, :, :, volIdx] = voxelArray
 
             # update the completed volumes table
             self.completedVols[volIdx] = True
@@ -160,62 +172,90 @@ class ScanReceiver(Thread):
             self.logger.info(response)
             self.sendToDashboard(response)
 
-
     def createImageMatrix(self, volHeader):
-        """
-        Once the first volume appears, this function should be called
-        to build the empty matrix to store incoming vol data, using
-        info from the vol header.
+        """ Create empty 4D image matrix
+
+        Once the first volume appears, this function should be called to build
+        the empty matrix to store incoming vol data, using info contained in
+        the vol header.
+
+        Parameters
+        ----------
+        volHeader : dict
+            dictionary containing header information from the volume, including
+            'volIdx', 'dtype', 'shape', and 'affine'
+
         """
         # create the empty imageMatrix
         self.imageMatrix = np.zeros(shape=(
-                                volHeader['shape'][0],
-                                volHeader['shape'][1],
-                                volHeader['shape'][2],
-                                self.numTimepts), dtype=volHeader['dtype'])
+            volHeader['shape'][0],
+            volHeader['shape'][1],
+            volHeader['shape'][2],
+            self.numTimepts), dtype=volHeader['dtype'])
 
         self.logger.debug('Image Matrix dims: {}'.format(self.imageMatrix.shape))
 
-
     def get_affine(self):
-        """
-        Return the affine for this series
+        """ Return the affine for the current series
+
         """
         return self.affine
 
-
     def get_vol(self, volIdx):
-        """
-        Return the requested vol, if it is here.
-        Note: volIdx is 0-based
+        """ Return the requested vol, if it is here.
+
+        Parameters
+        ----------
+        volIdx : int
+            index location (0-based) of the volume you'd like to retrieve
+
+        Returns
+        -------
+        numpy-array or None
+            3D array of voxel data for the requested volume
+
         """
         if self.completedVols[volIdx]:
             return self.imageMatrix[:, :, :, volIdx]
         else:
             return None
 
-
     def get_slice(self, volIdx, sliceIdx):
-        """
-        Return the requested slice, if it is here.
-        Note: volIdx, and sliceIdx are 0-based
+        """ Return the requested slice, if it is here.
+
+        Parameters
+        ----------
+        volIdx : int
+            index location (0-based) of the volume you'd like to retrieve
+        sliceIdx : int
+            index location (0-based) of the slice you'd like to retrieve
+
+        Returns
+        -------
+        numpy-array or None
+            2D array of voxel data for the requested slice
+
         """
         if self.completedVols[volIdx]:
             return self.imageMatrix[:, :, sliceIdx, volIdx]
         else:
             return None
 
-
     def sendToDashboard(self, msg):
-        """
-        If dashboard is launched, send the msg to the dashboard. The dashboard
-        expects messages formatted in specific way, namely a dictionary with 2
-        keys: 'topic', and 'content'
+        """ Send a msg to the Pyneal dashboard
 
-        Any message from the scanReceiver should set the topic as
-        'pynealScannerLog', and the content should be it's own dictionary with
-        the key 'logString'. logString should contain the log message you want
-        the dashboard to display
+        The dashboard expects messages formatted in specific way, namely a
+        dictionary with 2 keys: 'topic', and 'content'. In this case, the
+        scan receiver will always use the topic 'pynealScannerLog'.
+
+        The content will be a dictionary with the key 'logString', which has
+        the `msg` stored.
+
+        Parameters
+        ----------
+        msg : string
+            log message you want to send to the dashboard
+
         """
         if self.dashboard:
             dashboardMsg = {'topic': 'pynealScannerLog',
@@ -223,18 +263,18 @@ class ScanReceiver(Thread):
             self.dashboardSocket.send_json(dashboardMsg)
             response = self.dashboardSocket.recv_string()
 
-
     def saveResults(self):
-        """
+        """ Save the numpy 4D image matrix of data as a Nifti File
+
         Save the image matrix as a Nifti file in the output directory for this
         series
+
         """
         ds = nib.Nifti1Image(self.imageMatrix, self.affine)
         nib.save(ds, join(self.seriesOutputDir, 'receivedFunc.nii.gz'))
 
-
     def killServer(self):
-        # function to stop the Thread
+        """ Close the thread by setting the alive flag to False """
         self.alive = False
 
 
@@ -247,7 +287,7 @@ if __name__ == '__main__':
     fileLogger = logging.FileHandler('./scanReceiver.log', mode='w')
     fileLogger.setLevel(logging.DEBUG)
     fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
-                                        '%m-%d %H:%M:%S')
+                                      '%m-%d %H:%M:%S')
     fileLogger.setFormatter(fileLogFormat)
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)

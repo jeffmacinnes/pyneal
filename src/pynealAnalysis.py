@@ -4,9 +4,6 @@ These tools will set up and apply the specified analysis steps to incoming
 volume data during a real-time scan
 
 """
-# python 2/3 compatibility
-from __future__ import print_function
-
 import os
 import sys
 import logging
