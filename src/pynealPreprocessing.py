@@ -1,21 +1,14 @@
-"""
-Set of utilities for preprocessing for Pyneal. These tools will apply the
-specified preprocessing steps to incoming volume data during a real-time scan
-"""
-# python 2/3 compatibility
-from __future__ import print_function
+""" Preprocessing Module for Real-time Scan
 
-import os
+Set of utilities for apply specified preprocessing steps to data during a
+real-time run.
+
+"""
 import sys
-from os.path import join
-import time
 import logging
-from threading import Thread
-from queue import Queue
 import io
 import contextlib
 
-import yaml
 import zmq
 import numpy as np
 import nibabel as nib
@@ -23,14 +16,23 @@ from nipy.algorithms.registration import HistogramRegistration, Rigid
 
 
 class Preprocessor:
-    """
-    Preprocessing class. The methods of this class can be used to
-    set up and execute preprocessing steps on incoming volumes during
-    a real-time scan
+    """ Preprocessing class.
+
+    This is the main Preprocessing module that gets instantiated by Pyneal, and
+    will handle executing specific preprocessing routines on incoming volumes
+    throughout the scan.
+
     """
     def __init__(self, settings):
-        """
-        settings: user settings dictionary
+        """ Initialize the class
+
+        Parameters
+        ----------
+        settings : dict
+            dictionary that contains all of the pyneal settings for the current
+            session. This dictionary is loaded/configured by the GUI once
+            Pyneal is first launched
+
         """
         # set up logger
         self.logger = logging.getLogger('PynealLog')
@@ -48,17 +50,38 @@ class Preprocessor:
             self.dashboardSocket = context.socket(zmq.REQ)
             self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(self.settings['dashboardPort']))
 
-
     def set_affine(self, affine):
-        """
-        make a local reference to the RAS+ affine transformation for this series
+        """ Set a local reference to the RAS+ affine transformation for the
+        current series
+
+        Parameters
+        ----------
+        affine : (4,4) numpy array-like
+            affine matrix mapping the current series to RAS+ space
+
         """
         self.affine = affine
 
-
     def runPreprocessing(self, vol, volIdx):
-        """
-        Run preprocessing on the supplied volume
+        """ Run preprocessing on the supplied volume
+
+        This is a function that Pyneal can call in order to execute the
+        specified preprocessing routines for this series.
+
+        Parameters
+        ----------
+        vol : nibabel-like image
+            nibabel-like image containing a 3D array of voxel data, a (4,4)
+            affine matrix mapping the volume to RAS+ space, and image metadata
+        volIdx : int
+            0-based index indicating where, in time (4th dimension), the volume
+            belongs
+
+        Returns
+        -------
+        vol : nibabel-like image
+            preprocessed volume
+
         """
         ### calculate the motion parameters on this volume. motionParams are
         # returned as dictionary with keys for 'rms_abs', and 'rms_rel';
@@ -66,8 +89,8 @@ class Preprocessor:
         # the nostdout bit suppresses verbose estimation output to stdOut
         with nostdout():
             motionParams = self.motionProcessor.estimateMotion(
-                                nib.Nifti1Image(vol,self.affine),
-                                volIdx)
+                nib.Nifti1Image(vol, self.affine),
+                volIdx)
 
         ### send to dashboard (if specified)
         if self.settings['launchDashboard']:
@@ -75,24 +98,29 @@ class Preprocessor:
 
                 # send to the dashboard
                 self.sendToDashboard(topic='motion',
-                                    content={'volIdx':volIdx,
-                                            'rms_abs': motionParams['rms_abs'],
-                                            'rms_rel': motionParams['rms_rel']})
+                                     content={'volIdx': volIdx,
+                                              'rms_abs': motionParams['rms_abs'],
+                                              'rms_rel': motionParams['rms_rel']})
 
         self.logger.debug('preprocessed vol: {}'.format(volIdx))
         return vol
 
-
     def sendToDashboard(self, topic=None, content=None):
-        """
-        If dashboard is launched, send the msg to the dashboard. The dashboard
-        expects messages formatted in specific way, namely a dictionary with 2
-        keys: 'topic', and 'content'
+        """ Send a msg to the Pyneal dashboard.
 
-        Any message from the scanReceiver should set the topic as
-        'pynealScannerLog', and the content should be it's own dictionary with
-        the key 'logString'. logString should contain the log message you want
-        the dashboard to display
+        The dashboard expects messages formatted in specific way, namely a
+        dictionary with 2 keys: 'topic', and 'content'
+
+        Parameters
+        ----------
+        topic : string
+            topic of the message. For instance, topic = 'motion', would tell
+            the dashboard to parse this message for data to use in the motion
+            plot
+        content : dict
+            dictionary containing all of the key:value pairs you want to
+            include in your message
+
         """
         if self.dashboard:
             dashboardMsg = {'topic': topic,
@@ -102,15 +130,32 @@ class Preprocessor:
 
 
 class MotionProcessor():
-    """
-    Tool to estimate motion. The motion estimates will be made relative to
-    a reference volume, specifed by refVolIdx (0-based index).
+    """ Tool to estimate motion during a real-time run.
 
+    The motion estimates will be made relative to a reference volume,
+    specifed by `refVolIdx` (0-based index), and relative to the previous
+    volume.
+
+
+    See Also
+    --------
     Motion estimation based on:
     https://github.com/cni/rtfmri/blob/master/rtfmri/analyzers.py &
     https://www.sciencedirect.com/science/article/pii/S1053811917306729#bib32
+
     """
     def __init__(self, logger=None, refVolIdx=4):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        logger : logger object, optional
+            reference to the logger object where you want to write log messages
+        refVolIdx : int, optional
+            The index of the volume to make absolute motion estimates relative
+            to. 0-based index (default: 4)
+
+        """
         self.logger = logger
         self.refVolIdx = refVolIdx
         self.refVol = None
@@ -119,14 +164,13 @@ class MotionProcessor():
         self.refVol_T = Rigid(np.eye(4))
         self.prevVol_T = Rigid(np.eye(4))
 
-
     def estimateMotion(self, niiVol, volIdx):
-        """
-        Estimate the motion parameters for the current volume. This tool will
-        first estimate the transformation needed to align the current volume to
-        the reference volume. This transformation can be expressed as a rigid
-        body transformation with 6 degrees of freedom (translation x,y,z;
-        rotation x,y,z).
+        """ Estimate the motion parameters for the current volume.
+
+        This tool will first estimate the transformation needed to align the
+        current volume to the reference volume. This transformation can be
+        expressed as a rigid body transformation with 6 degrees of freedom
+        (translation x,y,z; rotation x,y,z).
 
         Using the estimated transformation matrix, we can compute RMS deviation
         as a single value representing the displacement (in mm) between the
@@ -139,9 +183,14 @@ class MotionProcessor():
         RMS calculations:
         https://www.fmrib.ox.ac.uk/datasets/techrep/tr99mj1/tr99mj1.pdf
 
-        Inputs:
-            niiVol: nibabel-like 3D data object, representing the current volume
-            volIdx: the index of the current volume along the 4th dim (i.e. time)
+        Parameters
+        ----------
+        niiVol : nibabel-like image
+            nibabel-like 3D data object, representing the current volume
+        volIdx : int
+            the 0-based index of the current volume along the 4th dim
+            (i.e. time)
+
         """
         if volIdx < self.refVolIdx:
             return None
@@ -174,24 +223,35 @@ class MotionProcessor():
                             'rms_rel': rms_rel}
             return motionParams
 
-
     def computeRMS(self, T1, T2, R=50):
-        """
-        Compute the RMS displacement between transformation matrices. Returns
-        a single value reprsenting the mean displacement in mm (assuming a
-        spherical volume with radius, R).
+        """ Compute the RMS displacement between transformation matrices.
 
-        R defaults to 50mm (apprx distance from cerebral cortex to center of head):
+        Parameters
+        ----------
+        T1,T2 : nipy Rigid object
+            Transformation matrices
+        R : int, optional
+            radius (in mm) from center of head to cerebral cortex. Defaults to
+            50mm (apprx distance from cerebral cortex to center of head):
             Motion-related artifacts in structural brain images revealed with
-            independent estimates of in-scanner head motion. (2017) Savalia, et al.
-            Human Brain Mapping. Jan; 38(1)
+            independent estimates of in-scanner head motion. (2017) Savalia,
+            et al. Human Brain Mapping. Jan; 38(1)
             https://www.ncbi.nlm.nih.gov/pubmed/27634551
 
+        Returns
+        -------
+        rms : float
+            a single value representing the mean displacement in mm (assuming
+            a spherical volume with radius, R).
+
+        See Also
+        --------
         This approach for estimating motion borrows heavily from:
         https://github.com/cni/rtfmri/blob/master/rtfmri/analyzers.py
 
         RMS calculations:
         https://www.fmrib.ox.ac.uk/datasets/techrep/tr99mj1/tr99mj1.pdf
+
         """
         diffMatrix = T1.as_affine().dot(np.linalg.inv(T2.as_affine())) - np.eye(4)
 
@@ -204,7 +264,7 @@ class MotionProcessor():
         t += A.dot(center)
 
         # compute RMS error (aka deviation error between transforms)
-        rms = np.sqrt((1/5) * R**2 * A.T.dot(A).trace() + t.T.dot(t))
+        rms = np.sqrt((1 / 5) * R**2 * A.T.dot(A).trace() + t.T.dot(t))
 
         return rms
 
