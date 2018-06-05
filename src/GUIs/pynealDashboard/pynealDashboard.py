@@ -1,50 +1,62 @@
-"""
-Flask-based App to host the backend of the Pyneal Dashboard for
-monitoring a real-time scan.
+""" Web server to host the Pyneal Dashboard
 
-In addition to providing a webserver for the dashboard, this tool will
-listen for interprocess communication messages sent from the main
-Pyneal processes, which it will parse and send along to any client
-browsers that are viewing the dashboard. The client-side javascript will
-interpret the messages and update the dashboard accordingly
-"""
+Flask-based App to host the backend of the Pyneal Dashboard for monitoring a
+real-time scan.
 
+In addition to providing a web server that hosts the dashboard, this tool will
+listen for interprocess communication messages sent from the main Pyneal
+processes, which it will parse and send along to any client browsers that are
+viewing the dashboard. The client-side javascript will interpret the messages
+and update the dashboard accordingly
+
+"""
 import sys
-import os
 import time
 from threading import Thread
 
 import zmq
 
 from flask import Flask, render_template
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO
 import eventlet
 eventlet.monkey_patch()
-
 
 # initialize flask app
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-
 # vars to store incoming data
 existingData = {'mask': '',
-            'analysisChoice': '',
-            'volDims': '',
-            'numTimepts': None,
-            'outputPath': '',
-            'currentVolIdx': 0,
-            'motion': [],
-            'timePerVol': []
-            }
+                'analysisChoice': '',
+                'volDims': '',
+                'numTimepts': None,
+                'outputPath': '',
+                'currentVolIdx': 0,
+                'motion': [],
+                'timePerVol': []}
 
 
 class DashboardIPCServer(Thread):
-    """
-    Class to run in the background, listen for incoming IPC messages, parse,
-    and pass along to the client web browser via socketio
+    """ Dashboard interprocess communication server
+
+    Essentially a relay for sending messages from Pyneal to connected web
+    clients running the dashboard in a browser
+
+    Runs in the background, listens for incoming IPC messages from various
+    Pyneal modules, parses messages, and passes along that information to
+    connected clients via socketio library
+
     """
     def __init__(self, socket):
+        """ Initialize class
+
+        Parameters
+        ----------
+        socket : object
+            instance of ZMQ style socket that will be listening for incoming
+            messages from Pyneal throughout a scan
+
+        """
         # start the thread upon creation
         Thread.__init__(self)
 
@@ -53,14 +65,14 @@ class DashboardIPCServer(Thread):
 
         # dashboard data
         self.configSettings = None
-
         self.alive = True
 
-
     def run(self):
-        """
+        """ While alive loop
+
         While the IPC server is running, it will listen for new incoming JSON
         messages, and process according to the 'topic' field of the message
+
         """
         while self.alive:
             try:
@@ -75,28 +87,36 @@ class DashboardIPCServer(Thread):
                 pass
             time.sleep(.1)
 
-
     def processMsg(self, msg):
-        """
-        process the incoming message to figure out what kind of data it
+        """ Process the incoming message
+
+        Process the incoming message to figure out what kind of data it
         contains. Each message is assumed to be a dictionary with 2 keys:
-          'topic': indicates what kind of data this message contains
+          'topic': indicates what kind of data this message contains. See
+                function body for examples of valid `topic` types
           'content': the actual content of the message; can be anything
-                        from a simple integer to a dictionary of multiple vals.
-                        A given topic should always have similarly formatted
-                        content to ensure it gets handled appropriately on this
-                        end
+                from a simple integer to a dictionary of multiple vals. A given
+                topic should always have similarly formatted content to ensure
+                it gets handled appropriately on this end
         E.g.
               msg = {'topic':'volIdx',
                       'content':25}
 
-        messages are processed differently according to their topic.
+        Messages are processed differently according to their topic.
 
         In addition, each time a new message appears, it's contents get added
-        to the existingData dictionary. This dictionary gets sent to the client
+        to the `existingData` dictionary. This dictionary gets sent to the client
         upon first connecting to the page. This way, if the client breaks the
         connection partway through the scan, they can still receive all of
         the existing data
+
+        Parameters
+        ----------
+        msg : dictionary
+            dictionary containing 2-fields: 'topic', and 'content'. Topic is a
+            string indicating what type of message it is. And 'content' is the
+            actual substance of the message itself (datatypes can vary)
+
         """
         if msg['topic'] == 'configSettings':
             # update existing data
@@ -142,12 +162,13 @@ class DashboardIPCServer(Thread):
 # Root dashboard page
 @app.route('/')
 def pynealWatcher():
+    """ Method for loading the main html page when clients load the root folder """
     return render_template('pynealDashboard.html')
 
 
-# Method for when web browser client connects
 @socketio.on('connect')
 def handle_client_connect_event():
+    """ Method to handle when a new client connects to webserver (via browser) """
     # when the client connects, send all existing data
     print('dashboard client connected, sending any existing data...')
     socketio.emit('existingData', existingData)
@@ -156,11 +177,20 @@ def handle_client_connect_event():
 
 # Method to launch dashboard
 def launchDashboard(dashboardPort=9998, clientPort=9999):
-    """
-    start the app. Use the supplied socket to listen in for incoming messages
-    that will be parsed and sent to the client's web browser
-    """
+    """ Launch the Dashboard
 
+    Start the app. Use the supplied socket to listen in for incoming messages
+    that will be parsed and sent to the client's web browser
+
+    Parameters
+    ----------
+    dashboardPort : int, optional
+        port number over which messages FROM Pyneal will arrive at the server
+    clientPort : int, option
+        port number that CLIENT web browsers will use to connect to the
+        dashboard web server
+
+    """
     ### set up the socket that the dashboard will use to listen for incoming IPC
     dashboardPort = int(sys.argv[1])
     context = zmq.Context.instance()
@@ -176,11 +206,11 @@ def launchDashboard(dashboardPort=9998, clientPort=9999):
     socketio.run(app, port=clientPort)
 
 
-
 # Calling this script directly will start the webserver and create a zmq socket
-# that will listen for incoming inter-process communication (IPC) messages on the
-# port specified by 'dashboardPort'. It will host the dashboard website on the port
-# specified by 'dashboardClientPort' (website at 127.0.0.1:<dashboardClientPort>)
+# that will listen for incoming inter-process communication (IPC) messages on
+# the port specified by 'dashboardPort'. It will host the dashboard website on
+# the port specified by 'dashboardClientPort'
+# (e.g. website at 127.0.0.1:<dashboardClientPort>)
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
