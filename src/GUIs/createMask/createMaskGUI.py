@@ -401,7 +401,6 @@ class MainContainer(BoxLayout):
 
     def cancelFileChooser(self):
         """ Close the popup file browser """
-        # close the file chooser dialog
         self._popup.dismiss()
 
     ### Show Notification Pop-up ##############################################
