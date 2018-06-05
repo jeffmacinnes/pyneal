@@ -1,5 +1,4 @@
-"""
-Create Mask GUI:
+""" Create Mask GUI:
 GUI to set inputs and option for creating a mask to use during Pyneal real-time
 analysis. Pyneal requires that all masks be in subject functional space; this
 tool helps create those.
@@ -7,9 +6,10 @@ tool helps create those.
 All of the settings are stored in a createMaskConfig.yaml file. This GUI reads
 that file to obtain initial settings, and then once the user hits 'submit' the
 file is overwritten with new settings
+
 """
 import os
-from os.path import join, dirname, exists
+from os.path import join, exists
 from pathlib import Path
 import sys
 
@@ -17,13 +17,9 @@ import yaml
 
 from kivy.app import App
 from kivy.base import EventLoop
-from kivy.uix.widget import Widget
-from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.stacklayout import StackLayout
 from kivy.uix.textinput import TextInput
-from kivy.properties import StringProperty, NumericProperty, ListProperty, ObjectProperty, DictProperty, BooleanProperty
-from kivy.uix.filechooser import FileChooserListView
+from kivy.properties import StringProperty, ListProperty, ObjectProperty, DictProperty, BooleanProperty
 from kivy.uix.popup import Popup
 from kivy.factory import Factory
 
@@ -48,33 +44,32 @@ class FilePathInputField(TextInput):
 
 
 class LoadFileDialog(BoxLayout):
-    """ generic class to present file chooser popup """
-    loadFunc= ObjectProperty(None)
+    """ Generic class to present file chooser popup """
+    loadFunc = ObjectProperty(None)
     cancelFileChooser = ObjectProperty(None)
     path = StringProperty()
     fileFilter = ListProperty()
 
 
 class ErrorNotification(BoxLayout):
-    """ class to load error notification popup """
+    """ Class to load error notification popup """
     errorMsg = StringProperty('')
 
 
 class MainContainer(BoxLayout):
-    """
-    Root level widget for the createMask GUI
+    """ Root level widget for the createMask GUI
+
     """
     # create a kivy DictProperty that will store a dictionary with all of the
     # settings for the GUI.
     GUI_settings = DictProperty({}, rebind=True)
     setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
-    textColor = ListProperty([0,0,0,1])
+    textColor = ListProperty([0, 0, 0, 1])
     disabledTextColor = ListProperty([.6, .6, .6, 1])
 
     fileBrowserStartDir = '~/'
     MNI_standardsDir = join(pynealDir, 'utils/MNI_templates')
     masksDir = join(pynealDir, 'utils/masks')
-
 
     def __init__(self, **kwargs):
         self.GUI_settings = self.readSettings(createMaskConfigFile)
@@ -86,13 +81,20 @@ class MainContainer(BoxLayout):
         # pass the keywords along to the parent class
         super().__init__(**kwargs)
 
-
     ### Methods for dealing with loading/saving Settings -----------------------
     def readSettings(self, settingsFile):
-        """
-        Open the supplied settingsFile, and compare to the default
-        values. Any valid setting in the settingsFile will override
+        """ Read all settings
+
+        Open the supplied `settingsFile`, and compare to the default
+        values. Any valid setting in the `settingsFile` will override
         the default
+
+        Parameters
+        ----------
+        settingsFile : settingsFile
+            full path to the settings yaml file that contains one or more of
+            the settings to be used for creating the mask
+
         """
         # set up defaults
         defaultSettings = {
@@ -130,10 +132,10 @@ class MainContainer(BoxLayout):
                         # throw error and quit
                         print('Problem loading the settings file!')
                         print('{} setting expecting dtype {}, but got {}'.format(
-                                k,
-                                defaultSettings[k][1],
-                                type(loadedValue)
-                                ))
+                              k,
+                              defaultSettings[k][1],
+                              type(loadedValue)
+                              ))
                         sys.exit()
                 # if the loaded file doesn't have this setting, take the default
                 else:
@@ -147,18 +149,19 @@ class MainContainer(BoxLayout):
         # return the settings dict
         return newSettings
 
-
     def setCreateFuncBrainMask(self):
+        """ Set config setting for whether to create whole brain func mask """
         self.GUI_settings['createFuncBrainMask'] = self.ids.createFuncBrainMaskCheckbox.active
 
-
     def setTransformMaskToFunc(self):
+        """ Set config setting for whether to transform a MNI mask to functional space """
         self.GUI_settings['transformMaskToFunc'] = self.ids.transformMaskToFuncCheckbox.active
 
-
     def submitGUI(self):
-        """
+        """ Submit the GUI
+
         Get all settings, confirm they are valid, save new settings file
+
         """
         # Error check all GUI settings
         errorCheckPassed = self.check_GUI_settings()
@@ -181,10 +184,15 @@ class MainContainer(BoxLayout):
             App.get_running_app().stop()
             EventLoop.exit()
 
-
     def check_GUI_settings(self):
-        """
-        Make sure all of the GUI settings are legit
+        """ Check the validity of all current GUI settings
+
+        Returns
+        -------
+        errorCheckPassed : Boolean
+            True/False flag indicating whether ALL of the current settings are
+            valid or not
+
         """
         errorMsg = []
 
@@ -230,10 +238,19 @@ class MainContainer(BoxLayout):
 
         return errorCheckPassed
 
-
     def setFuncFile(self, path, selection):
-        """
-        Function attached to load button for the 4D FUNC field
+        """ Callback function for load button in 4D FUNC file browser
+
+        This function will update stored settings based on the file that was
+        selected in the popup file browser
+
+        Parameters
+        ----------
+        path : string
+            full path of parent directory of file(s) that were selected
+        selection : list
+            list of files that were selected from within `path` directory
+
         """
         # if a file was selected, return full path to the file
         if len(selection) > 0:
@@ -257,10 +274,19 @@ class MainContainer(BoxLayout):
         # close the parent popup
         self._popup.dismiss()
 
-
     def setAnatFile(self, path, selection):
-        """
-        Function attached to load button for the hi-res ANAT field
+        """ Callback function for load button in ANAT file browser
+
+        This function will update stored settings based on the file that was
+        selected in the popup file browser
+
+        Parameters
+        ----------
+        path : string
+            full path of parent directory of file(s) that were selected
+        selection : list
+            list of files that were selected from within `path` directory
+
         """
         # if a file was selected, return full path to the file
         if len(selection) > 0:
@@ -278,14 +304,23 @@ class MainContainer(BoxLayout):
         # close the parent popup
         self._popup.dismiss()
 
-
     def setSkullStrip(self):
+        """ Set config setting for whether to skull strip anat image """
         self.GUI_settings['skullStrip'] = self.ids.skullStripCheckbox.active
 
-
     def setMNI_standard(self, path, selection):
-        """
-        Function attached to load button for the MNI standard file
+        """ Callback function for load button in MNI-standard file browser
+
+        This function will update stored settings based on the file that was
+        selected in the popup file browser
+
+        Parameters
+        ----------
+        path : string
+            full path of parent directory of file(s) that were selected
+        selection : list
+            list of files that were selected from within `path` directory
+
         """
         # if a file was selected, return full path to the file
         if len(selection) > 0:
@@ -303,10 +338,19 @@ class MainContainer(BoxLayout):
         # close the parent popup
         self._popup.dismiss()
 
-
     def setMNI_mask(self, path, selection):
-        """
-        Function attached to load button for the MNI mask file
+        """ Callback function for load button in MNI mask file browser
+
+        This function will update stored settings based on the file that was
+        selected in the popup file browser
+
+        Parameters
+        ----------
+        path : string
+            full path of parent directory of file(s) that were selected
+        selection : list
+            list of files that were selected from within `path` directory
+
         """
         # if a file was selected, return full path to the file
         if len(selection) > 0:
@@ -319,18 +363,28 @@ class MainContainer(BoxLayout):
         self.ids.MNI_maskInput.cursor = (len(selectedPath), 0)
 
         # update the GUI settings with path to MNI_standardfile
-        self.GUI_settings.MNI_mask= selectedPath
+        self.GUI_settings.MNI_mask = selectedPath
 
         # close the parent popup
         self._popup.dismiss()
 
-
     def launchFileBrowser(self, loadFunc=None, path=None, fileFilter=[]):
-        """
-        generic function to present a popup window with a file browser. Customize this with the parameters you pass in
-            - path: path where the file browser will start
-            - fileFilter: list of file types to filter; e.g. ['*.txt']
-            - loadFunc: function that will be called when 'load' button pressed
+        """ Launch pop-up file browser for selecting files
+
+        Generic function to present a popup window with a file browser.
+        Customizable by specifying the callback functions to attach to buttons
+        in browser
+
+        Parameters
+        ----------
+        loadFunc : function
+            callback function you want to attach to the "load" button in the
+            filebrowser popup
+        path : string
+            full path to starting directory of the file browser
+        fileFilter : list
+            list of file types to isolate in the file browser; e.g ['*.txt']
+
         """
         if path is None:
             path = self.fileBrowserStartDir
@@ -338,32 +392,42 @@ class MainContainer(BoxLayout):
         # method to pop open a file browser
         print('currentPath: {}'.format(path))
         content = LoadFileDialog(loadFunc=loadFunc,
-                                    cancelFileChooser=self.cancelFileChooser,
-                                    path=path,
-                                    fileFilter=fileFilter)
+                                 cancelFileChooser=self.cancelFileChooser,
+                                 path=path,
+                                 fileFilter=fileFilter)
         self._popup = Popup(title="Select", content=content,
-                            size_hint=(0.9,0.9))
+                            size_hint=(0.9, 0.9))
         self._popup.open()
 
-
     def cancelFileChooser(self):
+        """ Close the popup file browser """
         # close the file chooser dialog
         self._popup.dismiss()
 
-
     ### Show Notification Pop-up ##############################################
     def show_ErrorNotification(self, msg):
+        """ Show error messages in popup
+
+        Parameters
+        ----------
+        msg : list
+            List of all of the error messages (each item in list is a string)
+            that are to be shown in the popup error window
+
+        """
         self._notification = Popup(
-                        title='Errors',
-                        content=ErrorNotification(errorMsg=msg),
-                        size_hint=(.5, .5)).open()
+            title='Errors',
+            content=ErrorNotification(errorMsg=msg),
+            size_hint=(.5, .5)).open()
 
 
 class CreateMaskGUIApp(App):
-    """
-    Root App class. This will look for the createMaskGUI.kv file in the same
-    directory and build the GUI according to the parameters outlined in that file.
-    Calling 'run' on this class instance will launch the GUI
+    """ Root App class.
+
+    This will look for the createMaskGUI.kv file in the same directory and
+    build the GUI according to the parameters outlined in that file. Calling
+    'run' on this class instance will launch the GUI
+
     """
     title = 'Create Mask'
 
@@ -375,11 +439,16 @@ Factory.register('ErrorNotification', cls=ErrorNotification)
 
 
 def launchCreateMaskGUI(settingsFile):
-    """
-    launch the createMask GUI. Call this function to open the GUI. The GUI will
-    be populated with the settings specified in the 'settingsFile'.
+    """ Launch the createMask GUI.
 
-    settingsFile: path to yaml file containing createMaskConfig settings
+    Call this function to open the GUI. The GUI will be populated with the
+    settings specified in the 'settingsFile'.
+
+    Parameters
+    ----------
+    settingsFile : string
+        path to yaml file containing createMaskConfig settings
+
     """
     global createMaskConfigFile
     createMaskConfigFile = settingsFile
