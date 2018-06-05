@@ -1,6 +1,7 @@
-"""
-Pyneal Logging Module
+""" Pyneal Logging Module
+
 Tools to set up a logger for a given Pyneal run
+
 """
 # python 2/3 compatibility
 from __future__ import print_function
@@ -8,13 +9,12 @@ from __future__ import print_function
 import os
 import sys
 import logging
-import time
 
 
 def createLogger(log_fName):
-    """
-    Generic tool to create a logger with preset formatting. Log messages
-    will be written to the log file specified by log_fName.
+    """ Generic tool to create a logger with preset formatting.
+
+    Log messages will be written to the log file specified by `log_fName`.
 
     This method sets up how you want log messages to be formatted for the
     log file, as well as how log messages should be formatted and displayed in
@@ -25,6 +25,16 @@ def createLogger(log_fName):
     been called, any other module can write log messages to this file by
     defining a logger like:
         logger = logging.getLogger('PynealLog')
+
+    Parameters
+    ----------
+    log_fName : string
+        full path to the filename you want to set as the log output file
+
+    Returns
+    -------
+    logger : logger object
+
     """
     logDir, logFile = os.path.split(log_fName)
 
@@ -36,7 +46,7 @@ def createLogger(log_fName):
     fileLogger = logging.FileHandler(log_fName, mode='w')
     fileLogger.setLevel(logging.DEBUG)
     fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s: %(message)s',
-                                        '%m-%d %H:%M:%S')
+                                      '%m-%d %H:%M:%S')
     fileLogger.setFormatter(fileLogFormat)
 
     ### CONSOLE HANDLER - set up how log messages should appear in std.Out of the console

@@ -1,34 +1,41 @@
-"""
-Set of utilities for real-time analysis with Pyneal. These tools will apply the
-specified analysis steps to incoming volume data during a real-time scan
+""" Analysis Module for Pyneal Real-time Scan
 
-Note: The output from every analysis function needs to be a dictionary that stores
-the results for that volume. As long as that criterion is met, all key names and
-formatting are completely up to the particular analysis function
+These tools will set up and apply the specified analysis steps to incoming
+volume data during a real-time scan
+
 """
 # python 2/3 compatibility
 from __future__ import print_function
 
 import os
 import sys
-from os.path import join
-import time
 import logging
 import importlib
 
-import yaml
 import numpy as np
 import nibabel as nib
 
 
 class Analyzer:
-    """
-    Analysis class. The methods of this class can be used to
-    run the specified analysis on each volume during a real-time scan
+    """ Analysis Class
+
+
+    This is the main Analysis module that gets instantiated by Pyneal, and will
+    handle executing the specific analyses throughout the scan. The specific
+    analysis functions that get used will be based on the analyses specified
+    in the settings dictionary that gets passed in.
+
     """
     def __init__(self, settings):
-        """
-        settings: user settings dictionary
+        """ Initialize the class
+
+        Parameters
+        ----------
+        settings : dict
+            dictionary that contains all of the pyneal settings for the current
+            session. This dictionary is loaded/configured by the GUI once
+            Pyneal is first launched
+
         """
         # set up logger
         self.logger = logging.getLogger('PynealLog')
@@ -40,7 +47,7 @@ class Analyzer:
         # be weighted, create separate vars for the weights and mask. Convert
         # mask to boolean array
         mask_img = nib.load(settings['maskFile'])
-        if settings['maskIsWeighted'] == True:
+        if settings['maskIsWeighted'] is True:
             self.weightMask = True
             self.weights = mask_img.get_data().copy()
             self.mask = mask_img.get_data() > 0
@@ -69,26 +76,57 @@ class Analyzer:
             # method of the customAnaylsis template)
             self.analysisFunc = customAnalysis.compute
 
-
     def runAnalysis(self, vol, volIdx):
-        """
-        Run preprocessing on the supplied volume. Every analysisFunc will be
-        passed in the volume (as nibabel obj) and the volIdx (0-based). Not all
-        analysisFuncs will use the volIdx for anything (e.g. averageFromMask),
-        but is included anyway so that any custom analysis scripts that need it
-        have access to it
+        """ Analyze the supplied volume
+
+        This is a generic function that Pyneal can call in order to execute the
+        unique analysis routines setup for this session. The specific analysis
+        routines are contained in the `analysisFunc` function, and will be
+        set up by the `__init__` method of this class.
+
+        Every analysisFunc will have access to the volume data and the `volIdx`
+        (0-based index). Not every `analysisFunc` will use the `volIdx` for
+        anything (e.g. averageFromMask),but is included anyway so that any
+        custom analysis scripts that need it have access to it
+
+        Parameters
+        ----------
+        vol : nibabel-like image
+            nibabel-like image containing a 3D array of voxel data, a (4,4)
+            affine matrix mapping the volume to RAS+ space, and image metadata
+        volIdx : int
+            0-based index indicating where, in time (4th dimension), the volume
+            belongs
+
+        Returns
+        -------
+        output : dict
+            dictionary containing key:value pair(s) for analysis results
+            specific to the current volume
+
         """
         output = self.analysisFunc(vol, volIdx)
         self.logger.info('analyzed vol: {}'.format(volIdx))
         return output
 
-
     def averageFromMask(self, vol, volIdx):
-        """
-        Compute the average voxel activation within the mask.
+        """ Compute the average voxel activation within the mask.
         Note: np.average has weights option, np.mean doesn't
 
-        outputs: {'weightedAverage': ####} or {'average': ####}
+        Parameters
+        ----------
+        vol
+            nibabel-like image containing a 3D array of voxel data, a (4,4)
+            affine matrix mapping the volume to RAS+ space, and image metadata
+        volIdx : int
+            0-based index indicating where, in time (4th dimension), the volume
+            belongs
+
+        Returns
+        -------
+        dict
+            {'weightedAverage': ####} or {'average': ####}
+
         """
         if self.weightMask:
             result = np.average(vol[self.mask], weights=self.weights[self.mask])
@@ -97,25 +135,39 @@ class Analyzer:
             result = np.mean(vol[self.mask])
             return {'average': np.round(result, decimals=2)}
 
-
     def medianFromMask(self, vol, volIdx):
-        """
-        Compute the median voxel activation within the mask
-        Note: weighted median algorithm from: https://pypi.python.org/pypi/weightedstats/0.2
+        """ Compute the median voxel activation within the mask
 
-        outputs: {'weightedMedian': ####} or {'median': ####}
+        Parameters
+        ----------
+        vol
+            nibabel-like image containing a 3D array of voxel data, a (4,4)
+            affine matrix mapping the volume to RAS+ space, and image metadata
+        volIdx : int
+            0-based index indicating where, in time (4th dimension), the volume
+            belongs
+
+        Returns
+        -------
+        dict
+            {'weightedMedian': ####} or {'median': ####}
+
+        See Also
+        --------
+        Weighted median algorithm from: https://pypi.python.org/pypi/weightedstats/0.2
+
         """
         if self.weightMask:
             data = vol[self.mask]
             sorted_data, sorted_weights = map(np.array, zip(*sorted(zip(data, self.weights[self.mask]))))
             midpoint = 0.5 * sum(sorted_weights)
             if any(self.weights[self.mask] > midpoint):
-                return (data[weights == np.max(weights)])[0]
+                return (data[self.weights == np.max(self.weights)])[0]
             cumulative_weight = np.cumsum(sorted_weights)
             below_midpoint_index = np.where(cumulative_weight <= midpoint)[0][-1]
             if cumulative_weight[below_midpoint_index] == midpoint:
-                return np.mean(sorted_data[below_midpoint_index:below_midpoint_index+2])
-            result = sorted_data[below_midpoint_index+1]
+                return np.mean(sorted_data[below_midpoint_index:below_midpoint_index + 2])
+            result = sorted_data[below_midpoint_index + 1]
             return {'weightedMedian': np.round(result, decimals=2)}
         else:
             # take the median of the voxels in the mask

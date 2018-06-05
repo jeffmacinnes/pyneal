@@ -30,7 +30,7 @@ def getSeries_GE(scannerDirs):
     Parameters
     ----------
     scannerDirs : object
-        instance of `GE_utils.GE_DirStructure`. Has attributes for the relvant
+        instance of `GE_utils.GE_DirStructure`. Has attributes for the relevant
         paths for the current session. `scannerDirs` is one of the variables
         returned by running `general_utils.initializeSession()`
 
@@ -173,7 +173,7 @@ def saveNifti(niftiBuilder, outputPath):
     Parameters
     ----------
     niftiBuilder : object
-        instance of the niftiBuilder class for this scannering environment
+        instance of the niftiBuilder class for this scanning environment
     outputPath : string
         full path to where you want to save nifti file
 
