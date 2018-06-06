@@ -262,7 +262,7 @@ class ResultsServer(Thread):
             outputFile.write(json.dumps(self.results))
 
     def killServer(self):
-        """ Close the server thread by setting the alive flag to False """
+        """ Close the thread by setting the alive flag to False """
         self.alive = False
 
 

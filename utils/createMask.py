@@ -1,5 +1,4 @@
-"""
-Tool to create a mask for use during a real-time run.
+""" Tool to create masks to be used during a real-time run.
 
 *REQUIRES FSL 5.0+*
 
@@ -13,7 +12,8 @@ To do so, you must supply:
     - a high resolution anatomical image from the current subject
     - the MNI space mask you wish to transform
 
-Using FSL FLIRT, this tool will create the intermediary transforms to map from MNI-to-HIRES, and HIRES-to-FUNC space, and then combine the transformation
+Using FSL FLIRT, this tool will create the intermediary transforms to map from
+MNI-to-HIRES, and HIRES-to-FUNC space, and then combine the transformation
 matrices to produce a transform that maps from MNI-to-FUNC. This transformation
 will be applied to the specified MNI-space mask or atlas, producing both
 binarized and non-binarized versions of the functional space mask.
@@ -22,14 +22,13 @@ Lastly, FSLeyes will open and display the results masks for review.
 
 All output will be saved in a subdirectory called 'mask_transforms' located in
 the same directory as the example functional space data
-"""
 
+"""
 import sys
 import os
 from os.path import join
 from os.path import exists
 import time
-import shutil
 import logging
 import subprocess
 
@@ -42,14 +41,22 @@ pynealDir = os.path.dirname(utilsDir)
 sys.path.insert(0, pynealDir)
 import src.GUIs.createMask.createMaskGUI as createMaskGUI
 
+
 class MaskCreator():
+    """ Mask Creator module
+
+    This class contains functions for creating transformation matrices for
+    mapping between various image spaces, based on inputs provided in the
+    settings file. These transformations can be used to create new masks.
+
+    """
     def __init__(self):
-        """
+        """ Initialize the class
+
         Open GUI to modify settings file. Read settings. Create logfiles
         and necessary output directories. Make masks accordingly
+
         """
-
-
         ### Read Settings ------------------------------------
         # Read the settings file, and launch the createMask GUI to give the user
         # a chance to update the settings. Hitting 'submit' within the GUI
@@ -99,20 +106,20 @@ class MaskCreator():
         ### Display all masks in fslEyes
         self.displayMasks()
 
-
     def createMaskOutputDir(self):
-        """
-        create a subdir in the mask_transforms directory that holds all of the
+        """ Create output directory for saving functional-space masks
+
+        Create a subdir in the mask_transforms directory that holds all of the
         completed masks, transformed to subject FUNC space
+
         """
         self.maskOutputDir = join(self.outputDir, 'FUNC_masks')
         if not os.path.isdir(self.maskOutputDir):
             os.makedirs(self.maskOutputDir)
 
-
     def createFuncBrainMask(self):
-        """
-        Create a whole brain mask of the example functional data
+        """ Create a whole brain mask of the example functional data
+
         """
         # make sure mask output dir exists
         self.createMaskOutputDir()
@@ -127,10 +134,9 @@ class MaskCreator():
 
         self.logger.info('created func brain mask: {}'.format(outputFile))
 
-
     def transformMaskToFunc(self):
-        """
-        transform the chosen MNI space mask to functional space
+        """ Transform the chosen MNI space mask to functional space
+
         """
         # make sure mask output dir exists
         self.createMaskOutputDir()
@@ -149,40 +155,37 @@ class MaskCreator():
             self.logger.info('copying {} to {}'.format(self.settings['subjAnat'], outputFile))
             subprocess.call(['cp', self.settings['subjAnat'], outputFile])
 
-
         ### register MNI standard --> hires
         self.logger.info('creating mni2hires transformation matrix')
         outputFile = join(self.outputDir, 'mni2hires.mat')
         if not exists(outputFile):
             subprocess.call(['flirt', '-in', self.settings['MNI_standard'],
-                            '-ref', join(self.outputDir, 'hires_brain.nii.gz'),
-                            '-out', join(self.outputDir, 'mni_HIRES'),
-                            '-omat', outputFile,
-                            '-bins', '256', '-cost', 'corratio',
-                            '-searchrx', '-180', '180',
-                            '-searchry', '-180', '180',
-                            '-searchrz', '-180', '180',
-                            '-dof', '9', '-interp', 'trilinear'])
+                             '-ref', join(self.outputDir, 'hires_brain.nii.gz'),
+                             '-out', join(self.outputDir, 'mni_HIRES'),
+                             '-omat', outputFile,
+                             '-bins', '256', '-cost', 'corratio',
+                             '-searchrx', '-180', '180',
+                             '-searchry', '-180', '180',
+                             '-searchrz', '-180', '180',
+                             '-dof', '9', '-interp', 'trilinear'])
         else:
             self.logger.info('using existing: {}'.format(outputFile))
-
 
         ### register hires --> functional space
         self.logger.info('creating hires2func transformation matrix')
         outputFile = join(self.outputDir, 'hires2func.mat')
         if not exists(outputFile):
             subprocess.call(['flirt', '-in', join(self.outputDir, 'hires_brain.nii.gz'),
-                            '-ref',self.settings['subjFunc'],
-                            '-out', join(self.outputDir, 'hires_FUNC'),
-                            '-omat', outputFile,
-                            '-bins', '256', '-cost', 'corratio',
-                            '-searchrx', '-90', '90',
-                            '-searchry', '-90', '90',
-                            '-searchrz', '-90', '90',
-                            '-dof', '9', '-interp', 'trilinear'])
+                             '-ref', self.settings['subjFunc'],
+                             '-out', join(self.outputDir, 'hires_FUNC'),
+                             '-omat', outputFile,
+                             '-bins', '256', '-cost', 'corratio',
+                             '-searchrx', '-90', '90',
+                             '-searchry', '-90', '90',
+                             '-searchrz', '-90', '90',
+                             '-dof', '9', '-interp', 'trilinear'])
         else:
             self.logger.info('using existing: {}'.format(outputFile))
-
 
         ### concatenate mni2hires and hires2func to create mni2func transform
         self.logger.info('concatenating mni2hires and hires2func matrices')
@@ -190,34 +193,33 @@ class MaskCreator():
         if not exists(outputFile):
             # Note that the transform after '-concat' should be 2nd transform you want applied
             subprocess.call(['convert_xfm', '-omat', outputFile,
-                            '-concat', join(self.outputDir, 'hires2func.mat'),
-                            join(self.outputDir, 'mni2hires.mat')])
+                             '-concat', join(self.outputDir, 'hires2func.mat'),
+                             join(self.outputDir, 'mni2hires.mat')])
         else:
             self.logger.info('using existing: {}'.format(outputFile))
-
 
         ### apply mni2func transform to the chosen mask; this will create the weighted version of
         # mask in subject functional space
         self.logger.info('applying mni2func transform to {}'.format(self.settings['MNI_mask']))
         self.weightedMaskPath = join(self.maskOutputDir, (self.settings['outputPrefix'] + '_FUNC_weighted'))
         subprocess.call(['flirt', '-in', self.settings['MNI_mask'],
-                        '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
-                        '-out', self.weightedMaskPath,
-                        '-applyxfm', '-init', join(self.outputDir, 'mni2func.mat'),
-                        '-interp', 'trilinear'])
-
+                         '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
+                         '-out', self.weightedMaskPath,
+                         '-applyxfm', '-init', join(self.outputDir, 'mni2func.mat'),
+                         '-interp', 'trilinear'])
 
         ### binarize the weighted FUNC space mask
         self.logger.info('creating binarized mask of {}'.format(self.weightedMaskPath))
         self.binarizedMaskPath = self.weightedMaskPath.replace('FUNC_weighted', 'FUNC_mask')
         subprocess.call(['fslmaths', self.weightedMaskPath, '-bin', self.binarizedMaskPath])
 
-
     def displayMasks(self):
-        """
+        """ Display masks in fsleyes
+
         Display all masks in fsleyes. If transformMaskToFunc selected, use the
         hires_FUNC (high-res anatomical transformed to FUNC space) as the
         background layer, otherwise exampleFunc
+
         """
         # figure out appropriate BG image
         if self.settings['transformMaskToFunc']:
@@ -231,7 +233,7 @@ class MaskCreator():
             cmd.append('-cm')
             cmd.append('yellow')
 
-		# add the transformed masks (weighted and binarized both), if specified
+        # add the transformed masks (weighted and binarized both), if specified
         if self.settings['transformMaskToFunc']:
             cmd.append(join(self.maskOutputDir, (self.settings['outputPrefix'] + '_FUNC_mask.nii.gz')))
             cmd.append('-cm')
@@ -245,8 +247,11 @@ class MaskCreator():
         subprocess.call(cmd)
 
 
-
 def createLogger(logName):
+    """ Create logger for storing log messages pertaining to creating new
+    masks
+
+    """
     ### FILE HANDLER - set up how log messages should be formatted in the log file
     fileLogger = logging.FileHandler(logName, mode='a')
     fileLogger.setLevel(logging.DEBUG)
@@ -266,6 +271,7 @@ def createLogger(logName):
     logger.addHandler(consoleLogger)
 
     return logger
+
 
 if __name__ == '__main__':
     m = MaskCreator()
