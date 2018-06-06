@@ -1,42 +1,44 @@
-"""
-Tool to simulate and demo how an end-user may request results from Pyneal
+""" Tool to simulate and demo how an end-user may request results from Pyneal
 during a real-time scan.
 
-In a neurofeedback context, for example, the end-user may be the software that is
-controlling the experimental task. In this case, anytime the task wants to present
-feedback to the participant, it must request the output of the real-time analysis
-for a specific set of timepoints (or volumes).
+In a neurofeedback context, for example, the end-user may be the software that
+is controlling the experimental task. In this case, anytime the task wants to
+present feedback to the participant, it must request the output of the
+real-time analysis for a specific set of timepoints (or volumes).
 
-This is an example of how requests should be formatted and sent to Pyneal. Requests
-are made on a per-volume basis, and each request should take the form of a
-4-character string representing the desired volume index (using a 0-based index).
-For example, to request the first volume in the series, the string would be '0000';
-to request the 25th volume in the series the string would be '0024', and so on...
+This is an example of how requests should be formatted and sent to Pyneal.
+Requests are made on a per-volume basis, and each request should take the form
+of a 4-character string representing the desired volume index (using a 0-based
+index). For example, to request the first volume in the series, the string
+would be '0000'; to request the 25th volume in the series the string would be
+'0024', and so on...
 
-Pyneal will send back a response comprised of two parts: first a header, and then
-followed by the results. The results message contains all of the analysis results
-that were calculated for that volume; since different analyses can yield differing
-numbers of results, the length of the results message can vary considerably. That
-is why we include the header, which is a short message simply telling the end-user
-how many bytes to expect for the full message.
+Pyneal will send back a response comprised of two parts: first a header, and
+then followed by the results. The results message contains all of the analysis
+results that were calculated for that volume; since different analyses can
+yield differing numbers of results, the length of the results message can vary
+considerably. That is why we include the header, which is a short message
+simply telling the end-user how many bytes to expect for the full message.
 
-The results message starts off as a python dictionary, and then converted to JSON
-and encoded as a byte array before sending over the socket. The end-user should
-reencode the byte array as a JSON object in order to access the results. At a minumum
-each results message will contain an entry called 'foundResults' that stores a
-boolean value indicating whether Pyneal has a result for this volume (True) or
-not (False). If 'foundResults' is True, there will also be additional entries
-containing the results for that volume. How those results are formatted and named
-depends on the analysis option chosen. For instance, for basic ROI averaging,
-the results may look like 'average':1423, indicating the ROI had an average value
-of 1423 on this volume.
+The results message starts off as a python dictionary, and then converted to
+JSON and encoded as a byte array before sending over the socket. The end-user
+should reencode the byte array as a JSON object in order to access the results.
+At a minumum each results message will contain an entry called 'foundResults'
+that stores a boolean value indicating whether Pyneal has a result for this
+volume (True) or not (False). If 'foundResults' is True, there will also be
+additional entries containing the results for that volume. How those results
+are formatted and named depends on the analysis option chosen. For instance,
+for basic ROI averaging, the results may look like 'average':1423, indicating
+the ROI had an average value of 1423 on this volume.
 
-To use this tool:
-    python endUser_sim.py volIdx
-        e.g. python endUser_sim.py 24
+Usage
+-----
+python endUser_sim.py volIdx
+    e.g. python endUser_sim.py 24
 
-    where 'volIdx' is the volume index you want to request data from. If
-    volume index is excluded it'll request volume 0
+where 'volIdx' is the volume index you want to request data from. If volume
+index is excluded it'll default to requesting volume 0
+
 """
 
 import socket
