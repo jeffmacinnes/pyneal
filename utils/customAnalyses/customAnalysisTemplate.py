@@ -93,7 +93,6 @@ class CustomAnalysis:
         self.myResult = 1
 
 
-
         ############# ^^^ END USER-SPECIFIED CODE ^^^ ##########################
         ########################################################################
 
@@ -125,8 +124,6 @@ class CustomAnalysis:
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################
         self.myResult += 1
-
-
 
 
         ############# ^^^ END USER-SPECIFIED CODE ^^^ ##########################

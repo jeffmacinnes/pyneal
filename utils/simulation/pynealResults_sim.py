@@ -1,7 +1,7 @@
-"""
-Tool to simulate the output results server of Pyneal. This tool will simulate the
-results server from  Pyneal as well as populate it with fake
-data at a rate of one new volume per TR (user can specify TR below)
+""" Tool to simulate the output results server of Pyneal.
+
+This tool will simulate the results server from  Pyneal as well as populate it
+with fake data at a rate of one new volume per TR (user can specify TR below)
 
 Once running, the resultsServer will listen for requests over the specified
 socket and return a response.
@@ -15,15 +15,12 @@ Responses from the server will be JSON strings:
         e.g. {'foundResults': True, 'average':2432}
     If they don't:
         {'foundResults': False}
+
 """
-import sys
-import os
-from os.path import join
 import json
 import atexit
 import socket
 from threading import Thread
-from pathlib import Path
 import time
 import argparse
 
@@ -31,16 +28,21 @@ import numpy as np
 
 
 class ResultsServer(Thread):
-    """
-    Class to serve results from real-time analysis. This server will accept
-    connections from remote clients, check if the requested results are available,
-    and return a JSON-formatted message
+    """ Class to serve results from real-time analysis.
 
-    Input a dictionary called 'settings' that has (at least) the following keys:
-        resultsServerPort: port # for results server socket [e.g. 5555]
-    """
+    This server will accept connections from remote clients, check if the
+    requested results are available, and return a JSON-formatted message
 
+    """
     def __init__(self, settings):
+        """ Initialize the class
+
+        Parameters
+        ----------
+        settings : dict
+            dictionary that has (at least) the following keys:
+            -resultsServerPort: port # for results server socket [e.g. 5555]
+        """
         # start the thread upon creation
         Thread.__init__(self)
 
@@ -62,10 +64,10 @@ class ResultsServer(Thread):
         # atexit function, shut down server
         atexit.register(self.killServer)
 
-
     def run(self):
-        """
-        Run server, listening for requests and returning responses to clients
+        """ Run server, listening for requests and returning responses to
+        clients
+
         """
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
@@ -90,37 +92,82 @@ class ResultsServer(Thread):
             # close client connection
             connection.close()
 
-
     def updateResults(self, volIdx, volResults):
-        """
-        Add the supplied result to the results dictionary.
-            - vol: the volume number associated with this result
-            - volResults: dictionary containing all of the results for this volume
+        """ Add the supplied result to the results dictionary.
+
+        There is a master dictionary (called `results`) that stores the
+        analysis results for each volume throughout a scan. The keys in this
+        master dictionary will be the volume indices; the values for each key
+        will itself be a (nested) dictionary containing the specific result(s)
+        for that volume.
+
+        This function takes the results dictionary for a single volume, and
+        adds it to the master dictionary under a new key (the volIdx).
+
+        Parameters
+        ----------
+        volIdx : int
+            volume index (0-based) of the current volume
+        volResults : dict
+            dictionary containing the result(s) of the analysis for the current
+            volume
+
         """
         self.results[str(volIdx)] = volResults
         print('vol {} - {} added to resultsServer'.format(volIdx, volResults))
 
+    def requestLookup(self, volIdx):
+        """ Lookup results for the requested volume
 
-    def requestLookup(self, vol):
+        Check to see if there are results for the requested volume. Will
+        return a dictionary of results for this volume. At a minimum, the
+        dictionary will contain an entry with the key 'foundResults' and the
+        value is True or False based on whether there are any results for this
+        volume.
+
+        Parameters
+        ----------
+        volIdx : int
+            volume index (0-based) of the volume you are requesting results for
+
+        Returns
+        -------
+        theseResults : dict
+            dictionary containing the retrieved results for this volume. At a
+            minimum, this dictionary will contain an entry with the key
+            'foundResults' and the value is True or False based on whether
+            there are any results for this volume. If True, the remaining
+            items in the dictionary will reflect all of the stored results
+            for the requested volume
+
         """
-        Check to see if there are results for the requested volume. Will return a
-        dictionary of results for this volume. At a minimum, the dictionary will
-        contain an entry with the key 'foundResults' and the value is True or
-        False based on whether there are any results for this volume.
-        """
-        if str(vol) in self.results.keys():
-            theseResults = self.results[str(vol)]
+        if str(volIdx) in self.results.keys():
+            theseResults = self.results[str(volIdx)]
             theseResults['foundResults'] = True
         else:
             theseResults = {'foundResults': False}
         return theseResults
 
-
     def sendResults(self, connection, results):
-        """
-        Format the results dict to a json string, and send results to the client.
-        Message will be sent in 2 waves: first a header indicating the msg length,
-        and then the message itself
+        """ Send the results back to the End User
+
+        Format the results dict to a json string, and send results to the End
+        User. Message will be sent in 2 waves: first a header indicating the
+        msg length, and then the message itself.
+
+        The size of results messages can vary substantially based on the
+        specific analyses performed, and whether or not the the results were
+        computed for the requested volume or not yet. Sending the message in
+        this way allows the End User to know precisely how big the results
+        message will be, and read from the socket accordingly.
+
+        Parameters
+        ----------
+        connection : socket object
+            socket object that is used for communicating with the End User
+        results : dict
+            dictionary containing the results to be sent to the End User
+
         """
         # format as json string and then convert to bytes
         formattedMsg = json.dumps(results).encode()
@@ -134,20 +181,35 @@ class ResultsServer(Thread):
         print('Sent result: {}'.format(formattedMsg))
 
     def killServer(self):
+        """ Close the thread by setting the alive flag to False """
         self.alive = False
 
 
 def launchPynealSim(TR, host, resultsServerPort):
-    """
+    """ Launch a Pyneal simulator
+
+    This simulator will mimic Pyneal just enough to launch the simulated
+    results server and populate it with fake data AS THOUGH a real scan was
+    occuring.
+
     Start the results server going on its own thread where it will listen for
     incoming responses, and then send a response to each request.
 
     Meanwhile, start sending fake results to the resultsServer at a rate set
     by the TR
+
+    Parameters :
+    TR : int
+        TR of fake scan, in ms
+    host : string
+        IP address of the results server
+    resultsServerPort : int
+        Port number for the results server to listen on
+
     """
     # Results Server Thread, listens for requests from end-user (e.g. task
     # presentation), and sends back results
-    settings = {'pynealHost': host, 'resultsServerPort':resultsServerPort}
+    settings = {'pynealHost': host, 'resultsServerPort': resultsServerPort}
     resultsServer = ResultsServer(settings)
     resultsServer.daemon = True
     resultsServer.start()
@@ -163,13 +225,13 @@ def launchPynealSim(TR, host, resultsServerPort):
         resultsServer.updateResults(volIdx, result)
 
         # pause for TR
-        time.sleep(TR/1000)
+        time.sleep(TR / 1000)
 
 
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(description="Pyneal-Results Server Simulator",
-                                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', '--TR',
                         nargs=1,
                         default=1000,
