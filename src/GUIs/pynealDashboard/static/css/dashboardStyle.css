@@ -1,21 +1,21 @@
 @font-face {
-    font-family:'TeX Gyre Adventor';
-    src: "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.eot')}}";
-    src: "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.eot?#iefix')}}" format('embedded-opentype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.woff')}}", format('woff'),
-         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.ttf')}}" format('truetype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.svg#texgyreadventorregular')}}" format('svg');
+    font-family:"TeX Gyre Adventor";
+    src: url("../fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.eot");
+    src: url("../fonts/texgyreadventor_bold/texgyreadventor-regular-webfont.eot?#iefix") format('embedded-opentype'),
+         url("../fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.woff") format("woff"),
+         url("../fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.ttf") format("truetype"),
+         url("../fonts/texgyreadventor_regular/texgyreadventor-regular-webfont.svg#texgyreadventorregular") format("svg");
     font-weight: normal;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'TeX Gyre Adventor Bold';
-        src: "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot')}}";
-        src: "{{url_for('static',       filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix')" format('embedded-opentype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.woff')" format('woff'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.ttf')" format('truetype'),
-         "{{url_for('static', filename='fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.svg#texgyreadventorregular')" format('svg');
+        src: url("../fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot");
+        src: url("../fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.eot?#iefix") format('embedded-opentype'),
+             url("../fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.woff") format('woff'),
+             url("../fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.ttf") format('truetype'),
+             url("../fonts/texgyreadventor_bold/texgyreadventor-bold-webfont.svg#texgyreadventorregular") format('svg');
     font-weight: bold;
     font-style: normal;
 }
