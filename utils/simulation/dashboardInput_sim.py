@@ -23,6 +23,7 @@ volDims = '(64, 64, 44)'
 outputPath = '/path/to/output/pyneal001'
 
 # build the socket to send data to the dashboard webserver
+print("Trying to connect to dashboard at: 127.0.0.1:{}".format(port))
 context = zmq.Context.instance()
 dashboardSocket = context.socket(zmq.REQ)
 dashboardSocket.connect('tcp://127.0.0.1:{}'.format(port))

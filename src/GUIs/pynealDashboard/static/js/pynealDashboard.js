@@ -140,6 +140,7 @@ var motionScale_x, motionAxis_x;
 var motionScale_y, motionAxis_y;
 var motionPlotWidth, motionPlotHeight;
 var rms_abs_line, rms_rel_line;
+var motionLines
 
 function drawMotionPlot() {
     var motionPlotDiv = d3.select('#motionPlotDiv');
@@ -194,10 +195,12 @@ function drawMotionPlot() {
 
     motionPlotSVG.append('path')
         .datum(motion)
+        .attr("class", "motionLine")
         .attr('id', 'rms_abs_line')
         .attr('d', rms_abs_line);
     motionPlotSVG.append('path')
         .datum(motion)
+        .attr("class", "motionLine")
         .attr('id', 'rms_rel_line')
         .attr('d', rms_rel_line);
 
@@ -218,6 +221,92 @@ function drawMotionPlot() {
         .style("text-anchor", "middle")
         .style("font-size", 12)
         .text("displacement (mm)");
+
+    // mouseover effects group
+    var mouseG = motionPlotSVG.append("g")
+        .attr("class", "mouse-over-effects")
+    motionLines = document.getElementsByClassName("motionLine")
+
+    // vertical line following mouse
+    mouseG.append("path")
+        .attr("class", "mouse-line")
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .style("opacity", "0")
+
+    // circles on line (position indicators)
+    var absIndicator = mouseG.append('circle')
+        .attr("id", "rms_abs_indicator")
+        .attr("class", "motionIndicator")
+        //.attr("cx", 100)
+        //.attr("cy", 100)
+        .attr("r", 5)
+    var relIndicator = mouseG.append('circle')
+        .attr("id", "rms_rel_indicator")
+        .attr("class", "motionIndicator")
+        //.attr("cx", 100)
+        //.attr("cy", 100)
+        .attr("r", 5)
+
+    mouseG.append("svg:rect")
+        .attr("width", motionPlotWidth)
+        .attr("height", motionPlotHeight)
+        .attr("fill", "none")
+        .attr("pointer-events", "all")
+        .on("mouseout", function(){  // hide line on mouse out
+            d3.select(".mouse-line")
+                .style("opacity", "0")
+            d3.select(".motionIndicator")
+                .style("opacity", "0")
+        })
+        .on("mouseover", function(){  // show line on mouse over
+            d3.select(".mouse-line")
+                .style("opacity", ".3")
+            d3.select(".motionIndicator")
+                .style("opacity", 1)
+        })
+        .on("mousemove", function(){  // move the line with the mouse
+            var mouse = d3.mouse(this);
+            var xInPlot = motionScale_x.invert(mouse[0]);
+            bisect = d3.bisector(function(d) {
+                return d.volIdx}).right;
+            var idx = bisect(motion, xInPlot)
+            var thisABS = motion[idx-1].rms_abs
+            var thisREL = motion[idx-1].rms_rel
+
+            // move mouse line
+            d3.select(".mouse-line")
+                .attr("d", function(){
+                    var d = "M" + motionScale_x(idx) + "," + motionPlotHeight;
+                    d += " " + motionScale_x(idx) + "," + 0;
+                    return d;
+                })
+
+            // move abs indicator
+            d3.select("#rms_abs_indicator")
+                .attr("cx", motionScale_x(idx))
+                .attr("cy", motionScale_y(thisABS))
+
+            // move rel indicator
+            d3.select("#rms_rel_indicator")
+                .attr("cx", motionScale_x(idx))
+                .attr("cy", motionScale_y(thisREL))
+
+            console.log(thisABS + ", " + thisREL);
+            console.log(bisect(motion, xInPlot))
+
+            // var pathLen = motionLines[0].getTotalLength();
+            // console.log('pathlen = ' + pathLen)
+            // var pos = motionLines[0].getPointAtLength(xInPlot);
+            // console.log(pos)
+            // console.log(mouse[1])
+            // console.log(motionPlotWidth)
+            // d3.select(".posIndicator")
+            //     .attr("cx", mouse[0])
+            //     .attr("cy", pos.y);
+
+
+        })
 
     // append a legend
     legendData = ['abs', 'rel']

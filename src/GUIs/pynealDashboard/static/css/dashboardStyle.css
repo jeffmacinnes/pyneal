@@ -182,12 +182,19 @@
   stroke-width: 2px;
 }
 
+#rms_abs_indicator {
+    fill: #265971;
+}
+
 #rms_rel_line {
   fill: none;
   stroke: #5CC2F0;
   stroke-width: 2px;
 }
 
+#rms_rel_indicator {
+    fill: #5CC2F0;
+}
 
 /* TIMING DIV ------------------------------------ */
 #timingDiv {
