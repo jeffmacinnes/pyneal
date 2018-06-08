@@ -289,37 +289,42 @@ function drawMotionPlot() {
         .on("mousemove", function(){  // move the line with the mouse
             // convert mouse pos from svg space to plot domain space
             var mouse = d3.mouse(this);
-            var xInPlot = motionScale_x.invert(mouse[0]);
-            bisect = d3.bisector(function(d) {
-                return d.volIdx}).right;
-            var idx = bisect(motion, xInPlot)
-            var thisABS = motion[idx-1].rms_abs
-            var thisREL = motion[idx-1].rms_rel
+            var xInPlot = Math.round(motionScale_x.invert(mouse[0]));
+
+            var volIdx = motion.map(function(d){ return d.volIdx}).indexOf(xInPlot-1);
+            var thisABS, thisREL
+            if (volIdx == -1){
+                thisABS = 0;
+                thisREL = 0;
+            } else {
+                thisABS = motion[volIdx].rms_abs
+                thisREL = motion[volIdx].rms_rel
+            }
 
             // move mouse line
             d3.select("#motion-mouse-line")
                 .attr("d", function(){
-                    var d = "M" + motionScale_x(idx) + "," + motionPlotHeight;
-                    d += " " + motionScale_x(idx) + "," + 0;
+                    var d = "M" + motionScale_x(xInPlot) + "," + motionPlotHeight;
+                    d += " " + motionScale_x(xInPlot) + "," + 0;
                     return d;
                 })
 
             // move abs indicator
             d3.select("#rms_abs_indicator")
-                .attr("cx", motionScale_x(idx))
+                .attr("cx", motionScale_x(xInPlot))
                 .attr("cy", motionScale_y(thisABS))
             d3.select("#absText")
                 .text(thisABS.toFixed(2) + " mm")
-                .attr("x", motionScale_x(idx))
+                .attr("x", motionScale_x(xInPlot))
                 .attr("y", motionScale_y(thisABS))
 
             // move rel indicator
             d3.select("#rms_rel_indicator")
-                .attr("cx", motionScale_x(idx))
+                .attr("cx", motionScale_x(xInPlot))
                 .attr("cy", motionScale_y(thisREL))
             d3.select("#relText")
                 .text(thisREL.toFixed(2) + " mm")
-                .attr("x", motionScale_x(idx))
+                .attr("x", motionScale_x(xInPlot))
                 .attr("y", motionScale_y(thisREL))
         })
 
@@ -506,27 +511,30 @@ function drawTimingPlot() {
         .on("mousemove", function(){  // move the line with the mouse
             // convert mouse pos from svg space to plot domain space
             var mouse = d3.mouse(this);
-            var xInPlot = timingScale_x.invert(mouse[0]);
-            bisect = d3.bisector(function(d) {
-                return d.volIdx}).right;
-            var idx = bisect(timePerVol, xInPlot)
-            var thisTime= timePerVol[idx-1].processingTime
+            var xInPlot = Math.round(timingScale_x.invert(mouse[0]));
+            var volIdx = timePerVol.map(function(d) { return d.volIdx}).indexOf(xInPlot-1);
+            var thisTime
+            if (volIdx == -1){
+                thisTime = 0
+            } else {
+                thisTime = timePerVol[volIdx].processingTime
+            }
 
             // move mouse line
             d3.select("#timing-mouse-line")
                 .attr("d", function(){
-                    var d = "M" + timingScale_x(idx) + "," + timingPlotHeight;
-                    d += " " + timingScale_x(idx) + "," + 0;
+                    var d = "M" + timingScale_x(xInPlot) + "," + timingPlotHeight;
+                    d += " " + timingScale_x(xInPlot) + "," + 0;
                     return d;
                 })
 
             // move timing indicator
             d3.select("#volTime_indicator")
-                .attr("cx", timingScale_x(idx))
+                .attr("cx", timingScale_x(xInPlot))
                 .attr("cy", timingScale_y(thisTime))
             d3.select("#timeText")
                 .text(thisTime.toFixed(2) * 1000 + " ms")
-                .attr("x", timingScale_x(idx))
+                .attr("x", timingScale_x(xInPlot))
                 .attr("y", timingScale_y(thisTime))
         })
 }

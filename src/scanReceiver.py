@@ -24,6 +24,7 @@ connection one volume at a time.
 There should be two parts to each volume transmission:
     1. First, a JSON header containing the following dict keys:
         - volIdx: within-volume index of the volume (0-based)
+        - TR: repetition time for scan
         - dtype: datatype of the voxel array (e.g. int16)
         - shape: voxel array dimensions  (e.g. (64, 64, 18))
         - affine: affine matrix to transform the voxel data from vox to mm
@@ -147,6 +148,7 @@ class ScanReceiver(Thread):
             if not self.scanStarted:
                 self.createImageMatrix(volHeader)
                 self.affine = np.array(json.loads(volHeader['affine']))
+                #self.tr = json.loads(volHeader['TR'])
 
                 self.scanStarted = True     # toggle the scanStarted flag
 
