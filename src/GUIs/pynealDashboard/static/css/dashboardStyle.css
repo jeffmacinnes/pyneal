@@ -218,6 +218,10 @@
     stroke-width: 2px;
 }
 
+#volTime_indicator {
+    fill: #A44754;
+}
+
 
 /* PYNEAL SCANNER LOG DIV ------------------------------------ */
 .logHeader{

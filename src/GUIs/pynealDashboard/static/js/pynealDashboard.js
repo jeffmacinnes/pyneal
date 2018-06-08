@@ -225,11 +225,10 @@ function drawMotionPlot() {
     // mouseover effects group
     var mouseG = motionPlotSVG.append("g")
         .attr("class", "mouse-over-effects")
-    motionLines = document.getElementsByClassName("motionLine")
 
     // vertical line following mouse
     mouseG.append("path")
-        .attr("class", "mouse-line")
+        .attr("id", "motion-mouse-line")
         .style("stroke", "black")
         .style("stroke-width", "1px")
         .style("opacity", "0")
@@ -238,15 +237,25 @@ function drawMotionPlot() {
     var absIndicator = mouseG.append('circle')
         .attr("id", "rms_abs_indicator")
         .attr("class", "motionIndicator")
-        //.attr("cx", 100)
-        //.attr("cy", 100)
-        .attr("r", 5)
+        .attr("r", 7)
+        .style("opacity", "0");
+    var absText = mouseG.append('text')
+        .attr("id", "absText")
+        .attr("class", "motionText")
+        .attr("dx", 15)
+        .text("")
+        .style("font-size", 14)
     var relIndicator = mouseG.append('circle')
         .attr("id", "rms_rel_indicator")
         .attr("class", "motionIndicator")
-        //.attr("cx", 100)
-        //.attr("cy", 100)
-        .attr("r", 5)
+        .attr("r", 7)
+        .style("opacity", "0")
+    var relText = mouseG.append('text')
+        .attr("id", "relText")
+        .attr("class", "motionText")
+        .attr("dx", 15)
+        .text("")
+        .style("font-size", 14)
 
     mouseG.append("svg:rect")
         .attr("width", motionPlotWidth)
@@ -254,18 +263,31 @@ function drawMotionPlot() {
         .attr("fill", "none")
         .attr("pointer-events", "all")
         .on("mouseout", function(){  // hide line on mouse out
-            d3.select(".mouse-line")
+            d3.select("#motion-mouse-line")
                 .style("opacity", "0")
             d3.select(".motionIndicator")
+                .style("opacity", "0")
+            d3.selectAll(".motionLine")
+                .style("opacity", "1")
+            d3.selectAll(".motionIndicator")
+                .style("opacity", "0")
+            d3.selectAll(".motionText")
                 .style("opacity", "0")
         })
         .on("mouseover", function(){  // show line on mouse over
-            d3.select(".mouse-line")
+            d3.select("#motion-mouse-line")
                 .style("opacity", ".3")
             d3.select(".motionIndicator")
                 .style("opacity", 1)
+            d3.selectAll(".motionLine")
+                .style("opacity", ".5")
+            d3.selectAll(".motionIndicator")
+                .style("opacity", "1")
+            d3.selectAll(".motionText")
+                .style("opacity", "1")
         })
         .on("mousemove", function(){  // move the line with the mouse
+            // convert mouse pos from svg space to plot domain space
             var mouse = d3.mouse(this);
             var xInPlot = motionScale_x.invert(mouse[0]);
             bisect = d3.bisector(function(d) {
@@ -275,7 +297,7 @@ function drawMotionPlot() {
             var thisREL = motion[idx-1].rms_rel
 
             // move mouse line
-            d3.select(".mouse-line")
+            d3.select("#motion-mouse-line")
                 .attr("d", function(){
                     var d = "M" + motionScale_x(idx) + "," + motionPlotHeight;
                     d += " " + motionScale_x(idx) + "," + 0;
@@ -286,26 +308,19 @@ function drawMotionPlot() {
             d3.select("#rms_abs_indicator")
                 .attr("cx", motionScale_x(idx))
                 .attr("cy", motionScale_y(thisABS))
+            d3.select("#absText")
+                .text(thisABS.toFixed(2) + " mm")
+                .attr("x", motionScale_x(idx))
+                .attr("y", motionScale_y(thisABS))
 
             // move rel indicator
             d3.select("#rms_rel_indicator")
                 .attr("cx", motionScale_x(idx))
                 .attr("cy", motionScale_y(thisREL))
-
-            console.log(thisABS + ", " + thisREL);
-            console.log(bisect(motion, xInPlot))
-
-            // var pathLen = motionLines[0].getTotalLength();
-            // console.log('pathlen = ' + pathLen)
-            // var pos = motionLines[0].getPointAtLength(xInPlot);
-            // console.log(pos)
-            // console.log(mouse[1])
-            // console.log(motionPlotWidth)
-            // d3.select(".posIndicator")
-            //     .attr("cx", mouse[0])
-            //     .attr("cy", pos.y);
-
-
+            d3.select("#relText")
+                .text(thisREL.toFixed(2) + " mm")
+                .attr("x", motionScale_x(idx))
+                .attr("y", motionScale_y(thisREL))
         })
 
     // append a legend
@@ -440,6 +455,80 @@ function drawTimingPlot() {
         .style("text-anchor", "middle")
         .style("font-size", 12)
         .text("time (s)");
+
+    // mouseover effects group
+    var mouseG = timingPlotSVG.append("g")
+        .attr("class", "mouse-over-effects")
+
+    // vertical line following mouse
+    mouseG.append("path")
+        .attr("id", "timing-mouse-line")
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .style("opacity", "0")
+
+    // circles on line (position indicators)
+    var timeIndicator = mouseG.append('circle')
+        .attr("id", "volTime_indicator")
+        .attr("r", 7)
+        .style("opacity", "0");
+    var timeText = mouseG.append('text')
+        .attr("id", "timeText")
+        .attr("dx", 15)
+        .text("")
+        .style("font-size", 14)
+
+    mouseG.append("svg:rect")
+        .attr("width", timingPlotWidth)
+        .attr("height", timingPlotHeight)
+        .attr("fill", "none")
+        .attr("pointer-events", "all")
+        .on("mouseout", function(){  // hide line on mouse out
+            d3.select("#timing-mouse-line")
+                .style("opacity", "0")
+            d3.select("#volTime_Line")
+                .style("opacity", "1")
+            d3.select("#volTime_Indicator")
+                .style("opacity", "0")
+            d3.select("#timeText")
+                .style("opacity", "0")
+        })
+        .on("mouseover", function(){  // show line on mouse over
+            d3.select("#timing-mouse-line")
+                .style("opacity", ".3")
+            d3.select("#volTime_Line")
+                .style("opacity", ".5")
+            d3.select("#volTime_Indicator")
+                .style("opacity", "1")
+            d3.select("#timeText")
+                .style("opacity", "1")
+        })
+        .on("mousemove", function(){  // move the line with the mouse
+            // convert mouse pos from svg space to plot domain space
+            var mouse = d3.mouse(this);
+            var xInPlot = timingScale_x.invert(mouse[0]);
+            bisect = d3.bisector(function(d) {
+                return d.volIdx}).right;
+            var idx = bisect(timePerVol, xInPlot)
+            var thisTime= timePerVol[idx-1].processingTime
+
+            // move mouse line
+            d3.select("#timing-mouse-line")
+                .attr("d", function(){
+                    var d = "M" + timingScale_x(idx) + "," + timingPlotHeight;
+                    d += " " + timingScale_x(idx) + "," + 0;
+                    return d;
+                })
+
+            // move timing indicator
+            d3.select("#volTime_indicator")
+                .attr("cx", timingScale_x(idx))
+                .attr("cy", timingScale_y(thisTime))
+            d3.select("#timeText")
+                .text(thisTime.toFixed(2) * 1000 + " ms")
+                .attr("x", timingScale_x(idx))
+                .attr("y", timingScale_y(thisTime))
+        })
 }
 
 function updateTimingPlot(){
