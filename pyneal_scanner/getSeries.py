@@ -1,4 +1,4 @@
- """ Create a Nifti file from specified series data
+""" Create a Nifti file from specified series data
 
 Take the data in the specified series directory and convert it to a 4D
 nifti image in RAS+ orientation, and then save the new data to disk.

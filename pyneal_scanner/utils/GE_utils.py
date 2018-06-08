@@ -464,6 +464,7 @@ class GE_BuildNifti():
         nVols = getattr(dcm, 'NumberOfTemporalPositions')
         sliceThickness = getattr(dcm, 'SliceThickness')
         voxSize = getattr(dcm, 'PixelSpacing')
+        TR = getattr(dcm, 'RepetitionTime') / 1000
 
         ### Build 4D array of voxel data
         # create an empty array to store the slice data
@@ -518,6 +519,11 @@ class GE_BuildNifti():
         ### Build a Nifti object, reorder it to RAS+
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
         funcImage_RAS = nib.as_closest_canonical(funcImage)  # reoder to RAS+
+
+        # add the correct TR to the header
+        pixDims = np.array(funcImage_RAS.header.get_zooms())
+        pixDims[3] = TR
+        funcImage_RAS.header.set_zooms(pixDims)
 
         return funcImage_RAS
 
@@ -897,7 +903,7 @@ class GE_processSlice(Thread):
         self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')
         self.nVols = getattr(dcmHdr, 'NumberOfTemporalPositions')
         self.pixelSpacing = getattr(dcmHdr, 'PixelSpacing')
-        self.tr = getattr(dcmHdr, 'RepetitionTime') / 1000  # convert to sec 
+        self.tr = getattr(dcmHdr, 'RepetitionTime') / 1000  # convert to sec
 
         # Note: [cols, rows] to match the order of the transposed pixel_array later on
         self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),

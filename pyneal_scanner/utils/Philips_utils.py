@@ -310,6 +310,7 @@ class Philips_BuildNifti():
         """
         imageMatrix = None
         affine = None
+        TR = None
 
         ### Loop over all of the par files
         nVols = len(parFiles)
@@ -333,6 +334,10 @@ class Philips_BuildNifti():
             # header (1-based index)
             volIdx = int(thisVol.header.general_info['acq_nr']) - 1
 
+            # set TR
+            if TR is None:
+                TR = thisVol.header.general_info['repetition_time'][0]
+
             # convert to RAS+
             thisVol_RAS = nib.as_closest_canonical(thisVol)
 
@@ -352,6 +357,11 @@ class Philips_BuildNifti():
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
+
+        # add the correct TR to the header
+        pixDims = np.array(funcImage.header.get_zooms())
+        pixDims[3] = TR
+        funcImage.header.set_zooms(pixDims)
 
         return funcImage
 
@@ -377,6 +387,7 @@ class Philips_BuildNifti():
         """
         # read the parfile
         par = nib.load(join(self.seriesDir, parFile), strict_sort=True)
+        print(par.header.general_info)
         if par.header.general_info['scan_mode'] == '3D':
             scanType = 'anat'
         elif par.header.general_info['scan_mode'] == '2D':

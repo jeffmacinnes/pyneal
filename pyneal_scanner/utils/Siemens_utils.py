@@ -310,6 +310,7 @@ class Siemens_BuildNifti():
         """
         imageMatrix = None
         affine = None
+        TR = None
 
         # make dicomFiles store the full path
         dicomFiles = [join(self.seriesDir, f) for f in dicomFiles]
@@ -333,6 +334,9 @@ class Siemens_BuildNifti():
             # convert to RAS+
             thisVol_RAS = nib.as_closest_canonical(thisVol)
 
+            if TR is None:
+                TR = dcm.RepetitionTime / 1000
+
             # construct the imageMatrix if it hasn't been made yet
             if imageMatrix is None:
                 imageMatrix = np.zeros(shape=(thisVol_RAS.shape[0],
@@ -349,6 +353,9 @@ class Siemens_BuildNifti():
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
+        pixDims = np.array(funcImage.header.get_zooms())
+        pixDims[3] = TR
+        funcImage.header.set_zooms(pixDims)
 
         return funcImage
 
