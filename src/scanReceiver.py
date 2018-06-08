@@ -24,7 +24,7 @@ connection one volume at a time.
 There should be two parts to each volume transmission:
     1. First, a JSON header containing the following dict keys:
         - volIdx: within-volume index of the volume (0-based)
-        - TR: repetition time for scan
+        - TR: repetition time for scan (seconds)
         - dtype: datatype of the voxel array (e.g. int16)
         - shape: voxel array dimensions  (e.g. (64, 64, 18))
         - affine: affine matrix to transform the voxel data from vox to mm
@@ -102,6 +102,7 @@ class ScanReceiver(Thread):
         self.alive = True               # thread status
         self.imageMatrix = None         # matrix that will hold the incoming data
         self.affine = None
+        self.tr = None
 
         # array to keep track of completedVols
         self.completedVols = np.zeros(self.numTimepts, dtype=bool)
@@ -142,13 +143,14 @@ class ScanReceiver(Thread):
             # dtype - dtype of volume voxel array
             # shape - dims of volume voxel array
             # affine - affine to transform vol to RAS+ mm space
+            # TR - repetition time of scan
             volHeader = self.scannerSocket.recv_json(flags=0)
 
             # if this is the first vol, initialize the matrix and store the affine
             if not self.scanStarted:
                 self.createImageMatrix(volHeader)
                 self.affine = np.array(json.loads(volHeader['affine']))
-                #self.tr = json.loads(volHeader['TR'])
+                self.tr = json.loads(volHeader['TR'])
 
                 self.scanStarted = True     # toggle the scanStarted flag
 
@@ -272,7 +274,15 @@ class ScanReceiver(Thread):
         series
 
         """
+        # build nifti image
         ds = nib.Nifti1Image(self.imageMatrix, self.affine)
+
+        # set the TR appropriately in the header
+        pixDims = np.array(ds.header.get_zooms())
+        pixDims[3] = self.tr
+        ds.header.set_zooms(pixDims)
+
+        # save to disk
         nib.save(ds, join(self.seriesOutputDir, 'receivedFunc.nii.gz'))
 
     def killServer(self):

@@ -897,6 +897,7 @@ class GE_processSlice(Thread):
         self.nSlicesPerVol = getattr(dcmHdr, 'ImagesInAcquisition')
         self.nVols = getattr(dcmHdr, 'NumberOfTemporalPositions')
         self.pixelSpacing = getattr(dcmHdr, 'PixelSpacing')
+        self.tr = getattr(dcmHdr, 'RepetitionTime') / 1000  # convert to sec 
 
         # Note: [cols, rows] to match the order of the transposed pixel_array later on
         self.sliceDims = np.array([getattr(dcmHdr, 'Columns'),
@@ -991,6 +992,7 @@ class GE_processSlice(Thread):
         ### Create a header with metadata info
         volHeader = {
             'volIdx': volIdx,
+            'TR': self.tr,
             'dtype': str(thisVol_RAS_data.dtype),
             'shape': thisVol_RAS_data.shape,
             'affine': json.dumps(thisVol_RAS.affine.tolist())}

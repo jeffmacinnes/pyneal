@@ -603,7 +603,8 @@ class Philips_processVolume(Thread):
             'volIdx': volIdx,
             'dtype': str(thisVol_RAS_data.dtype),
             'shape': thisVol_RAS_data.shape,
-            'affine': json.dumps(thisVol_RAS.affine.tolist())
+            'affine': json.dumps(thisVol_RAS.affine.tolist()),
+            'TR': str(thisVol.header.general_info['repetition_time'][0])
         }
 
         ### Send the voxel array and header to the pynealSocket
