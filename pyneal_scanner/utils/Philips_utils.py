@@ -393,7 +393,11 @@ class Philips_BuildNifti():
         elif par.header.general_info['scan_mode'] == '2D':
             scanType = 'func'
         else:
-            print('Cannot determine scan type from this image! Check the header')
+            print('Header is missing a value for the "scan_mode" flag.')
+            scanType = input('Please enter "anat" or "func": ')
+
+        if scanType not in ['anat', 'func']:
+            print('invalid scanType: {}'.format(scanType))
             sys.exit()
 
         return scanType
