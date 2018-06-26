@@ -2,9 +2,9 @@ analysisChoice: Average
 dashboardClientPort: 5558
 dashboardPort: 5557
 launchDashboard: true
-maskFile: /Users/jeff/gDrive/jeffCloud/real-time/sandbox/pynealTests/testMask_64-64-18.nii.gz
+maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/dummyMask_80-80-30.nii.gz
 maskIsWeighted: false
-numTimepts: 60
+numTimepts: 93
 outputPath: /Users/jeff/Desktop/development/pynealOutput
 pynealHost: 127.0.0.1
 pynealScannerPort: 5555

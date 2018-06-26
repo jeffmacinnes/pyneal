@@ -50,6 +50,8 @@ import glob
 import time
 import subprocess
 
+import nibabel as nib
+
 
 def Philips_sim(inputDir, outputDir, TR):
     """ Simulate a Philips scanning environment
@@ -89,9 +91,11 @@ def Philips_sim(inputDir, outputDir, TR):
 
     # make a list of all of the volume files (ony do .PAR files)
     parFiles = glob.glob(join(inputDir, 'Dump-*.par'))
+    exampleFile = nib.load(parFiles[0])
 
     # print parameters
     print('Total Volumes: ', len(parFiles))
+    print('Image Dims: ', exampleFile.shape[:-1])
     print('TR: ', TR)
 
     # wait for input to begin
@@ -143,7 +147,7 @@ if __name__ == "__main__":
                         help='full path to directory containing PAR/RECs for the series you want to simulate')
     parser.add_argument('-o', '--outputDir',
                         default=None,
-                        help='full path to output directory where new slice images will appear (i.e. new seriesDir)')
+                        help='full path to output directory where new slice images will appear (i.e. new seriesDir) [default: 0999 in parent directory of inputDir]')
     parser.add_argument('-t', '--TR',
                         type=int,
                         default=1000,

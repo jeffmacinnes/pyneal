@@ -387,7 +387,6 @@ class Philips_BuildNifti():
         """
         # read the parfile
         par = nib.load(join(self.seriesDir, parFile), strict_sort=True)
-        print(par.header.general_info)
         if par.header.general_info['scan_mode'] == '3D':
             scanType = 'anat'
         elif par.header.general_info['scan_mode'] == '2D':
