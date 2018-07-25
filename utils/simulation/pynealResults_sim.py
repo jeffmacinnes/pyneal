@@ -233,15 +233,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Pyneal-Results Server Simulator",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', '--TR',
-                        nargs=1,
                         default=1000,
+                        type=int,
                         help='TR (in ms)')
     parser.add_argument('-sh', '--sockethost',
-                        nargs=1,
                         default='127.0.0.1',
+                        type=str,
                         help='Pyneal socket host')
     parser.add_argument('-sp', '--socketport',
                         default=5556,
+                        type=int,
                         help='Pyneal socket port')
     args = parser.parse_args()
 

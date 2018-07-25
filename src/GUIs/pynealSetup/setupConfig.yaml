@@ -1,8 +1,8 @@
-analysisChoice: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pynealAnalysis/pilot2/pyneal_b2b_customAnalysis.py
+analysisChoice: Average
 dashboardClientPort: 5558
 dashboardPort: 5557
 launchDashboard: true
-maskFile: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pynealAnalysis/pilot2/firstLevel+.feat/mask.nii.gz
+maskFile: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/dummyMask_64-64-18.nii.gz
 maskIsWeighted: false
 numTimepts: 68
 outputPath: /Users/jeff/Desktop/development/pynealOutput

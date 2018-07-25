@@ -146,7 +146,8 @@ def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
         volHeader = {'volIdx': volIdx,
                      'dtype': str(thisVol.dtype),
                      'shape': thisVol.shape,
-                     'affine': json.dumps(ds_affine.tolist())}
+                     'affine': json.dumps(ds_affine.tolist()),
+                     'TR': str(TR*1000)}
 
         # send header as json
         socket.send_json(volHeader, zmq.SNDMORE)
@@ -178,7 +179,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dims',
                         nargs=4,
                         default=[64, 64, 18, 60],
-                        help='dimensions of randomly generated dataset [x y z t]')
+                        type=int,
+                        help='dimensions of randomly generated dataset: x y z t')
     parser.add_argument('-t', '--TR',
                         default=1000,
                         type=int,
