@@ -180,7 +180,7 @@ class MaskCreator():
         outputFile = join(self.outputDir, 'hires2func.mat')
         if not exists(outputFile):
             subprocess.call(['flirt', '-in', join(self.outputDir, 'hires_brain.nii.gz'),
-                             '-ref', self.settings['subjFunc'],
+                             '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
                              '-out', join(self.outputDir, 'hires_FUNC'),
                              '-omat', outputFile,
                              '-bins', '256', '-cost', 'corratio',

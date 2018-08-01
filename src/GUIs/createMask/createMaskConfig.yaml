@@ -1,8 +1,8 @@
-MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/juelich_prob_GMPrimaryMotorCortexBA4p_L_50prob.nii.gz
-MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_1mm_brain.nii.gz
+MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/motor_imagery_association-test_z_FDR_0.01.nii.gz
+MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_2mm_brain.nii.gz
 createFuncBrainMask: false
 outputPrefix: test
 skullStrip: true
 subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/pilot2_anat_MPRAGE.nii.gz
-subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/func_0002.nii.gz
+subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/func_0003.nii.gz
 transformMaskToFunc: true
