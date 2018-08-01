@@ -84,10 +84,14 @@ class MaskCreator():
             self.logger.debug('Settings: {}: {}'.format(s, self.settings[s]))
 
         ### Average func data to create an example 3D func image
-        self.logger.info('creating exampleFunc image by averaging input func')
+        self.logger.info('creating exampleFunc image by averaging input func and running brain extraction')
         outputFile = join(self.outputDir, 'exampleFunc.nii.gz')
         if not exists(outputFile):
+            # average func file
             subprocess.call(['fslmaths', self.settings['subjFunc'], '-Tmean', outputFile])
+
+            # run Brain Extraction Tool, overwriting output from previous step
+            subprocess.call(['bet', outputFile, outputFile, '-f', '0.4', '-g', '0'])
         else:
             self.logger.info('using existing: {}'.format(outputFile))
 

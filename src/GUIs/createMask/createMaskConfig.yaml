@@ -4,5 +4,5 @@ createFuncBrainMask: false
 outputPrefix: test
 skullStrip: true
 subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/pilot2_anat_MPRAGE.nii.gz
-subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/func_0003.nii.gz
+subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/func_0002.nii.gz
 transformMaskToFunc: true
