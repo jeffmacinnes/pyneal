@@ -1,0 +1,385 @@
+#kivy 1.10.0
+#:import split os.path.split
+MainContainer:
+
+<SectionHeading>:
+    padding_y: dp(5)
+    Label:
+        pos: [dp(40+10), self.pos[1]]
+        size: (dp(100), dp(20))
+        id: sectionLabel
+        text: root.labelText
+        font_size: sp(19)
+        bold: True
+        valign: 'middle'
+        halign: 'left'
+        text_size: self.size
+        color: (1,1,1,1)
+        canvas.before:
+            Color:
+                rgba: .78, .25, .33, 1
+            Line:
+                points: dp(25), self.center_y, self.width, self.center_y
+                width: 3.0
+                cap: 'square'
+            Color:
+                rgba: .78, .25, .33, 1
+            Rectangle:
+                pos: [dp(40), self.center_y-dp(15)]
+                size: [dp(180), dp(30)]
+
+
+<NumberInputField>:
+    multiline: False
+    write_tab: False
+    width: dp(60)
+
+<IP_inputField>:
+    multiline: False
+    write_tab: False
+
+<FilePathInputField>:
+    multiline: False
+    write_tab: False
+
+
+<MainContainer>:
+    padding: dp(root.width * .015), dp(root.height * .015)
+    spacing: "7dp"
+    canvas.before:
+        Color:
+            rgba: 1,1,1,1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    orientation: 'vertical'
+    ### Logo Box ------------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: dp(100)
+        Image:
+            size_hint_x: 1
+            size: [dp(100), dp(90)]
+            source: root.setupGUI_dir + '/images/pynealLogo.png'
+        BoxLayout:
+            orientation: 'vertical'
+            Image:
+                size_hint_y: 1
+                source:  root.setupGUI_dir + '/images/pynealText.png'
+            Button:
+                size_hint: (1, None)
+                text: 'Load Settings'
+                font_size: sp(16)
+                size: [dp(50), dp(30)]
+                on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.yaml'], loadFunc=root.loadSettings, cancelFunc=root.closeFileBrowser)
+
+
+    ### Communication Box ------------------
+    BoxLayout:
+        size_hint: (1,None)
+        height: dp(150)
+        BoxLayout:
+            spacing: dp(10)
+            orientation: 'vertical'
+            # box label
+            SectionHeading:
+                labelText: 'Communication'
+            # pyneal host IP
+            BoxLayout:
+                padding: [dp(20), dp(2)]
+                spacing: dp(10)
+                Label:
+                    size_hint_x: 1.5
+                    padding: [dp(10), 0]
+                    text_size: self.size
+                    text: 'Pyneal Host IP:'
+                    color: root.textColor
+                    halign: 'right'
+                    valign: 'middle'
+                IP_inputField:
+                    id: pynealHost
+                    text: str(root.GUI_settings.pynealHost)
+                    on_text: root.GUI_settings.pynealHost = pynealHost.text
+            # scanner port
+            BoxLayout:
+                padding: [dp(20), dp(2)]
+                spacing: dp(10)
+                Label:
+                    size_hint_x: 1.5
+                    padding: [dp(10), 0]
+                    text_size: self.size
+                    text: 'Pyneal-Scanner Port:'
+                    color: root.textColor
+                    halign: 'right'
+                    valign: 'middle'
+                NumberInputField:
+                    id: pynealScannerPort
+                    text: str(root.GUI_settings.pynealScannerPort)
+                    on_text: root.GUI_settings.pynealScannerPort = pynealScannerPort.text
+            # Results Server port
+            BoxLayout:
+                padding: [dp(20), dp(2)]
+                spacing: dp(10)
+                Label:
+                    size_hint_x: 1.5
+                    padding: [dp(10), 0]
+                    text_size: self.size
+                    text: 'Results Server Port:'
+                    color: root.textColor
+                    halign: 'right'
+                    valign: 'middle'
+                NumberInputField:
+                    id: resultsServerPort
+                    text: str(root.GUI_settings.resultsServerPort)
+                    on_text: root.GUI_settings.resultsServerPort = resultsServerPort.text
+
+
+    ### Mask Box ------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: dp(110)
+        BoxLayout:
+            spacing: dp(10)
+            orientation: 'vertical'
+            # box label
+            SectionHeading:
+                labelText: 'Mask'
+            BoxLayout:
+                spacing: dp(10)
+                padding: [dp(30), dp(5)]
+                Label:
+                    size_hint_x: 2.5
+                    padding: [dp(20), dp(15)]
+                    text_size: (dp(270), None)
+                    shorten: True
+                    shorten_from: 'left'
+                    id: maskFile
+                    text: root.GUI_settings.maskFile
+                    font_size: sp(14)
+                    color: root.textColor
+                # change mask button
+                Button:
+                    text: 'Change'
+                    size_hint: None, None
+                    size: [dp(80), dp(35)]
+                    on_release: root.modifyMaskPath(currentMaskPath=root.GUI_settings.maskFile)
+            BoxLayout:
+                BoxLayout:
+                    size_hint_x: 1.5
+                CheckBox:
+                    halign: 'right'
+                    id: maskIsWeighted
+                    state: 'down' if root.GUI_settings.maskIsWeighted else 'normal'
+                    on_active: root.setMaskIsWeighted()
+                Label:
+                    text: 'Weighted Mask?'
+                    color: root.textColor
+                    halign: 'left'
+                BoxLayout:
+                    size_hint_x: 1.5
+
+
+    ### Preprocessing Box ------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: dp(60)
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            SectionHeading:
+                labelText: 'Preprocessing'
+            # num timepts
+            BoxLayout:
+                padding: [dp(20), dp(3)]
+                spacing: dp(10)
+                Label:
+                    size_hint_x: 2.5
+                    padding: [dp(30), 0]
+                    text_size: self.size
+                    text: '# of timepts:'
+                    color: root.textColor
+                    halign: 'right'
+                    valign: 'middle'
+                NumberInputField:
+                    id: numTimepts
+                    text: str(root.GUI_settings.numTimepts)
+                    on_text: root.GUI_settings.numTimepts = numTimepts.text
+
+
+    ### Analysis Box ------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: dp(120)
+        BoxLayout:
+            orientation: 'vertical'
+            # box label
+            SectionHeading:
+                labelText: 'Analysis'
+            # buttons
+            BoxLayout:
+                #padding: [0, 20, 0, 0]
+                padding: [dp(10), dp(5)]
+                ToggleButton:
+                    id: analysisChoice_average
+                    text: 'Average'
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice == 'Average' else 'normal'
+                    on_release: root.setAnalysisChoice('Average')
+                ToggleButton:
+                    id: analysisChoice_median
+                    text: 'Median'
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice == 'Median' else 'normal'
+                    on_release: root.setAnalysisChoice('Median')
+                ToggleButton:
+                    id: analysisChoice_custom
+                    text: 'Custom'
+                    group: 'analysisChoice'
+                    state: 'down' if root.GUI_settings.analysisChoice not in ['Average', 'Median'] else 'normal'
+                    on_release: root.setAnalysisChoice('Custom')
+                    #on_release: root.show_loadFileDialog(path='~/', fileFilter=['*.py'], loadFunc=root.loadCustomAnalysis)
+            Label:
+                size_hint_y: .6
+                padding: [dp(20), dp(10)]
+                text_size: (dp(750), None)
+                font_size: sp(16)
+                halign: 'center'
+                shorten: True
+                shorten_from: 'left'
+                text: root.analysisInfo
+                color: root.textColor
+
+
+    ### Output Box ------------------
+    BoxLayout:
+        size_hint: (1, None)
+        height: dp(110)
+        BoxLayout:
+            spacing: dp(5)
+            orientation: 'vertical'
+            # box label
+            SectionHeading:
+                labelText: 'Output'
+            BoxLayout:
+                spacing: dp(10)
+                padding: [dp(30), dp(5)]
+                Label:
+                    size_hint_x: 2.5
+                    padding: [dp(20), dp(5)]
+                    text_size: (dp(270), None)
+                    shorten: True
+                    shorten_from: 'left'
+                    id: maskFile
+                    text: root.GUI_settings.outputPath
+                    font_size: sp(14)
+                    color: root.textColor
+                # change output path button
+                Button:
+                    text: 'Change'
+                    size_hint: None, None
+                    size: [dp(80), dp(35)]
+                    on_release: root.modifyOutputPath(currentOutputPath=root.GUI_settings.outputPath)
+            BoxLayout:
+                BoxLayout:
+                    size_hint_x: 1.23
+                CheckBox:
+                    halign: 'right'
+                    id: launchDashboardCheckbox
+                    state: 'down' if root.GUI_settings.launchDashboard else 'normal'
+                    on_active: root.setLaunchDashboardChoice()
+                Label:
+                    text: 'Launch Dashboard?'
+                    color: root.textColor
+                    halign: 'left'
+                BoxLayout:
+                    size_hint_x: 1.23
+
+
+    ### Submit Box ------------------
+    BoxLayout:
+        #size_hint_y: 1.3
+        height: dp(10)
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                canvas.before:
+                    Color:
+                        rgba: .78, .25, .33, 1
+                    Line:
+                        points: dp(25), self.center_y, self.width, self.center_y
+                        width: 3.0
+                        cap: 'square'
+            # box label
+            BoxLayout:
+                padding: [dp(15), dp(5)]
+                spacing: dp(2)
+                Button:
+                    padding: [dp(5), dp(15)]
+                    spacing: dp(2)
+                    size_hint: (None, None)
+                    size: [dp(350), dp(30)]
+                    text: 'Submit'
+                    font_size: sp(16)
+                    on_release: root.submitGUI()
+
+
+### Generic Load File Dialog Window #################################
+<LoadFileDialog>:
+    BoxLayout:
+        font_size: '10sp'
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            id: filechooser
+            path: root.path
+            filters: root.fileFilter
+            font_name: 'Roboto-Bold'
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            Button:
+                text: "Load"
+                on_release: root.loadFunc(filechooser.path, filechooser.selection)
+            Button:
+                text: "Cancel"
+                on_release: root.cancelFunc()
+
+
+### Generic Select Path Dialog Window #################################
+<ModifyPathDialog>:
+    orientation: "vertical"
+    BoxLayout:
+        orientaton: "vertical"
+        BoxLayout:
+            FilePathInputField:
+                id: inputPath
+                size_hint_x: 2.5
+                text: root.currentPath
+                on_text:root.currentPath = inputPath.text
+                font_size: sp(14)
+                padding: [dp(15), dp(3)]
+            Button:
+                size_hint: (None, None)
+                size: (dp(35), dp(35))
+                spacing: dp(15)
+                padding: (dp(15), dp(15))
+                background_normal: root.setupGUI_dir + '/images/openFileBrowser.png'
+                allow_stretch: False
+                on_release: root.launchFileBrowser()
+    BoxLayout:
+        padding: [dp(60), dp(5)]
+        Button:
+            text: "Done"
+            on_release: root.doneFunc(root.currentPath)
+
+
+### Error Notification Pop-up Window #################################
+<ErrorNotification>:
+    BoxLayout:
+        Label:
+            text_size: self.size
+            valign: 'top'
+            text: root.errorMsg

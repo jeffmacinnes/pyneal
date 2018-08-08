@@ -1,0 +1,65 @@
+<html>
+<head>
+    <title>Pyneal Real-time Dashboard</title>
+
+    <!-- Load scripts -->
+    <script src="{{ url_for('static', filename='js/socket.io.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/d3.min.js')}}"></script>
+    <!-- <script src="https://d3js.org/d3.v5.min.js"></script> -->
+    <script src="{{ url_for('static', filename='js/d3-selection-multi.min.js')}}"></script>
+
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboardStyle.css')}}" />
+
+
+</head>
+<body>
+<div id="dashboardContainer">
+    <div id="header">
+        <img src="{{ url_for('static', filename='images/pynealLogoBig.png')}}">
+        <img src="{{ url_for('static', filename='images/pynealText.png')}}">
+    </div>
+
+    <div id="settings">
+        <p class="settingsHeading">mask:</p> <p class="setting" id="mask"></p>
+        <p class="settingsHeading">analysis:</p> <p class="setting" id="analysisChoice"></p>
+        <p class="settingsHeading">vol dims:</p> <p class="setting" id="volDims"></p>
+        <p class="settingsHeading"># timepts:</p> <p class="setting" id="numTimepts"></p>
+        <p class="settingsHeading">output dir:</p> <p class="setting" id="outputPath"></p>
+    </div>
+
+    <div id='progressDiv'>
+        <div id="currentVolDiv">Current Vol:
+            <p id="currentVol">0</p>
+        </div>
+        <div id="progressBarDiv"></div>
+    </div>
+
+    <div id='motionDiv'>
+        <div class="divHeading">head motion</div>
+        <div id="motionPlotDiv"></div>
+    </div>
+
+    <div id='timingDiv'>
+        <div class="divHeading">processing time/volume</div>
+        <div id="timingPlotDiv"></div>
+    </div>
+
+    <div id='pynealScannerLogDiv'>
+        <div class='logHeader'>pyneal scanner log</div>
+        <div class='logMessageBox' id="pynealScannerLogBox"></div>
+    </div>
+
+    <div id='resultsServerLogDiv'>
+        <div class='logHeader'>results server log</div>
+        <div class='logMessageBox' id="resultsServerLogBox"></div>
+    </div>
+</div>
+
+    <!-- page script -->
+    <script src="{{ url_for('static', filename='js/pynealDashboard.js')}}"></script>
+
+</body>
+</html>

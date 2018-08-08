@@ -1,6 +1,48 @@
-.DS_*
-socketSettings.json
-scannerLogin.json
-nonCommit/
-*.pyc
+# Pyneal Specific
+*.log
+pyneal_scanner/scannerConfig.yaml
+src/GUIs/createMask/createMaskConfig.yaml
+src/GUIs/pynealSetup/setupConfig.yaml
+pyneal_scanner/data/*
+
+# OS
+#*
 *~
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+__pycache__/
+*/__pycache__/*
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+
+# Unit test / coverage reports
+.pytest_cache/
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
