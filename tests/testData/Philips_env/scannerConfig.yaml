@@ -1,0 +1,4 @@
+pynealSocketHost: 127.0.0.1
+pynealSocketPort: '5555'
+scannerBaseDir: ' '
+scannerMake: Philips
