@@ -1,4 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  [![Build Status](https://travis-ci.com/jeffmacinnes/pyneal.svg?branch=master)](https://travis-ci.com/jeffmacinnes/pyneal)
 
 
 ![Pyneal Logo](src/images/logo.jpg)
