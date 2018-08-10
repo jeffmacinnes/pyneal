@@ -1,4 +1,4 @@
 pynealSocketHost: 127.0.0.1
 pynealSocketPort: '5555'
-scannerBaseDir: ' '
+scannerBaseDir: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/tests/testData/GE_env
 scannerMake: GE

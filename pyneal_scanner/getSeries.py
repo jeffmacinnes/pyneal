@@ -16,9 +16,8 @@ from os.path import join
 from utils.general_utils import initializeSession
 
 # Get the full path to where the pyneal_scanner directory is. This assumes
-# getSeries.py was called directly from the command line (currently
-# the only option)
-pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
+# getSeries.py lives in the pyneal_scanner directory. 
+pynealScannerDir = os.path.dirname(os.path.abspath(__file__))
 
 def getSeries_GE(scannerDirs):
     """ Build nifti image from series data, GE format
@@ -70,7 +69,7 @@ def getSeries_GE(scannerDirs):
     saveNifti(niftiBuilder, output_path)
 
 
-def getSeries_Philips(scannerSettings, scannerDirs):
+def getSeries_Philips(scannerDirs):
     """ Build nifti image from series data, Philips format
 
     Assumes series data are represented as par/rec file pairs, one per volume.
@@ -120,7 +119,7 @@ def getSeries_Philips(scannerSettings, scannerDirs):
     saveNifti(niftiBuilder, output_path)
 
 
-def getSeries_Siemens(scannerSettings, scannerDirs):
+def getSeries_Siemens(scannerDirs):
     """ Build nifti image from series data, Siemens format
 
     Assumes series data are represented as dicom mosaic files, one per volume.
@@ -193,10 +192,10 @@ if __name__ == '__main__':
     # load the appropriate tools for this scanning environment
     scannerMake = scannerSettings.allSettings['scannerMake']
     if scannerMake == 'GE':
-        getSeries_GE(scannerSettings, scannerDirs)
+        getSeries_GE(scannerDirs)
     elif scannerMake == 'Philips':
-        getSeries_Philips(scannerSettings, scannerDirs)
+        getSeries_Philips(scannerDirs)
     elif scannerMake == 'Siemens':
-        getSeries_Siemens(scannerSettings, scannerDirs)
+        getSeries_Siemens(scannerDirs)
     else:
         print('Unrecognized scanner make: {}'.format(scannerMake))
