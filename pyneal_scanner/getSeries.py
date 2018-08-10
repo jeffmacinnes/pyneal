@@ -16,7 +16,7 @@ from os.path import join
 from utils.general_utils import initializeSession
 
 # Get the full path to where the pyneal_scanner directory is. This assumes
-# getSeries.py lives in the pyneal_scanner directory. 
+# getSeries.py lives in the pyneal_scanner directory.
 pynealScannerDir = os.path.dirname(os.path.abspath(__file__))
 
 def getSeries_GE(scannerDirs):
@@ -177,6 +177,11 @@ def saveNifti(niftiBuilder, outputPath):
         full path to where you want to save nifti file
 
     """
+    # make sure the output dir exists
+    outputDir, fName = os.path.split(outputPath)
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)
+
     niftiBuilder.write_nifti(outputPath)
     print('saved at: {}'.format(outputPath))
 
