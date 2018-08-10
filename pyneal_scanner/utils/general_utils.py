@@ -222,12 +222,20 @@ class ScannerSettings():
             yaml.dump(self.allSettings, ymlFile, default_flow_style=False)
 
 
-def initializeSession():
+def initializeSession(pynealScannerDir=None):
     """ Initialize a new scanning session for Pyneal Scanner
 
     Method that gets called at the beginning of most pyneal_scanner command
     line functions, and returns critical settings for configuring Pyneal
     Scanner for the current sessionself.
+
+    Parameters
+    ----------
+    pynealScannerDir : string, optional
+        Path to pyneal_scanner directory, where a `scannerConfig.yaml` file
+        is expected. If unspecified, it defaults to setting pynealScannerDir
+        to the same directory as the command line function that called this
+        method
 
     Returns
     -------
@@ -243,10 +251,12 @@ def initializeSession():
         according to the scanner make and current environment.
 
     """
-    # path to the pyneal dir (this assumes this file is stored in a directory
-    # one level deeper than the pyneal_scanner dir, AND that this method will only ever
-    # be called by command line functions in the pyneal_scanner dir)
-    pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
+
+    if pynealScannerDir is None:
+        # path to the pyneal dir (this assumes this file is stored in a directory
+        # one level deeper than the pyneal_scanner dir, AND that this method will only ever
+        # be called by command line functions in the pyneal_scanner dir)
+        pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
     # Intialize the ScannerSettings class. This will take care of reading the
     # config file (if found), or creating one if necessary.
