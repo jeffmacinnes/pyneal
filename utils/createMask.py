@@ -88,10 +88,14 @@ class MaskCreator():
         outputFile = join(self.outputDir, 'exampleFunc.nii.gz')
         if not exists(outputFile):
             # average func file
-            subprocess.call(['fslmaths', self.settings['subjFunc'], '-Tmean', outputFile])
+            cmdList = ['fslmaths', self.settings['subjFunc'], '-Tmean', outputFile]
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
 
             # run Brain Extraction Tool, overwriting output from previous step
-            subprocess.call(['bet', outputFile, outputFile, '-f', '0.4', '-g', '0'])
+            cmdList = ['bet', outputFile, outputFile, '-f', '0.4', '-g', '0']
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
         else:
             self.logger.info('using existing: {}'.format(outputFile))
 
@@ -134,7 +138,9 @@ class MaskCreator():
 
         # run fsl bet command to create whole brain mask
         outputFile = join(self.maskOutputDir, 'wholeBrain_FUNC')
-        subprocess.call(['bet', exampleFunc, outputFile, '-n', '-m'])
+        cmdList = ['bet', exampleFunc, outputFile, '-n', '-m']
+        self.logger.debug(' '.join(cmdList))
+        subprocess.call(cmdList)
 
         self.logger.info('created func brain mask: {}'.format(outputFile))
 
@@ -152,26 +158,32 @@ class MaskCreator():
         if self.settings['skullStrip']:
             self.logger.info('skull stripping hi-res subject anatomical')
             if not exists(outputFile):
-                subprocess.call(['bet', self.settings['subjAnat'], outputFile, '-f', '0.35'])
+                cmdList = ['bet', self.settings['subjAnat'], outputFile, '-f', '0.35']
+                self.logger.debug(' '.join(cmdList))
+                subprocess.call(cmdList)
             else:
                 self.logger.info('using existing: {}'.format(outputFile))
         else:
             self.logger.info('copying {} to {}'.format(self.settings['subjAnat'], outputFile))
-            subprocess.call(['cp', self.settings['subjAnat'], outputFile])
+            cmdList = ['cp', self.settings['subjAnat'], outputFile]
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
 
         ### register MNI standard --> hires
         self.logger.info('creating mni2hires transformation matrix')
         outputFile = join(self.outputDir, 'mni2hires.mat')
         if not exists(outputFile):
-            subprocess.call(['flirt', '-in', self.settings['MNI_standard'],
-                             '-ref', join(self.outputDir, 'hires_brain.nii.gz'),
-                             '-out', join(self.outputDir, 'mni_HIRES'),
-                             '-omat', outputFile,
-                             '-bins', '256', '-cost', 'corratio',
-                             '-searchrx', '-180', '180',
-                             '-searchry', '-180', '180',
-                             '-searchrz', '-180', '180',
-                             '-dof', '9', '-interp', 'trilinear'])
+            cmdList = ['flirt', '-in', self.settings['MNI_standard'],
+                       '-ref', join(self.outputDir, 'hires_brain.nii.gz'),
+                       '-out', join(self.outputDir, 'mni_HIRES'),
+                       '-omat', outputFile,
+                       '-bins', '256', '-cost', 'corratio',
+                       '-searchrx', '-180', '180',
+                       '-searchry', '-180', '180',
+                       '-searchrz', '-180', '180',
+                       '-dof', '9', '-interp', 'trilinear']
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
         else:
             self.logger.info('using existing: {}'.format(outputFile))
 
@@ -179,15 +191,17 @@ class MaskCreator():
         self.logger.info('creating hires2func transformation matrix')
         outputFile = join(self.outputDir, 'hires2func.mat')
         if not exists(outputFile):
-            subprocess.call(['flirt', '-in', join(self.outputDir, 'hires_brain.nii.gz'),
-                             '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
-                             '-out', join(self.outputDir, 'hires_FUNC'),
-                             '-omat', outputFile,
-                             '-bins', '256', '-cost', 'corratio',
-                             '-searchrx', '-90', '90',
-                             '-searchry', '-90', '90',
-                             '-searchrz', '-90', '90',
-                             '-dof', '9', '-interp', 'trilinear'])
+            cmdList = ['flirt', '-in', join(self.outputDir, 'hires_brain.nii.gz'),
+                       '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
+                       '-out', join(self.outputDir, 'hires_FUNC'),
+                       '-omat', outputFile,
+                       '-bins', '256', '-cost', 'corratio',
+                       '-searchrx', '-90', '90',
+                       '-searchry', '-90', '90',
+                       '-searchrz', '-90', '90',
+                       '-dof', '9', '-interp', 'trilinear']
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
         else:
             self.logger.info('using existing: {}'.format(outputFile))
 
@@ -196,9 +210,11 @@ class MaskCreator():
         outputFile = join(self.outputDir, 'mni2func.mat')
         if not exists(outputFile):
             # Note that the transform after '-concat' should be 2nd transform you want applied
-            subprocess.call(['convert_xfm', '-omat', outputFile,
-                             '-concat', join(self.outputDir, 'hires2func.mat'),
-                             join(self.outputDir, 'mni2hires.mat')])
+            cmdList = ['convert_xfm', '-omat', outputFile,
+                       '-concat', join(self.outputDir, 'hires2func.mat'),
+                       join(self.outputDir, 'mni2hires.mat')]
+            self.logger.debug(' '.join(cmdList))
+            subprocess.call(cmdList)
         else:
             self.logger.info('using existing: {}'.format(outputFile))
 
@@ -206,16 +222,20 @@ class MaskCreator():
         # mask in subject functional space
         self.logger.info('applying mni2func transform to {}'.format(self.settings['MNI_mask']))
         self.weightedMaskPath = join(self.maskOutputDir, (self.settings['outputPrefix'] + '_FUNC_weighted'))
-        subprocess.call(['flirt', '-in', self.settings['MNI_mask'],
-                         '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
-                         '-out', self.weightedMaskPath,
-                         '-applyxfm', '-init', join(self.outputDir, 'mni2func.mat'),
-                         '-interp', 'trilinear'])
+        cmdList = ['flirt', '-in', self.settings['MNI_mask'],
+                   '-ref', join(self.outputDir, 'exampleFunc.nii.gz'),
+                   '-out', self.weightedMaskPath,
+                   '-applyxfm', '-init', join(self.outputDir, 'mni2func.mat'),
+                   '-interp', 'trilinear']
+        self.logger.debug(' '.join(cmdList))
+        subprocess.call(cmdList)
 
         ### binarize the weighted FUNC space mask
         self.logger.info('creating binarized mask of {}'.format(self.weightedMaskPath))
         self.binarizedMaskPath = self.weightedMaskPath.replace('FUNC_weighted', 'FUNC_mask')
-        subprocess.call(['fslmaths', self.weightedMaskPath, '-bin', self.binarizedMaskPath])
+        cmdList = ['fslmaths', self.weightedMaskPath, '-bin', self.binarizedMaskPath]
+        self.logger.debug(' '.join(cmdList))
+        subprocess.call(cmdList)
 
     def displayMasks(self):
         """ Display masks in fsleyes
