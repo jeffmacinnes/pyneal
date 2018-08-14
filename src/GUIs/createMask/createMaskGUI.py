@@ -429,6 +429,12 @@ class CreateMaskGUIApp(App):
 
     """
     title = 'Create Mask'
+    pass
+
+    def on_stop(self):
+        global submitButtonPressed
+        if not submitButtonPressed:
+            sys.exit()
 
 
 # Register the various components of the GUI
