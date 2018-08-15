@@ -5,7 +5,7 @@ import sys
 import helper_tools
 
 # get dictionary with relevant paths for tests within this module
-paths = get_pyneal_scanner_test_paths()
+paths = helper_tools.get_pyneal_scanner_test_paths()
 sys.path.insert(0, paths['pynealDir'])
 sys.path.insert(0, paths['pynealScannerDir'])
 
