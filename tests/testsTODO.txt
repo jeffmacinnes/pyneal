@@ -11,10 +11,10 @@ X   ├── listSeries.py
 │   │       ├── Philips_sim.py
 │   │       └── Siemens_sim.py
 │   └── utils
-│       ├── GE_utils.py
+X       ├── GE_utils.py
 │       ├── Philips_utils.py
 │       ├── Siemens_utils.py
-│       └── general_utils.py
+X       └── general_utils.py
 ├── src
 │   ├── GUIs
 │   │   ├── createMask
