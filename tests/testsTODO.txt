@@ -12,7 +12,7 @@ X   ├── listSeries.py
 │   │       └── Siemens_sim.py
 │   └── utils
 X       ├── GE_utils.py
-│       ├── Philips_utils.py
+X       ├── Philips_utils.py
 │       ├── Siemens_utils.py
 X       └── general_utils.py
 ├── src
