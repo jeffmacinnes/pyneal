@@ -139,3 +139,18 @@ class SimRecvSocket(Thread):
 
         def stop(self):
             self.alive = False
+
+class ServerTest(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.alive = True
+
+    def run(self):
+        context = zmq.Context.instance()
+        self.socket = context.socket(zmq.PAIR)
+        self.socket.bind('tcp://*:5555')
+
+        while self.alive:
+            msg = self.socket.recv_string()
+            if msg == 'end':
+                self.alive = False

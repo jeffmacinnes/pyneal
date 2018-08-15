@@ -6,6 +6,8 @@ import threading
 from queue import Queue
 import subprocess
 
+import zmq
+
 import helper_tools
 
 # get dictionary with relevant paths for tests within this module
@@ -64,6 +66,20 @@ class Test_GE_utils():
         source files
         """
         pass
+
+    def test_socketCommunication(self):
+        # launch instance of server
+        server = helper_tools.ServerTest()
+        server.start()
+
+        # create client socket
+        context = zmq.Context.instance()
+        clientSock = context.socket(zmq.PAIR)
+        clientSock.connect('tcp://127.0.0.1:5555')
+
+        clientSock.send_string('end')
+
+        server.stop()
 
     # def test_GE_monitorSeriesDir_and_GE_processSlice(self):
     #     """ test GE_utils.GE_monitorSeriesDir & GE_utils.GE_processSlice
