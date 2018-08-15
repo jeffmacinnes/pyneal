@@ -1,7 +1,9 @@
 import os
 from os.path import join
 from os.path import dirname
+import shutil
 import sys
+from threading import Thread
 
 import yaml
 
@@ -35,6 +37,22 @@ def get_pyneal_scanner_test_paths():
 
     return paths
 
+def createFakeSeriesDir(newSeriesDir):
+    """ Mimic the creation of a new series directory at the start of the scan.
+
+    Parameters
+    ----------
+    newSeriesDir : string
+        full path for the new series directory you'd like to create
+    """
+    if not os.path.isdir(newSeriesDir):
+        os.makedirs(newSeriesDir)
+
+def copyScanData(srcDir, dstDir):
+    """ copy the contents of srcDir to dstDir """
+    for f in os.listdir(srcDir):
+        if os.path.isfile(join(srcDir, f)):
+            shutil.copy(join(srcDir, f), dstDir)
 
 ### Functions for updating and cleaning the test scannerConfig.yaml files
 def replace_scannerConfig_baseDir(configFile, newBaseDir):
@@ -73,3 +91,51 @@ def cleanConfigFile(configFile):
     # overwrite yaml file
     with open(configFile, 'w') as ymlFile:
         yaml.dump(configSettings, ymlFile, default_flow_style=False)
+
+
+### Class for creating a simple server to simulate Pyneal receiving socket
+class SimRecvSocket(Thread):
+    def __init__(self, host, port, nVols):
+        Thread.__init__(self)
+
+        self.host = host
+        self.port = port
+        self.nVols = nVols
+        self.alive = True
+        self.receivedVols = 0
+
+    def run(self):
+        host = '*'
+        context = zmq.Context.instance()
+        sock = context.socket(zmq.PAIR)
+        sock.bind('tcp://{}:{}'.format(host, self.port))
+
+        # wait for initial contact
+        while True:
+            msg = sock.recv_string()
+            sock.send_string(msg)
+            break
+
+        while self.alive:
+            # receive header info as json
+            volInfo = sock.recv_json(flags=0)
+
+            # retrieve relevant values about this slice
+            volIdx = volInfo['volIdx']
+            volDtype = volInfo['dtype']
+            volShape = volInfo['shape']
+
+            # receive data stream
+            data = sock.recv(flags=0, copy=False, track=False)
+            voxelArray = np.frombuffer(data, dtype=volDtype)
+            voxelArray = voxelArray.reshape(volShape)
+
+            # send response
+            sock.send_string('got it')
+
+            self.receivedVols += 1
+            if self.receivedVols == self.nVols:
+                self.alive = False
+
+        def stop(self):
+            self.alive = False
