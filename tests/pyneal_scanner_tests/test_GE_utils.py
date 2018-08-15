@@ -58,7 +58,6 @@ class Test_GE_utils():
         # remove local paths from config file
         helper_tools.cleanConfigFile(configFile)
 
-
     def test_GE_BuildNifti(self):
         """ Note: this module is already tested as part of the test_getSeries.py
         suite of tests. This function here is just included for the sake of
@@ -67,7 +66,6 @@ class Test_GE_utils():
         """
         pass
 
-
     def test_GE_monitorSeriesDir_and_GE_processSlice(self):
         """ test GE_utils.GE_monitorSeriesDir & GE_utils.GE_processSlice
 
@@ -75,7 +73,7 @@ class Test_GE_utils():
         """
         # create queue to store incoming file names
         dicomQ = Queue()
-        newSeriesDir = join(paths['GE_dir'], 'p1/e123/sTEST')
+        newSeriesDir = join(paths['GE_funcDir'], 'p1/e123/sTEST')
         helper_tools.createFakeSeriesDir(newSeriesDir)
 
         ## Set up sockets to send data between
@@ -91,7 +89,7 @@ class Test_GE_utils():
         recvSocket.daemon = True
         recvSocket.start()
 
-        # connect to simulated p socket
+        # connect to simulated pyneal socket
         msg = 'hello from GE test'
         pyneal_socket.send_string(msg)
         msgResponse = pyneal_socket.recv_string()
@@ -104,7 +102,7 @@ class Test_GE_utils():
         sliceProcessor = GE_utils.GE_processSlice(dicomQ, pyneal_socket)
 
         # copy contents of existing GE test data dir to new dir, simulating scan
-        GE_seriesDir = join(paths['GE_dir'], 'p1/e123/s1925')
+        GE_seriesDir = join(paths['GE_funcDir'], 'p1/e123/s1925')
         helper_tools.copyScanData(GE_seriesDir, newSeriesDir)
 
         # assuming it didn't crash, cancel the bg thread and delete new dir

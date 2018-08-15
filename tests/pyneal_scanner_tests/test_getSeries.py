@@ -4,10 +4,10 @@ import os
 from os.path import join
 import sys
 
-from helper_tools import *
+import helper_tools
 
 # get dictionary with relevant paths for tests within this module
-paths = get_pyneal_scanner_test_paths()
+paths = helper_tools.get_pyneal_scanner_test_paths()
 sys.path.insert(0, paths['pynealDir'])
 sys.path.insert(0, paths['pynealScannerDir'])
 
@@ -22,7 +22,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)
@@ -48,6 +48,9 @@ class Test_getSeries():
         assert os.path.exists(outputFile)
         os.remove(outputFile)
 
+        # remove local paths from the config file
+        helper_tools.cleanConfigFile(configFile)
+
 
     def test_getSeries_Philips(self):
         """ test getSeries.getSeries_Philips """
@@ -57,7 +60,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)
@@ -83,6 +86,9 @@ class Test_getSeries():
         assert os.path.exists(outputFile)
         os.remove(outputFile)
 
+        # remove local paths from the config file
+        helper_tools.cleanConfigFile(configFile)
+
 
     def test_getSeries_Siemens(self):
         """ test getSeries.getSeries_Siemens """
@@ -92,7 +98,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)
@@ -117,3 +123,6 @@ class Test_getSeries():
         outputFile = join(paths['pynealScannerDir'], 'data', '{}_{}.nii.gz'.format(seriesNum, seriesNum))
         assert os.path.exists(outputFile)
         os.remove(outputFile)
+
+        # remove local paths from the config file
+        helper_tools.cleanConfigFile(configFile)
