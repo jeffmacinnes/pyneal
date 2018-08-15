@@ -22,6 +22,9 @@ class Test_GE_utils():
     def test_GE_DirStructure(self):
         """ test GE_utils.GE_DirStructure """
 
+        # update config file to match local paths
+        helper_tools.replace_scannerConfig_baseDir(configFile, paths['GE_funcDir'])
+
         # create instance of ScannerSettings class from general_utils
         scannerSettings = general_utils.ScannerSettings(paths['GE_dir'])
 
@@ -48,6 +51,10 @@ class Test_GE_utils():
         # assuming it didn't crash, cancel the timer function and delete new dir
         t.cancel()
         shutil.rmtree(fakeNewSeries)
+
+        # remove local paths from config file
+        helper_tools.cleanConfigFile(configFile)
+        
 
     def test_GE_BuildNifti(self):
         """ Note: this module is already tested as part of the test_getSeries.py
