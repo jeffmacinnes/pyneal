@@ -5,6 +5,8 @@ import shutil
 import sys
 from threading import Thread
 
+import zmq
+
 import yaml
 
 def get_pyneal_scanner_test_paths():
@@ -137,8 +139,8 @@ class SimRecvSocket(Thread):
             if self.receivedVols == self.nVols:
                 self.alive = False
 
-        def stop(self):
-            self.alive = False
+    def stop(self):
+        self.alive = False
 
 class ServerTest(Thread):
     def __init__(self):
@@ -152,5 +154,9 @@ class ServerTest(Thread):
 
         while self.alive:
             msg = self.socket.recv_string()
+            self.socket.send_string(msg)
             if msg == 'end':
                 self.alive = False
+
+    def stop(self):
+        self.alive = False

@@ -67,60 +67,48 @@ class Test_GE_utils():
         """
         pass
 
-    def test_socketCommunication(self):
-        # launch instance of server
-        server = helper_tools.ServerTest()
-        server.start()
 
-        # create client socket
-        context = zmq.Context.instance()
-        clientSock = context.socket(zmq.PAIR)
-        clientSock.connect('tcp://127.0.0.1:5555')
+    def test_GE_monitorSeriesDir_and_GE_processSlice(self):
+        """ test GE_utils.GE_monitorSeriesDir & GE_utils.GE_processSlice
 
-        clientSock.send_string('end')
+        Since these two classes work hand-in-hand, we test both in the same func
+        """
+        # create queue to store incoming file names
+        dicomQ = Queue()
+        newSeriesDir = join(paths['GE_dir'], 'p1/e123/sTEST')
+        helper_tools.createFakeSeriesDir(newSeriesDir)
 
-        server.stop()
+        ## Set up sockets to send data between
+        host = '127.0.0.1'
+        port = 5555
+        nVols = 3
 
-    # def test_GE_monitorSeriesDir_and_GE_processSlice(self):
-    #     """ test GE_utils.GE_monitorSeriesDir & GE_utils.GE_processSlice
-    #
-    #     Since these two classes work hand-in-hand, we test both in the same func
-    #     """
-    #     # create queue to store incoming file names
-    #     dicomQ = Queue()
-    #     newSeriesDir = join(paths['GE_dir'], 'p1/e123/sTEST')
-    #     helper_tools.createFakeSeriesDir(newSeriesDir)
-    #
-    #     ## Set up sockets to send data between
-    #     host = '127.0.0.1'
-    #     port = 5555
-    #     nVols = 3
-    #
-    #     # create a scanner side socket to talk to simulated pyneal socket
-    #     pyneal_socket = general_utils.create_pynealSocket(host, port)
-    #
-    #     # start simulated pyneal-side socket to receive data
-    #     recvSocket = helper_tools.SimRecvSocket(host, port, nVols)
-    #     recvSocket.start()
-    #
-    #     # connect to simulated p socket
-    #     msg = 'hello from GE test'
-    #     pyneal_socket.send_string(msg)
-    #     msgResponse = pyneal_socket.recv_string()
-    #
-    #     # start in instance of GE_monitorSeriesDir. Note: runs in bg thread
-    #     scanWatcher = GE_utils.GE_monitorSeriesDir(newSeriesDir, dicomQ)
-    #     scanWatcher.start()
-    #
-    #     # start instance of slice processor. Note: runs in bg thread
-    #     sliceProcessor = GE_utils.GE_processSlice(dicomQ, pyneal_socket)
-    #
-    #     # copy contents of existing GE test data dir to new dir, simulating scan
-    #     GE_seriesDir = join(paths['GE_dir'], 'p1/e123/s1925')
-    #     helper_tools.copyScanData(GE_seriesDir, newSeriesDir)
-    #
-    #     # assuming it didn't crash, cancel the bg thread and delete new dir
-    #     scanWatcher.stop()
-    #     sliceProcessor.stop()
-    #     recvSocket.stop()
-    #     #shutil.rmtree(newSeriesDir)
+        # create a scanner side socket to talk to simulated pyneal socket
+        pyneal_socket = general_utils.create_pynealSocket(host, port)
+
+        # start simulated pyneal-side socket to receive data
+        recvSocket = helper_tools.SimRecvSocket(host, port, nVols)
+        recvSocket.daemon = True
+        recvSocket.start()
+
+        # connect to simulated p socket
+        msg = 'hello from GE test'
+        pyneal_socket.send_string(msg)
+        msgResponse = pyneal_socket.recv_string()
+
+        # start in instance of GE_monitorSeriesDir. Note: runs in bg thread
+        scanWatcher = GE_utils.GE_monitorSeriesDir(newSeriesDir, dicomQ)
+        scanWatcher.start()
+
+        # start instance of slice processor. Note: runs in bg thread
+        sliceProcessor = GE_utils.GE_processSlice(dicomQ, pyneal_socket)
+
+        # copy contents of existing GE test data dir to new dir, simulating scan
+        GE_seriesDir = join(paths['GE_dir'], 'p1/e123/s1925')
+        helper_tools.copyScanData(GE_seriesDir, newSeriesDir)
+
+        # assuming it didn't crash, cancel the bg thread and delete new dir
+        scanWatcher.stop()
+        sliceProcessor.stop()
+        recvSocket.stop()
+        shutil.rmtree(newSeriesDir)
