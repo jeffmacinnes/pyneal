@@ -2,7 +2,7 @@ import os
 from os.path import join
 import sys
 
-from helper_tools import *
+import helper_tools
 
 # get dictionary with relevant paths for tests within this module
 paths = get_pyneal_scanner_test_paths()
@@ -40,7 +40,7 @@ class Test_general_utils:
 
             # update config file to match local paths
             configFile = join(envDir, 'scannerConfig.yaml')
-            replace_scannerConfig_baseDir(configFile, funcDir)
+            helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
 
             # run through all functions in ScannerSettings class
             scanSettings = general_utils.ScannerSettings(envDir)
@@ -52,7 +52,7 @@ class Test_general_utils:
             scanSettings.get_allSettings()
 
             # remove local paths from config file
-            cleanConfigFile(configFile)
+            helper_tools.cleanConfigFile(configFile)
 
             print('Passed!')
 
@@ -75,11 +75,11 @@ class Test_general_utils:
 
             # update config file to match local paths
             configFile = join(envDir, 'scannerConfig.yaml')
-            replace_scannerConfig_baseDir(configFile, funcDir)
+            helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
 
             general_utils.initializeSession(pynealScannerDir=envDir)
 
             # remove local paths from config file
-            cleanConfigFile(configFile)
+            helper_tools.cleanConfigFile(configFile)
 
             print('Passed!')
