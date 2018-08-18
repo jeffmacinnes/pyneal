@@ -68,5 +68,5 @@ def fakeNewSiemensSeries(newSeriesNum):
 @pytest.mark.skip(reason="we want the test methods to call this, not pytest itself")
 def removeFakeSiemensSeries(seriesNum):
     """ Remove the simulated new series from the test Siemens data dir """
-    fName = join(paths['Siemens_funcDir'], ('001_' + str(newSeriesNum).zfill(6) + '_000001.dcm')
+    fName = join(paths['Siemens_funcDir'], ('001_' + str(seriesNum).zfill(6) + '_000001.dcm'))
     os.remove(fName)
