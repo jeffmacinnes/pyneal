@@ -26,7 +26,7 @@ class Test_Philips_utils():
         configFile = join(paths['Philips_dir'], 'scannerConfig.yaml')
         helper_tools.replace_scannerConfig_baseDir(configFile, paths['Philips_funcDir'])
 
-        # create instace of ScannerSettings class from gneral_utils
+        # create instance of ScannerSettings class from general_utils
         scannerSettings = general_utils.ScannerSettings(paths['Philips_dir'])
 
         # create instance of Philips_DirStructure for testing
@@ -39,7 +39,7 @@ class Test_Philips_utils():
         ### Test the waitForSeriesDir function by creating a fake dir
         # threading.timer object to create a new dir after a few sec
         fakeNewSeries = join(paths['Philips_funcDir'], '0TEST')
-        t = threading.Timer(1.0, helper_tools.createFakeSeriesDir(fakeNewSeries))
+        t = threading.Timer(1.0, helper_tools.createFakeSeriesDir, [fakeNewSeries])
         t.start()
 
         scannerDirs.waitForSeriesDir()
@@ -50,7 +50,6 @@ class Test_Philips_utils():
 
         # remove local paths from the config file
         helper_tools.cleanConfigFile(configFile)
-
 
     def test_Philips_BuildNifti(self):
         """ Note: this module is already tested as part of the test_getSeries.py

@@ -1,0 +1,72 @@
+import os
+from os.path import join
+import sys
+import shutil
+import threading
+from queue import Queue
+import subprocess
+import time
+
+import zmq
+import pytest
+
+import helper_tools
+
+# get dictionary with relevant paths for tests within this module
+paths = helper_tools.get_pyneal_scanner_test_paths()
+sys.path.insert(0, paths['pynealDir'])
+sys.path.insert(0, paths['pynealScannerDir'])
+
+import pyneal_scanner.utils.Siemens_utils as Siemens_utils
+import pyneal_scanner.utils.general_utils as general_utils
+
+### Tests for classes/functions within the Siemens_utils.py module
+class Test_Siemens_utils():
+    def test_Siemens_DirStructure(self):
+        # update config file to match local paths
+        configFile = join(paths['Siemens_dir'], 'scannerConfig.yaml')
+        helper_tools.replace_scannerConfig_baseDir(configFile, paths['Siemens_funcDir'])
+
+        # create instace of ScannerSettings class from general_utils
+        scannerSettings = general_utils.ScannerSettings(paths['Siemens_dir'])
+
+        # create instance of Philips_DirStructure for testing
+        scannerDirs = Siemens_utils.Siemens_DirStructure(scannerSettings)
+
+        ## Run through the Siemens_DirStructure class methods
+        scannerDirs.print_currentSeries()
+        assert scannerDirs.getUniqueSeries() == set(['000013'])
+
+        ## Test waitForNewSeries function by simulating new series data
+        # threading.timer object to copy in new data after a few sec
+        newSeriesNum = 999
+        t = threading.Timer(1.0, fakeNewSiemensSeries, [newSeriesNum])
+        t.start()
+
+        scannerDirs.waitForNewSeries()
+
+        # assuming that didn't crash, stop the timer object and remove new file
+        t.cancel()
+        removeFakeSiemensSeries(newSeriesNum)
+
+        # remove local paths from the config file
+        helper_tools.cleanConfigFile(configFile)
+
+
+@pytest.mark.skip(reason="we want the test methods to call this, not pytest itself")
+def fakeNewSiemensSeries(newSeriesNum):
+    """ Unlike GE and Philips, Siemens stores new series in the same dir as
+    other series, instead of a unqiue dir for every series. So, we'll just
+    fake that by copying an existing Siemens dcm, renaming with a new
+    series number, and saving in the same directory.
+    """
+
+    origFile = join(paths['Siemens_funcDir'], '001_000013_000001.dcm')
+    newFile = join(paths['Siemens_funcDir'], ('001_' + str(newSeriesNum).zfill(6) + '_000001.dcm'))
+    shutil.copyfile(origFile, newFile)
+
+@pytest.mark.skip(reason="we want the test methods to call this, not pytest itself")
+def removeFakeSiemensSeries(seriesNum):
+    """ Remove the simulated new series from the test Siemens data dir """
+    fName = join(paths['Siemens_funcDir'], ('001_' + str(newSeriesNum).zfill(6) + '_000001.dcm')
+    os.remove(fName)

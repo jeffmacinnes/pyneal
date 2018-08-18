@@ -163,7 +163,7 @@ class Siemens_DirStructure():
             # pause before searching directories again
             time.sleep(interval)
 
-        # return the found series directory
+        # return the found series name
         return newSeries
 
 

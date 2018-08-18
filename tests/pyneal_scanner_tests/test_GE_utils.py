@@ -46,7 +46,7 @@ class Test_GE_utils():
         ### Test the waitForSeriesDir function by creating a fake dir
         # threading.timer object to create a new directory after a few sec
         fakeNewSeries = join(paths['GE_funcDir'], 'p1/e123/sTEST')
-        t = threading.Timer(1.0, helper_tools.createFakeSeriesDir(fakeNewSeries))
+        t = threading.Timer(1.0, helper_tools.createFakeSeriesDir, [fakeNewSeries])
         t.start()
 
         scannerDirs.waitForSeriesDir()
