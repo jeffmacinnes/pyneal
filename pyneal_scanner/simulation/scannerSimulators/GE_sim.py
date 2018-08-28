@@ -141,7 +141,7 @@ def GE_sim(dicomDir, outputDir, TR):
 
     simElapsed = time.time() - simStart
     print('Mean time per vol: {}'.format(simElapsed/totalVols))
-    time.sleep(3)
+    time.sleep(.25)
 
 
 def rmOutputDir(outputDir):
