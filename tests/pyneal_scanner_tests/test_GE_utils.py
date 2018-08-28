@@ -100,6 +100,7 @@ class Test_GE_utils():
 
         # start instance of slice processor. Note: runs in bg thread
         sliceProcessor = GE_utils.GE_processSlice(dicomQ, pyneal_socket)
+        sliceProcessor.start()
 
         # copy contents of existing GE test data dir to new dir, simulating scan
         GE_seriesDir = join(paths['GE_funcDir'], 'p1/e123/s1925')
@@ -109,4 +110,5 @@ class Test_GE_utils():
         scanWatcher.stop()
         sliceProcessor.stop()
         recvSocket.stop()
+        pyneal_socket.disconnect('tcp://{}:{}'.format(host, port))
         shutil.rmtree(newSeriesDir)

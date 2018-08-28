@@ -106,6 +106,7 @@ class SimRecvSocket(Thread):
         self.nVols = nVols
         self.alive = True
         self.receivedVols = 0
+        self.closeSocket = False
 
     def run(self):
         host = '*'
@@ -120,6 +121,10 @@ class SimRecvSocket(Thread):
             break
 
         while self.alive:
+            if self.closeSocket:
+                sock.unbind('tcp://{}:{}'.format(host, self.port))
+                context.term()
+
             # receive header info as json
             volInfo = sock.recv_json(flags=0)
 
@@ -141,7 +146,9 @@ class SimRecvSocket(Thread):
                 self.alive = False
 
     def stop(self):
+        self.closeSocket = True
         self.alive = False
+
 
 class ServerTest(Thread):
     def __init__(self):

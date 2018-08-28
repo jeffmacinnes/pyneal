@@ -68,11 +68,12 @@ class Test_Siemens_utils():
         # create queue to store incoming file names
         dicomQ = Queue()
         sessionDir = paths['Siemens_funcDir']
+        print(sessionDir)
         seriesNum = 999
 
         ## Set up sockets to send data between
         host = '127.0.0.1'
-        port = 5555
+        port = 5557
         nVols = 3
 
         # create a scanner side socket to talk to simulated pyneal socket
@@ -88,12 +89,17 @@ class Test_Siemens_utils():
         pyneal_socket.send_string(msg)
         msgResponse = pyneal_socket.recv_string()
 
+        fakeNewSiemensSeries(seriesNum, nVols=3)
+
+
+
         # start in instance of Siemens_monitorSessionDir. Note: runs in bg thread
         scanWatcher = Siemens_utils.Siemens_monitorSessionDir(sessionDir, seriesNum, dicomQ)
         scanWatcher.start()
 
         # start instance of slice processor. Note: runs in bg thread
         mosaicProcessor = Siemens_utils.Siemens_processMosaic(dicomQ, pyneal_socket)
+        mosaicProcessor.start()
 
         # simulate a scan by copying new data into the session dir
         fakeNewSiemensSeries(seriesNum, nVols=3)
@@ -102,6 +108,7 @@ class Test_Siemens_utils():
         scanWatcher.stop()
         mosaicProcessor.stop()
         recvSocket.stop()
+        pyneal_socket.disconnect('tcp://{}:{}'.format(host, port))
         removeFakeSiemensSeries(seriesNum, nVols=3)
 
 
