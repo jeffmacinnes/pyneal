@@ -73,7 +73,7 @@ class Test_Siemens_utils():
 
         ## Set up sockets to send data between
         host = '127.0.0.1'
-        port = 5557
+        port = 5555
         nVols = 3
 
         # create a scanner side socket to talk to simulated pyneal socket
@@ -88,10 +88,6 @@ class Test_Siemens_utils():
         msg = 'hello from Siemens test'
         pyneal_socket.send_string(msg)
         msgResponse = pyneal_socket.recv_string()
-
-        fakeNewSiemensSeries(seriesNum, nVols=3)
-
-
 
         # start in instance of Siemens_monitorSessionDir. Note: runs in bg thread
         scanWatcher = Siemens_utils.Siemens_monitorSessionDir(sessionDir, seriesNum, dicomQ)
@@ -108,7 +104,6 @@ class Test_Siemens_utils():
         scanWatcher.stop()
         mosaicProcessor.stop()
         recvSocket.stop()
-        pyneal_socket.disconnect('tcp://{}:{}'.format(host, port))
         removeFakeSiemensSeries(seriesNum, nVols=3)
 
 

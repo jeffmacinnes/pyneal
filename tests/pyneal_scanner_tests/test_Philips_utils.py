@@ -71,7 +71,7 @@ class Test_Philips_utils():
 
         ## Set up sockets to send data between
         host = '127.0.0.1'
-        port = 5556
+        port = 5555
         nVols = 3
 
         # create a scanner side socket to talk to simulated pyneal socket
@@ -102,5 +102,4 @@ class Test_Philips_utils():
         scanWatcher.stop()
         volProcessor.stop()
         recvSocket.stop()
-        pyneal_socket.disconnect('tcp://{}:{}'.format(host, port))
         shutil.rmtree(newSeriesDir)

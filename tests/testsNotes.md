@@ -4,6 +4,9 @@ This suite of test tools is setup to be run using the `pytest` module. You can r
 
 > pytest
 
+Or, to run in parallel (assuming you've installed pytest-xdist via pip):
+
+> pytest -n 2
 
 `pytest` will walk the directory structure and run every file it finds whose name starts with `test_`. Alternatively, you can run a *specific* test file by typing:
 

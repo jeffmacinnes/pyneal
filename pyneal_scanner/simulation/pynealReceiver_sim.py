@@ -20,6 +20,8 @@ received 4D volume as a nifti image in same directory as this script (output fil
 """
 from __future__ import division
 
+import os
+import time
 import json
 import argparse
 
@@ -28,7 +30,7 @@ import numpy as np
 import nibabel as nib
 
 
-def launchPynealReceiver(port, nVols):
+def launchPynealReceiver(port, nVols, saveImage=True):
     """ Launch Pyneal Receiver simulation.
 
     This method will simulate the behavior of the scanReceiver thread of
@@ -43,6 +45,8 @@ def launchPynealReceiver(port, nVols):
         and Pyneal
     nVols : int
         number of expected volumes in the dataset
+    saveImage : boolean, optional
+        flag for whether to save received image or not
 
     """
     ### Set up socket to listen for incoming data
@@ -102,11 +106,15 @@ def launchPynealReceiver(port, nVols):
 
         # if all volumes have arrived, save the image
         if volIdx == (nVols-1):
-            receivedImg = nib.Nifti1Image(imageMatrix, volAffine)
-            outputName = 'receivedImg.nii.gz'
-            nib.save(receivedImg, outputName)
+            if saveImage:
+                receivedImg = nib.Nifti1Image(imageMatrix, volAffine)
+                outputName = 'receivedImg.nii.gz'
+                nib.save(receivedImg, outputName)
+                print('Image saved at: {}'.format(os.path.abspath(outputName)))
 
-            print('Done. Image saved at: {}'.format(outputName))
+            # close socket
+            time.sleep(.5)
+            context.destroy()
             break
 
 

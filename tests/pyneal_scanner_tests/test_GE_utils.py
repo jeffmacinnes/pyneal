@@ -110,5 +110,4 @@ class Test_GE_utils():
         scanWatcher.stop()
         sliceProcessor.stop()
         recvSocket.stop()
-        pyneal_socket.disconnect('tcp://{}:{}'.format(host, port))
         shutil.rmtree(newSeriesDir)

@@ -106,12 +106,11 @@ class SimRecvSocket(Thread):
         self.nVols = nVols
         self.alive = True
         self.receivedVols = 0
-        self.closeSocket = False
 
     def run(self):
         host = '*'
-        context = zmq.Context.instance()
-        sock = context.socket(zmq.PAIR)
+        self.context = zmq.Context.instance()
+        sock = self.context.socket(zmq.PAIR)
         sock.bind('tcp://{}:{}'.format(host, self.port))
 
         # wait for initial contact
@@ -121,9 +120,6 @@ class SimRecvSocket(Thread):
             break
 
         while self.alive:
-            if self.closeSocket:
-                sock.unbind('tcp://{}:{}'.format(host, self.port))
-                context.term()
 
             # receive header info as json
             volInfo = sock.recv_json(flags=0)
@@ -146,7 +142,7 @@ class SimRecvSocket(Thread):
                 self.alive = False
 
     def stop(self):
-        self.closeSocket = True
+        self.context.destroy()
         self.alive = False
 
 
