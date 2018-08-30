@@ -66,8 +66,6 @@ class Test_pynealAnalysis:
 
             results.append(result['weightedAverage'])
 
-        print(results)
-
         # make np arrays of results and what results are expected to be
         results = np.array(results)
         expectedResults = np.array([1015.42, 1018.94, 1020.68])
