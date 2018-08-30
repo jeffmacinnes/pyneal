@@ -1,7 +1,6 @@
 import os
 from os.path import join
 import sys
-import mock
 
 import helper_tools
 

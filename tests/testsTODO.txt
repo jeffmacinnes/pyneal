@@ -1,28 +1,28 @@
 
 ├── pyneal.py
-├── pyneal_scanner
+X── pyneal_scanner
 X   ├── getSeries.py
 X   ├── listSeries.py
-│   ├── pynealScanner.py
-│   ├── simulation
-│   │   ├── pynealReceiver_sim.py
-│   │   └── scannerSimulators
-│   │       ├── GE_sim.py
-│   │       ├── Philips_sim.py
-│   │       └── Siemens_sim.py
+X   ├── pynealScanner.py
+X   ├── simulation
+X   │   ├── pynealReceiver_sim.py
+X   │   └── scannerSimulators
+X   │       ├── GE_sim.py
+X   │       ├── Philips_sim.py
+X   │       └── Siemens_sim.py
 X   └── utils
 X       ├── GE_utils.py
 X       ├── Philips_utils.py
 X       ├── Siemens_utils.py
 X       └── general_utils.py
 ├── src
-│   ├── GUIs
-│   │   ├── createMask
-│   │   │   └── createMaskGUI.py
-│   │   ├── pynealDashboard
-│   │   │   └── pynealDashboard.py
-│   │   └── pynealSetup
-│   │       └──setup.py
+X   ├── GUIs
+X   │   ├── createMask
+X   │   │   └── createMaskGUI.py
+X   │   ├── pynealDashboard
+X   │   │   └── pynealDashboard.py
+X   │   └── pynealSetup
+X   │       └──setup.py
 │   ├── pynealAnalysis.py
 │   ├── pynealLogger.py
 │   ├── pynealPreprocessing.py
