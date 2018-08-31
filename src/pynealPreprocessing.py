@@ -70,17 +70,16 @@ class Preprocessor:
 
         Parameters
         ----------
-        vol : nibabel-like image
-            nibabel-like image containing a 3D array of voxel data, a (4,4)
-            affine matrix mapping the volume to RAS+ space, and image metadata
+        vol : numpy-array
+            3D array of voxel data for the current volume
         volIdx : int
             0-based index indicating where, in time (4th dimension), the volume
             belongs
 
         Returns
         -------
-        vol : nibabel-like image
-            preprocessed volume
+        vol : numpy-array
+            preprocessed 3D array of voxel data for the current volume
 
         """
         ### calculate the motion parameters on this volume. motionParams are

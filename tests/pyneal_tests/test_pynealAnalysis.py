@@ -72,3 +72,85 @@ class Test_pynealAnalysis:
 
         # use np testing method to assert with customized precision
         np.testing.assert_almost_equal(results, expectedResults, decimal=2)
+
+    def test_median(self):
+        """ test Analyzer computing mediansignal within mask """
+        # settings dictionary for this test
+        settings = {'maskFile': maskFile,
+                    'analysisChoice': 'Median',
+                    'maskIsWeighted': False}
+
+        # create instance of Analyzer class
+        analyzer = Analyzer(settings)
+
+        # loop over series and test
+        seriesData = nib.load(seriesFile)
+        results = []
+        for volIdx in range(seriesData.shape[3]):
+            # extract the 3d array for this vol and convert to niftiobject
+            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            result = analyzer.runAnalysis(thisVol, volIdx)
+
+            results.append(result['median'])
+
+        # make np arrays of results and what results are expected to be
+        results = np.array(results)
+        expectedResults = np.array([1017.00, 1020.5, 1026.00])
+
+        # use np testing method to assert with customized precision
+        np.testing.assert_almost_equal(results, expectedResults, decimal=2)
+
+    def test_weightedMedian(self):
+        """ test Analyzer computing weighted median signal within mask """
+        # settings dictionary for this test
+        settings = {'maskFile': maskFile,
+                    'analysisChoice': 'Median',
+                    'maskIsWeighted': True}
+
+        # create instance of Analyzer class
+        analyzer = Analyzer(settings)
+
+        # loop over series and test
+        seriesData = nib.load(seriesFile)
+        results = []
+        for volIdx in range(seriesData.shape[3]):
+            # extract the 3d array for this vol and convert to niftiobject
+            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            result = analyzer.runAnalysis(thisVol, volIdx)
+
+            results.append(result['weightedMedian'])
+
+        # make np arrays of results and what results are expected to be
+        results = np.array(results)
+        expectedResults = np.array([1000.00, 1014.00, 1012.00])
+
+        # use np testing method to assert with customized precision
+        np.testing.assert_almost_equal(results, expectedResults, decimal=2)
+
+    def test_customAnalysis(self):
+        """ test Analyzer computing customAnalysis within mask """
+        # settings dictionary for this test
+        settings = {'maskFile': maskFile,
+                    'numTimepts': 3,
+                    'analysisChoice': join(paths['testDataDir'], 'test_customAnalysisScript.py'),
+                    'maskIsWeighted': False}
+
+        # create instance of Analyzer class
+        analyzer = Analyzer(settings)
+
+        # loop over series and test
+        seriesData = nib.load(seriesFile)
+        results = []
+        for volIdx in range(seriesData.shape[3]):
+            # extract the 3d array for this vol and convert to niftiobject
+            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            result = analyzer.runAnalysis(thisVol, volIdx)
+
+            results.append(result['customResult'])
+
+        # make np arrays of results and what results are expected to be
+        results = np.array(results)
+        expectedResults = np.array([1029.15, 1032.78, 1034.14])
+
+        # use np testing method to assert with customized precision
+        np.testing.assert_almost_equal(results, expectedResults, decimal=2)

@@ -1,4 +1,9 @@
-""" Template for creating customized analyses in Pyneal.
+"""
+NOTE: this is a modified version of the customAnalysis template designed to
+be used for automated testing purposes. The `compute` method will simply return
+the mean signal with the mask on every volume.
+
+Template for creating customized analyses in Pyneal.
 
 This tool allows users to design and implement unique analysis routines for
 use during a real-time fMRI scan
@@ -68,6 +73,7 @@ class CustomAnalysis:
         """
         # Load masks and weights, and create an within-class reference to
         # each for use in later methods.
+        self.weightMask = weightMask
         mask_img = nib.load(maskFile)
         if weightMask is True:
             self.weights = mask_img.get_data().copy()
@@ -122,10 +128,13 @@ class CustomAnalysis:
         """
         ########################################################################
         ############# vvv INSERT USER-SPECIFIED CODE BELOW vvv #################
-        self.myResult += 1
+        if self.weightMask:
+            result = np.average(vol[self.mask], weights=self.weights[self.mask])
+        else:
+            result = np.mean(vol[self.mask])
 
 
         ############# ^^^ END USER-SPECIFIED CODE ^^^ ##########################
         ########################################################################
 
-        return {'result': self.myResult}
+        return {'customResult': np.round(result, decimals=2)}
