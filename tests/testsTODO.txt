@@ -23,15 +23,15 @@ X   │   ├── pynealDashboard
 X   │   │   └── pynealDashboard.py
 X   │   └── pynealSetup
 X   │       └──setup.py
-│   ├── pynealAnalysis.py
+X   ├── pynealAnalysis.py
 │   ├── pynealLogger.py
-│   ├── pynealPreprocessing.py
+X   ├── pynealPreprocessing.py
 │   ├── resultsServer.py
 │   └── scanReceiver.py
 └── utils
     ├── createMask.py
-    ├── customAnalyses
-    │   └── customAnalysisTemplate.py
+    X── customAnalyses
+    X   └── customAnalysisTemplate.py
     ├── mkDummyMask.py
     └── simulation
         ├── dashboardInput_sim.py

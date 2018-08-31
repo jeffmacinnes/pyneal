@@ -33,7 +33,7 @@ class Test_pynealAnalysis:
         seriesData = nib.load(seriesFile)
         results = []
         for volIdx in range(seriesData.shape[3]):
-            # extract the 3d array for this vol and convert to niftiobject
+            # extract the 3d array for this vol
             thisVol = seriesData.get_data()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
@@ -60,7 +60,7 @@ class Test_pynealAnalysis:
         seriesData = nib.load(seriesFile)
         results = []
         for volIdx in range(seriesData.shape[3]):
-            # extract the 3d array for this vol and convert to niftiobject
+            # extract the 3d array for this vol
             thisVol = seriesData.get_data()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
@@ -87,7 +87,7 @@ class Test_pynealAnalysis:
         seriesData = nib.load(seriesFile)
         results = []
         for volIdx in range(seriesData.shape[3]):
-            # extract the 3d array for this vol and convert to niftiobject
+            # extract the 3d array for this vol
             thisVol = seriesData.get_data()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
@@ -114,7 +114,7 @@ class Test_pynealAnalysis:
         seriesData = nib.load(seriesFile)
         results = []
         for volIdx in range(seriesData.shape[3]):
-            # extract the 3d array for this vol and convert to niftiobject
+            # extract the 3d array for this vol
             thisVol = seriesData.get_data()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
@@ -142,7 +142,7 @@ class Test_pynealAnalysis:
         seriesData = nib.load(seriesFile)
         results = []
         for volIdx in range(seriesData.shape[3]):
-            # extract the 3d array for this vol and convert to niftiobject
+            # extract the 3d array for this vol
             thisVol = seriesData.get_data()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
