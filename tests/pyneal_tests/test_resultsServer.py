@@ -50,6 +50,10 @@ def test_resultsServer():
     result = fakeEndUserRequest(requestedVolIdx)
     assert result['foundResults'] == False
 
+    # test saving data
+    resultsServer.saveResults()
+    os.remove(join(paths['testDataDir'], 'results.json'))
+
     # assuming nothing as crashed, close the socket
     resultsServer.killServer()
 

@@ -265,7 +265,6 @@ class ResultsServer(Thread):
 
     def killServer(self):
         """ Close the thread by setting the alive flag to False """
-        self.resultsSocket.close()
         self.alive = False
 
 

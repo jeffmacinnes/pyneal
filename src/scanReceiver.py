@@ -108,8 +108,8 @@ class ScanReceiver(Thread):
         self.completedVols = np.zeros(self.numTimepts, dtype=bool)
 
         # set up socket server to listen for msgs from pyneal-scanner
-        context = zmq.Context.instance()
-        self.scannerSocket = context.socket(zmq.PAIR)
+        self.context = zmq.Context.instance()
+        self.scannerSocket = self.context.socket(zmq.PAIR)
         self.scannerSocket.bind('tcp://{}:{}'.format(self.host, self.scannerPort))
         self.logger.debug('scanReceiver server bound to {}:{}'.format(self.host, self.scannerPort))
         self.logger.info('ScanReceiver Server alive and listening....')
@@ -120,9 +120,11 @@ class ScanReceiver(Thread):
         # set up socket to communicate with dashboard (if specified)
         if settings['launchDashboard']:
             self.dashboard = True
-            context = zmq.Context.instance()
-            self.dashboardSocket = context.socket(zmq.REQ)
+            self.context = zmq.Context.instance()
+            self.dashboardSocket = self.context.socket(zmq.REQ)
             self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
+        else:
+            self.dashboard = False
 
     def run(self):
         # Once this thread is up and running, confirm that the scanner socket
@@ -287,6 +289,7 @@ class ScanReceiver(Thread):
 
     def killServer(self):
         """ Close the thread by setting the alive flag to False """
+        self.context.destroy()
         self.alive = False
 
 
