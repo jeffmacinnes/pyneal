@@ -91,6 +91,8 @@ class ResultsServer(Thread):
             context = zmq.Context.instance()
             self.dashboardSocket = context.socket(zmq.REQ)
             self.dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
+        else:
+            self.dashboard = False
 
     def run(self):
         """ Run server, listening for requests and returning responses to clients
@@ -263,6 +265,7 @@ class ResultsServer(Thread):
 
     def killServer(self):
         """ Close the thread by setting the alive flag to False """
+        self.resultsSocket.close()
         self.alive = False
 
 
