@@ -5,7 +5,6 @@ import socket
 import json
 
 import numpy as np
-import nibabel as nib
 
 import helper_tools
 
