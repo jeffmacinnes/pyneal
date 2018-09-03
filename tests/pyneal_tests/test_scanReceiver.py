@@ -8,11 +8,12 @@ import zmq
 import numpy as np
 import nibabel as nib
 
-import helper_tools
+import pyneal_helper_tools as helper_tools
 
 # get dictionary with relevant paths for tests within this module
-paths = helper_tools.get_pyneal_scanner_test_paths()
-sys.path.insert(0, paths['pynealDir'])
+paths = helper_tools.get_pyneal_test_paths()
+if paths['pynealDir'] not in sys.path:
+        sys.path.insert(0, paths['pynealDir'])
 
 port = 5555
 host = '127.0.0.1'

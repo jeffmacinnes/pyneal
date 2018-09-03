@@ -15,7 +15,7 @@ X       ├── GE_utils.py
 X       ├── Philips_utils.py
 X       ├── Siemens_utils.py
 X       └── general_utils.py
-├── src
+X── src
 X   ├── GUIs
 X   │   ├── createMask
 X   │   │   └── createMaskGUI.py
@@ -24,10 +24,10 @@ X   │   │   └── pynealDashboard.py
 X   │   └── pynealSetup
 X   │       └──setup.py
 X   ├── pynealAnalysis.py
-│   ├── pynealLogger.py
+X   ├── pynealLogger.py
 X   ├── pynealPreprocessing.py
-│   ├── resultsServer.py
-│   └── scanReceiver.py
+X   ├── resultsServer.py
+X   └── scanReceiver.py
 └── utils
     ├── createMask.py
     X── customAnalyses

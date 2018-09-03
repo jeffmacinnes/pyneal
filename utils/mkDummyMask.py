@@ -13,30 +13,26 @@ import nibabel as nib
 import numpy as np
 
 
-if __name__ == '__main__':
-    # parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('integers',
-                         metavar='dim',
-                         type=int,
-                         nargs=3,
-                         help='volume dims: x y z')
-    parser.add_argument('-o', '--output',
-                        default='.',
-                        type=str,
-                        help='output path for mask')
+def mkDummyMask(dims, outputDir):
+    """ Make a dummy mask of given dims
 
-    args = parser.parse_args()
+    Parameters
+    ----------
+    dims : int list (length = 3)
+        [x, y, z] dimensions of the output mask
+    outputDir : string
+        full path to where the output mask will be saved
+
+    """
+    assert len(dims) == 3, 'Too many dimensions specified!'
 
     # volume dims
-    x = args.integers[0]
-    y = args.integers[1]
-    z = args.integers[2]
+    x,y,z = dims
     print('mask dimensions: [{}, {}, {}]'.format(x,y,z))
 
     # confirm output path is a real path
-    if not os.path.exists(args.output):
-        print('Output path does not exist: {}'.format(args.output))
+    if not os.path.exists(outputDir):
+        print('Output path does not exist: {}'.format(outputDir))
         sys.exit()
 
     # make array of zeros
@@ -56,6 +52,25 @@ if __name__ == '__main__':
     # save as nib object
     maskImage = nib.Nifti1Image(maskArray, affine=np.eye(4))
     outputName = 'dummyMask_{}-{}-{}.nii.gz'.format(x,y,z)
-    outputPath = join(args.output, outputName)
-    nib.save(maskImage, outputName)
+    outputPath = join(outputDir, outputName)
+    nib.save(maskImage, outputPath)
     print('dummy mask saved as: {}'.format(outputPath))
+
+
+if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('maskDims',
+                         metavar='dim',
+                         type=int,
+                         nargs=3,
+                         help='volume dims: x y z')
+    parser.add_argument('-o', '--outputDir',
+                        default='.',
+                        type=str,
+                        help='output dir path for saving mask')
+
+    args = parser.parse_args()
+    print(args)
+
+    mkDummyMask(args.maskDims, args.outputDir)

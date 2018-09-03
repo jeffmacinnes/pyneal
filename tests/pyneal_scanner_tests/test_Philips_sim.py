@@ -3,12 +3,13 @@ from os.path import join
 import sys
 import mock
 
-import helper_tools
+import pynealScanner_helper_tools as helper_tools
 
 # get dictionary with relevant paths for tests within this module
 paths = helper_tools.get_pyneal_scanner_test_paths()
-sys.path.insert(0, paths['pynealDir'])
-sys.path.insert(0, paths['pynealScannerDir'])
+for path in [paths['pynealDir'], paths['pynealScannerDir']]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 import pyneal_scanner.simulation.scannerSimulators.Philips_sim as Philips_sim
 

@@ -7,12 +7,13 @@ import json
 import zmq
 import numpy as np
 
-import helper_tools
+import pynealScanner_helper_tools as helper_tools
 
 # get dictionary with relevant paths for tests within this module
 paths = helper_tools.get_pyneal_scanner_test_paths()
-sys.path.insert(0, paths['pynealDir'])
-sys.path.insert(0, paths['pynealScannerDir'])
+for path in [paths['pynealDir'], paths['pynealScannerDir']]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 import pyneal_scanner.simulation.pynealReceiver_sim as pynealReceiver_sim
 import pyneal_scanner.utils.general_utils as general_utils
