@@ -33,14 +33,25 @@ the ROI had an average value of 1423 on this volume.
 
 Usage
 -----
-python endUser_sim.py volIdx
-    e.g. python endUser_sim.py 24
+python endUser_sim.py volIdx [-sh] [-sp]
 
-where 'volIdx' is the volume index you want to request data from. If volume
-index is excluded it'll default to requesting volume 0
+e.g. python endUser_sim.py 24
+
+Parameters
+----------
+volIdx : int
+    the index (0-based) of the volume you'd like to request results from
+sh : string, optional
+    i.p. address of the result server. defaults to 127.0.0.1
+sp : port, optional
+    port number to use for communication with result server. defaults to 5556
+
+Returns
+-------
+The returned result from the Pyneal Result server will be printed to stdOut
 
 """
-
+import argparse
 import socket
 import json
 import sys
@@ -49,38 +60,65 @@ import sys
 port = 5556         # port number to connect to Pyneal over
 host = '127.0.0.1'  # ip of where Pyneal is running
 
-# connect to the results server of Pyneal
-clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientSocket.connect((host, port))
 
-# send request for volume number. Request must by 4-char string representing
-# the volume number requested
-if len(sys.argv) > 1:
-    request = str(sys.argv[1]).zfill(4)
-else:
-    request = '0000'
+def requestResult(volIdx, host, port):
+    """ send request to pyneal results server for specific result
 
-print('Sending request to {}:{} for vol {}'.format(host, port, request))
-clientSocket.send(request.encode())
+    Parameters
+    ----------
+    volIdx : int
+        the index (0-based) of the volume you'd like to request results from
+    host : string
+        i.p. address of the result server
+    port : int
+        port number to use for communication with result server
 
-# When the results server recieved the request, it will send back a variable
-# length response. But first, it will send a header indicating how long the response
-# is. This is so the socket knows how many bytes to read
-hdr = ''
-while True:
-    nextChar = clientSocket.recv(1).decode()
-    if nextChar == '\n':
-        break
-    else:
-        hdr += nextChar
-msgLen = int(hdr)
+    """
+    # connect to the results server of Pyneal
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    clientSocket.connect((host, port))
 
-# now read the full response from the server
-serverResp = clientSocket.recv(msgLen)
+    # send request for volume number. Request must by 4-char string representing
+    # the volume number requested
+    request = volIdx.zfill(4)
 
-# format at JSON
-serverResp = json.loads(serverResp.decode())
-print('client received:')
-print(serverResp)
+    print('Sending request to {}:{} for vol {}'.format(host, port, request))
+    clientSocket.send(request.encode())
 
-clientSocket.close()
+    # When the results server recieved the request, it will send back a variable
+    # length response. But first, it will send a header indicating how long the response
+    # is. This is so the socket knows how many bytes to read
+    hdr = ''
+    while True:
+        nextChar = clientSocket.recv(1).decode()
+        if nextChar == '\n':
+            break
+        else:
+            hdr += nextChar
+    msgLen = int(hdr)
+
+    # now read the full response from the server
+    serverResp = clientSocket.recv(msgLen)
+
+    # format at JSON
+    serverResp = json.loads(serverResp.decode())
+    print('client received:')
+    print(serverResp)
+
+    clientSocket.close()
+
+if __name__ == '__main__':
+    # parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('volIdx')
+    parser.add_argument('-sh', '--socketHost',
+                        default='127.0.0.1',
+                        type=str,
+                        help='Pyneal Result Server host')
+    parser.add_argument('-sp', '--socketPort',
+                        default=5556,
+                        type=int,
+                        help='Pyneal Result Server port')
+    args = parser.parse_args()
+
+    requestResult(args.volIdx, args.socketHost, args.socketPort)

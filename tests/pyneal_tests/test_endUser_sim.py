@@ -13,7 +13,7 @@ import pyneal_helper_tools as helper_tools
 paths = helper_tools.get_pyneal_test_paths()
 if paths['pynealDir'] not in sys.path:
         sys.path.insert(0, paths['pynealDir'])
-socketPort = 5556
+socketPort = 5558
 
 def test_endUser_sim():
     """ test utils.endUser_sim """
@@ -39,7 +39,9 @@ def test_endUser_sim():
     for volIdx in range(3):
         process = subprocess.Popen(['python3',
                             join(paths['pynealDir'], 'utils/simulation/endUser_sim.py'),
-                            str(volIdx)], stdout=subprocess.PIPE)
+                            str(volIdx),
+                            '-sh', '127.0.0.1',
+                            '-sp', str(socketPort)], stdout=subprocess.PIPE)
         out, err = process.communicate()
         result = parseOutput(out.decode("utf-8"))
 
