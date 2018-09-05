@@ -82,3 +82,5 @@ serverResp = clientSocket.recv(msgLen)
 serverResp = json.loads(serverResp.decode())
 print('client received:')
 print(serverResp)
+
+clientSocket.close()

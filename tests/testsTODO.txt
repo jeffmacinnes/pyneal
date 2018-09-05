@@ -29,12 +29,12 @@ X   ├── pynealPreprocessing.py
 X   ├── resultsServer.py
 X   └── scanReceiver.py
 └── utils
-    ├── createMask.py
+    X── createMask.py
     X── customAnalyses
     X   └── customAnalysisTemplate.py
-    ├── mkDummyMask.py
+    X── mkDummyMask.py
     └── simulation
-        ├── dashboardInput_sim.py
-        ├── endUser_sim.py
+        X── dashboardInput_sim.py
+        X── endUser_sim.py
         ├── pynealResults_sim.py
         └── pynealScanner_sim.py
