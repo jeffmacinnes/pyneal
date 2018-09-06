@@ -36,5 +36,5 @@ X   └── scanReceiver.py
     └── simulation
         X── dashboardInput_sim.py
         X── endUser_sim.py
-        ├── pynealResults_sim.py
+        X── pynealResults_sim.py
         └── pynealScanner_sim.py

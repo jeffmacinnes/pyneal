@@ -56,10 +56,6 @@ import socket
 import json
 import sys
 
-# socket configs
-port = 5556         # port number to connect to Pyneal over
-host = '127.0.0.1'  # ip of where Pyneal is running
-
 
 def requestResult(volIdx, host, port):
     """ send request to pyneal results server for specific result
