@@ -23,7 +23,6 @@ spec.loader.exec_module(pynealResults_sim)
 
 TR = 0
 host = '127.0.0.1'
-port = 6000
 
 class Test_launchPynealSim():
     """ test for utils.simulation.pynealResults_sim """
@@ -34,6 +33,7 @@ class Test_launchPynealSim():
         test the function that launches the simulator and populates it with
         fake data all in one method
         """
+        port = 6000
         pynealResults_sim.launchPynealSim(TR, host, port, keepAlive=False)
 
     def test_pynealResultsSim_resultsServer(self):
@@ -41,6 +41,7 @@ class Test_launchPynealSim():
 
         test the class the actually runs the simulated results server
         """
+        port = 6001
         # launch the simulated results server
         settings = {'pynealHost': host, 'resultsServerPort': port}
         resultsServer = pynealResults_sim.ResultsServer(settings)
@@ -60,19 +61,19 @@ class Test_launchPynealSim():
 
         # test sending a request from a remote socket connection
         requestedVolIdx = 1     # vol that exists
-        result = fakeEndUserRequest(requestedVolIdx)
+        result = fakeEndUserRequest(requestedVolIdx, port)
         assert result['foundResults'] == True
         assert result['testResult'] == fakeResults[requestedVolIdx]
 
         requestedVolIdx = 99    # vol that doesn't exist
-        result = fakeEndUserRequest(requestedVolIdx)
+        result = fakeEndUserRequest(requestedVolIdx, port)
         assert result['foundResults'] == False
 
         # assuming nothing crashed, close the socket
         resultsServer.killServer()
 
 
-def fakeEndUserRequest(requestedVolIdx):
+def fakeEndUserRequest(requestedVolIdx, port):
     """ Function to mimic the behavior of the end user, which sends a request
     to the simulated results server
 
