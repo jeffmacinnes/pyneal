@@ -23,7 +23,7 @@ spec.loader.exec_module(pynealResults_sim)
 
 TR = 0
 host = '127.0.0.1'
-port = 5556
+port = 6000
 
 class Test_launchPynealSim():
     """ test for utils.simulation.pynealResults_sim """
