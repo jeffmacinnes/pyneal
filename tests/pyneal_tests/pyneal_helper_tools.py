@@ -7,6 +7,7 @@ from threading import Thread
 import time
 
 import zmq
+import numpy as np
 
 import yaml
 
@@ -50,3 +51,51 @@ def createFakeSeriesDir(newSeriesDir):
     """
     if not os.path.isdir(newSeriesDir):
         os.makedirs(newSeriesDir)
+
+class SimRecvSocket(Thread):
+    def __init__(self, host, port, nVols):
+        Thread.__init__(self)
+
+        self.host = host
+        self.port = port
+        self.nVols = nVols
+        self.alive = True
+        self.receivedVols = 0
+
+    def run(self):
+        host = '*'
+        self.context = zmq.Context.instance()
+        sock = self.context.socket(zmq.PAIR)
+        sock.bind('tcp://{}:{}'.format(host, self.port))
+
+        # wait for initial contact
+        while True:
+            msg = sock.recv_string()
+            sock.send_string(msg)
+            break
+
+        while self.alive:
+
+            # receive header info as json
+            volInfo = sock.recv_json(flags=0)
+
+            # retrieve relevant values about this slice
+            volIdx = volInfo['volIdx']
+            volDtype = volInfo['dtype']
+            volShape = volInfo['shape']
+
+            # receive data stream
+            data = sock.recv(flags=0, copy=False, track=False)
+            voxelArray = np.frombuffer(data, dtype=volDtype)
+            voxelArray = voxelArray.reshape(volShape)
+
+            # send response
+            sock.send_string('got it')
+
+            self.receivedVols += 1
+            if self.receivedVols == self.nVols:
+                self.alive = False
+
+    def stop(self):
+        self.context.destroy()
+        self.alive = False

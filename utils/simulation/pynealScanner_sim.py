@@ -160,9 +160,12 @@ def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
         socketResponse = socket.recv_string()
         print('Socket Response: {}'.format(socketResponse))
 
-        if TR is not None:
+        if TR > 0:
             elapsedTime = time.time() - startTime
             time.sleep(TR - elapsedTime)
+
+    # close the socket
+    context.destroy()
 
 
 # run from command line
