@@ -13,7 +13,6 @@ paths = helper_tools.get_pyneal_test_paths()
 if paths['pynealDir'] not in sys.path:
         sys.path.insert(0, paths['pynealDir'])
 
-print(sys.path)
 spec = importlib.util.spec_from_file_location("mkDummyMask.mkDummyMask",
             join(paths['pynealDir'], 'utils/mkDummyMask.py'))
 mkDummyMask = importlib.util.module_from_spec(spec)
