@@ -183,9 +183,10 @@ class ResultsServer(Thread):
     def killServer(self):
         """ Close the thread by setting the alive flag to False """
         self.alive = False
+        self.resultsSocket.close()
 
 
-def launchPynealSim(TR, host, resultsServerPort):
+def launchPynealSim(TR, host, resultsServerPort, keepAlive=False):
     """ Launch a Pyneal simulator
 
     This simulator will mimic Pyneal just enough to launch the simulated
@@ -205,6 +206,12 @@ def launchPynealSim(TR, host, resultsServerPort):
         IP address of the results server
     resultsServerPort : int
         Port number for the results server to listen on
+    keepAlive : bool, optional
+        Flag for whether to shut the server down or not once all of the data
+        has been added (default=False). For debugging purposes, it may be
+        useful to keep the server alive so that you may continually send
+        requests, even after the end of the simulated "scan". In that case,
+        set this flag to True
 
     """
     # Results Server Thread, listens for requests from end-user (e.g. task
@@ -227,6 +234,9 @@ def launchPynealSim(TR, host, resultsServerPort):
         # pause for TR
         time.sleep(TR / 1000)
 
+    if not keepAlive:
+        print('Shutting down simulated Results Server')
+        resultsServer.killServer()
 
 if __name__ == '__main__':
     # parse arguments
@@ -244,6 +254,9 @@ if __name__ == '__main__':
                         default=5556,
                         type=int,
                         help='Pyneal socket port')
+    parser.add_argument('--keepAlive',
+                        default=False,
+                        action='store_true')
     args = parser.parse_args()
-
-    launchPynealSim(args.TR, args.sockethost, args.socketport)
+    print(args.keepAlive)
+    launchPynealSim(args.TR, args.sockethost, args.socketport, keepAlive=args.keepAlive)
