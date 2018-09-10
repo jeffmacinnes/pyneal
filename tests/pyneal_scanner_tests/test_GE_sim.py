@@ -5,13 +5,14 @@ import mock
 
 import pynealScanner_helper_tools as helper_tools
 
+
 # get dictionary with relevant paths for tests within this module
 paths = helper_tools.get_pyneal_scanner_test_paths()
 for path in [paths['pynealDir'], paths['pynealScannerDir']]:
     if path not in sys.path:
         sys.path.insert(0, path)
-
 import pyneal_scanner.simulation.scannerSimulators.GE_sim as GE_sim
+
 
 def test_GE_sim():
     """ Test pyneal_scanner.simulation.GE_sim """
