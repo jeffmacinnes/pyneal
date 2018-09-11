@@ -1,42 +1,57 @@
 import wx
+print(wx.__version__)
+pynealColor = '#C74053'
 
 
-class Example(wx.Frame):
-
-    def __init__(self, *args, **kw):
-        super(Example, self).__init__(*args, **kw)
-
+class SetupFrame(wx.Frame):
+    def __init__(self, parent, title="Pyneal Setup"):
+        super(SetupFrame, self).__init__(parent, title=title)  #initialize the parent class
         self.InitUI()
 
-
     def InitUI(self):
-
-        wx.StaticText(self, label='x:', pos=(10,10))
-        wx.StaticText(self, label='y:', pos=(10,30))
-
-        self.st1 = wx.StaticText(self, label='', pos=(30, 10))
-        self.st2 = wx.StaticText(self, label='', pos=(30, 30))
-
-        self.Bind(wx.EVT_MOVE, self.OnMove)
-
-        self.SetSize((350, 250))
-        self.SetTitle('Move event')
         self.Centre()
 
-    def OnMove(self, e):
+        # create the panels
+        self.createLogoPanel()
+        self.createCommunicationPanel()
+        # self.createMaskPanel()
+        # self.createPreprocessingPanel()
+        # self.createAnalysisPanel()
+        # self.createOutputPanel()
+        # self.createSubmitPanel()
 
+    ### (VIEW) - Panel creation methods ---------------------------------------
+    def createLogoPanel(self):
+        pass
+
+    def createCommunicationPanel(self):
+        pass
+
+    ### (CONTROL) - Event Handling and User Interaction -----------------------
+
+    def OnMove(self, e):
         x, y = e.GetPosition()
         self.st1.SetLabel(str(x))
         self.st2.SetLabel(str(y))
 
 
-def main():
+class SetupApp(wx.App):
+    """ Application class for setup GUI """
 
-    app = wx.App()
-    ex = Example(None)
-    ex.Show()
+    def OnInit(self):
+        self.frame = SetupFrame(None) #, title='fuck you')
+        self.frame.Show()
+        self.SetTopWindow(self.frame)
+        return True
+
+
+def launchPynealSetupGUI():
+    app = SetupApp()
     app.MainLoop()
 
 
 if __name__ == '__main__':
-    main()
+
+    # create settings dict to pass into
+
+    launchPynealSetupGUI()
