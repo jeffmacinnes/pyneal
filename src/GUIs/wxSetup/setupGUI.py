@@ -17,9 +17,15 @@ class SetupFrame(wx.Frame):
     def InitUI(self):
         """ Initialize all GUI windows and widgets """
 
+        # set defaults
+        font = self.GetFont()
+        font.SetFaceName('Helvetica')
+        font.SetPointSize(15)
+        self.SetFont(font)
+
         self.setupPanel = wx.Panel(self, -1)
         self.setupPanel.SetBackgroundColour("White")
-        self.headerFont = wx.Font(wx.FontInfo(22).FaceName('Helvetica').Bold().AntiAliased(True))
+        self.headerFont = wx.Font(wx.FontInfo(20).FaceName('Helvetica').Bold().AntiAliased(True))
 
         vbox = wx.BoxSizer(wx.VERTICAL)
 
@@ -30,7 +36,7 @@ class SetupFrame(wx.Frame):
         commSizer = self.createCommunicationBox()
         preprocSizer = self.createPreprocessingBox()
 
-        vbox.Add(logoSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=1)
+        vbox.Add(logoSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(commSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=1)
         vbox.Add(preprocSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=1)
 
@@ -68,7 +74,34 @@ class SetupFrame(wx.Frame):
         # add  header for this box
         headerImg = self.drawHeader(label='Communication')
         commSizer.Add(headerImg, flag=wx.EXPAND | wx.TOP, proportion=0)
-        #commSizer.Add(label, flag=wx.EXPAND | wx.TOP, border=5, proportion=0)
+
+        # main content sizer
+        contentSizer = wx.FlexGridSizer(rows=3, cols=2, hgap=5, vgap=5)
+
+        labelW = 180    # width of label col
+        entryW = 120    # width of entry col
+
+        # host IP row
+        hostText = wx.StaticText(self.setupPanel, -1, size=(labelW, -1), style=wx.ALIGN_RIGHT, label='Pyneal Host IP:')
+        hostEntry = wx.TextCtrl(self.setupPanel, -1, size=(entryW,-1), style=wx.TE_LEFT, value='127.0.0.1')
+        contentSizer.Add(hostText, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        contentSizer.Add(hostEntry, proportion=1, flag=wx.EXPAND | wx.ALL)
+
+        # Pyneal-Scanner Port row
+        pynealScannerPortText = wx.StaticText(self.setupPanel, -1, size=(labelW, -1), style=wx.ALIGN_RIGHT, label='Pyneal-Scanner Port:')
+        pynealScannerPortEntry = wx.TextCtrl(self.setupPanel, -1, size=(entryW, -1), style=wx.TE_LEFT, value='5555')
+        contentSizer.Add(pynealScannerPortText, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        contentSizer.Add(pynealScannerPortEntry, proportion=1, flag=wx.EXPAND | wx.ALL)
+
+        # Results Server Port row
+        resultsServerPortText = wx.StaticText(self.setupPanel, -1, size=(labelW, -1), style=wx.ALIGN_RIGHT, label='Results Server Port:')
+        resultsServerPortEntry = wx.TextCtrl(self.setupPanel, -1, size=(entryW, -1), style=wx.TE_LEFT, value='5556')
+        contentSizer.Add(resultsServerPortText, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        contentSizer.Add(resultsServerPortEntry, proportion=1, flag=wx.EXPAND | wx.ALL)
+
+
+        # add content sizer to main box
+        commSizer.Add(contentSizer, flag=wx.EXPAND | wx.ALL, proportion=1, border=10)
 
         return commSizer
 
@@ -96,7 +129,7 @@ class SetupFrame(wx.Frame):
         dc.SelectObject(bmp)
         dc.SetTextForeground("white")
         dc.SetFont(self.headerFont)
-        dc.DrawText(label, 15, 15)
+        dc.DrawText(label, 15, 8)
 
         headerImg = wx.StaticBitmap(self.setupPanel, -1, bmp)
         return headerImg
