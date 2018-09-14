@@ -21,6 +21,7 @@ class SetupFrame(wx.Frame):
         self.maskPath = '/Users/jeff/gDrive/jeffCloud/real-time/pyneal/tests/testData/testSeries_mask.nii.gz'
         self.weightMaskChoice = True
         self.numTimepts = 60
+        self.analysisChoice = '/path/to/customScript.py'
 
     def InitUI(self):
         """ Initialize all GUI windows and widgets """
@@ -45,6 +46,7 @@ class SetupFrame(wx.Frame):
         maskSizer = self.createMaskBox()
         preprocSizer = self.createPreprocessingBox()
         analysisSizer = self.createAnalysisBox()
+        outputSizer = self.createOutputBox()
 
         # add the sizers holding each box to the top level sizer for the panel
         vbox.Add(logoSizer, flag=wx.ALL, border=10, proportion=0)
@@ -52,6 +54,7 @@ class SetupFrame(wx.Frame):
         vbox.Add(maskSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(preprocSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(analysisSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
+        vbox.Add(outputSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
 
         # set the top level sizer to control the master panel
         self.setupPanel.SetSizer(vbox)
@@ -245,9 +248,41 @@ class SetupFrame(wx.Frame):
         headerImg = self.drawHeader(label='Analysis')
         analysisSizer.Add(headerImg, flag=wx.EXPAND | wx.TOP, proportion=0)
 
+        # analysis radio button box
+        analysisButtonLabels = ['Average', 'Median', 'Custom']
+        self.analysisButtonBox = wx.RadioBox(self.setupPanel, -1,
+                                             label='select analysis',
+                                             choices=analysisButtonLabels,
+                                             majorDimension=1,
+                                             style=wx.RA_SPECIFY_ROWS)
+        try:
+            currentChoiceIdx = analysisButtonLabels.index(self.analysisChoice)
+        except:
+            currentChoiceIdx = analysisButtonLabels.index('Custom')
+        self.analysisButtonBox.SetSelection(currentChoiceIdx)
+        self.analysisButtonBox.Bind(wx.EVT_RADIOBOX, self.onSelectAnalysis)
+        analysisSizer.Add(self.analysisButtonBox, proportion=0, border=5,
+                          flag=wx.EXPAND | wx.ALL)
 
+        # analysis info text
+        self.analysisText = wx.StaticText(self.setupPanel, -1,
+                                          style=wx.ALIGN_CENTRE_HORIZONTAL,
+                                          label=self.getAnalysisText())
+        self.analysisText.Wrap(200)
+        analysisSizer.Add(self.analysisText, proportion=0, border=5,
+                          flag=wx.EXPAND | wx.ALL)
 
         return analysisSizer
+
+    def createOutputBox(self):
+        """ draw the Output Box """
+        outputSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # add  header for this box
+        headerImg = self.drawHeader(label='Output')
+        outputSizer.Add(headerImg, flag=wx.EXPAND | wx.TOP, proportion=0)
+
+        return outputSizer
 
 
     ### (CONTROL) - Event Handling and User Interaction -----------------------
@@ -269,12 +304,28 @@ class SetupFrame(wx.Frame):
                 self.maskPathEntry.SetValue(self.maskPath)
 
     def onWeightMaskToggled(self, e):
-        """ update settings based on weight mask checkbox """
+        """ update settings & analysis text based on weight mask checkbox """
         self.weightMaskChoice = self.weightMaskCheckBox.GetValue()
+        self.analysisText.SetLabel(self.getAnalysisText())
+
 
     def onNumTimeptsUpdate(self, e):
         """ update settings based on number of timepts specified """
         self.numTimepts = self.numTimeptsSpin.GetValue()
+
+    def onSelectAnalysis(self, e):
+        """ update settings based on analysis selection """
+        selectedAnalysis = self.analysisButtonBox.GetStringSelection()
+        if selectedAnalysis in ['Average', 'Median']:
+            self.analysisChoice = selectedAnalysis
+        else:
+            customScriptPath = self.openFileDlg(msg="Choose Custom Script (.py)",
+                                                wildcard="*.py",
+                                                startDir='/Users/jeff')
+            self.analysisChoice = customScriptPath
+
+        self.analysisText.SetLabel(self.getAnalysisText())
+
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """
@@ -322,6 +373,25 @@ class SetupFrame(wx.Frame):
             return str(shape)
         except:
             return '(invalid mask)'
+
+    def getAnalysisText(self):
+        """ set the text label in the analysis box """
+        # determine appropriate label
+        if self.analysisChoice == 'Average':
+            if self.weightMaskChoice:
+                label = 'Compute the Weighted Average of voxels within mask'
+            else:
+                label = 'Compute the Average of voxels within mask'
+        elif self.analysisChoice == 'Median':
+            if self.weightMaskChoice:
+                label = 'Compute the Weighted Median of voxels within mask'
+            else:
+                label = 'Compute the Median of voxels within mask'
+        else:
+            label = 'Custom Analysis Script: {}'.format(os.path.split(self.analysisChoice)[-1])
+
+        # set the text label
+        return label
 
 
 class SetupApp(wx.App):
