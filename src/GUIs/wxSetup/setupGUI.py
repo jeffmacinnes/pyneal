@@ -2,26 +2,85 @@ import os
 from os.path import join
 
 import wx
+import yaml
 import nibabel as nib
 
 pynealColor = '#B04555'
 
 
 class SetupFrame(wx.Frame):
-    def __init__(self, parent, title="Pyneal Setup"):
+    def __init__(self, parent, title="Pyneal Setup", settingsFile=None):
         super(SetupFrame, self).__init__(parent, title=title)  #initialize the parent class
         self.setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
 
         # initialize all gui panels and settings
-        self.InitSettings()
-        self.InitUI()
 
-    def InitSettings(self):
-        """ Initialize values for all settings """
+
         self.maskPath = '/Users/jeff/gDrive/jeffCloud/real-time/pyneal/tests/testData/testSeries_mask.nii.gz'
         self.weightMaskChoice = True
         self.numTimepts = 60
         self.analysisChoice = '/path/to/customScript.py'
+        self.outputPath = '/path/to/output'
+        self.launchDashboardChoice = True
+
+        self.InitSettings(settingsFile)
+        self.InitUI()
+
+    def InitSettings(self, settingsFile):
+        """ Initialize values for all settings """
+        defaultSettings = {
+            'pynealHost': ['127.0.0.1', str],
+            'pynealScannerPort': [999, int],
+            'resultsServerPort': [999, int],
+            'maskFile': ['None', str],
+            'maskIsWeighted': [True, bool],
+            'numTimepts': [999, int],
+            'analysisChoice': ['Average', str],
+            'outputPath': ['', str],
+            'launchDashboard': [True, bool],
+            'dashboardPort': [5557, int],
+            'dashboardClientPort': [5558, int]}
+
+        # initialize the dict that will hold the new settings
+        newSettings = {}
+
+        # load the settingsFile, if it exists and is not empty
+        if os.path.isfile(settingsFile) and os.path.getsize(settingsFile) > 0:
+            # open the file, load all settings from the file into a dict
+            with open(settingsFile, 'r') as ymlFile:
+                loadedSettings = yaml.load(ymlFile)
+
+            # loop over all default settings and see if there is a loaded setting
+            # that should overwrite the default
+            for k in defaultSettings.keys():
+                # does this key exist in loaded settings?
+                if k in loadedSettings.keys():
+                    loadedValue = loadedSettings[k]
+
+                    # make sure loaded setting has correct dtype before loading into GUI
+                    if type(loadedValue) == defaultSettings[k][1]:
+                        newSettings[k] = loadedValue
+                    else:
+                        # print warning
+                        print('Problem loading the settings file!')
+                        print('{} setting expecting dtype {}, but got {}. Using default instead'.format(
+                              k,
+                              defaultSettings[k][1],
+                              type(loadedValue)))
+                        newSettings[k] = defaultSettings[k][0]
+                # otherwise take defaule
+                else:
+                    newSettings[k] = defaultSettings[k][0]
+
+        # if no settings file exists, use defaults
+        else:
+            for k in defaultSettings.keys():
+                newSettings[k] = defaultSettings[k][0]
+
+        # set the loaded settings dict
+        self.GUI_settings = newSettings
+        print(self.GUI_settings)
+
 
     def InitUI(self):
         """ Initialize all GUI windows and widgets """
@@ -47,6 +106,7 @@ class SetupFrame(wx.Frame):
         preprocSizer = self.createPreprocessingBox()
         analysisSizer = self.createAnalysisBox()
         outputSizer = self.createOutputBox()
+        submitSizer = self.createSubmitBox()
 
         # add the sizers holding each box to the top level sizer for the panel
         vbox.Add(logoSizer, flag=wx.ALL, border=10, proportion=0)
@@ -55,6 +115,8 @@ class SetupFrame(wx.Frame):
         vbox.Add(preprocSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(analysisSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(outputSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
+        vbox.Add(submitSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
+
 
         # set the top level sizer to control the master panel
         self.setupPanel.SetSizer(vbox)
@@ -103,7 +165,7 @@ class SetupFrame(wx.Frame):
         hostEntry = wx.TextCtrl(self.setupPanel, -1,
                                 size=(entryW,-1),
                                 style=wx.TE_LEFT,
-                                value='127.0.0.1')
+                                value=self.GUI_settings['pynealHost'])
         contentSizer.Add(hostText, proportion=0, border=5,
                          flag=wx.EXPAND | wx.ALL)
         contentSizer.Add(hostEntry, proportion=1,
@@ -117,7 +179,7 @@ class SetupFrame(wx.Frame):
         pynealScannerPortEntry = wx.TextCtrl(self.setupPanel, -1,
                                              size=(entryW, -1),
                                              style=wx.TE_LEFT,
-                                             value='5555')
+                                             value=str(self.GUI_settings['pynealScannerPort']))
         contentSizer.Add(pynealScannerPortText, proportion=0, border=5,
                          flag=wx.EXPAND | wx.ALL)
         contentSizer.Add(pynealScannerPortEntry, proportion=1,
@@ -131,7 +193,7 @@ class SetupFrame(wx.Frame):
         resultsServerPortEntry = wx.TextCtrl(self.setupPanel, -1,
                                              size=(entryW, -1),
                                              style=wx.TE_LEFT,
-                                             value='5556')
+                                             value=str(self.GUI_settings['resultsServerPort']))
         contentSizer.Add(resultsServerPortText, proportion=0,
                          flag=wx.EXPAND | wx.ALL, border=5)
         contentSizer.Add(resultsServerPortEntry, proportion=1,
@@ -165,7 +227,7 @@ class SetupFrame(wx.Frame):
         self.maskShapeText.SetFont(font)
         self.maskNameText = wx.StaticText(self.setupPanel, -1,
                                      style=wx.ALIGN_LEFT,
-                                     label=os.path.split(self.maskPath)[-1])
+                                     label=os.path.split(self.GUI_settings['maskFile'])[-1])
         self.maskNameText.SetFont(font)
         contentSizer.Add(self.maskShapeText, pos=(0,0), span=(1,1))
         contentSizer.Add(self.maskNameText, pos=(0,1), span=(1,2),
@@ -176,7 +238,7 @@ class SetupFrame(wx.Frame):
         self.maskPathEntry = wx.TextCtrl(self.setupPanel, -1,
                                     size=(300, -1),
                                     style= wx.TE_LEFT,
-                                    value=self.maskPath)
+                                    value=self.GUI_settings['maskFile'])
         changeBtn = wx.Button(self.setupPanel, -1,
                               label="change")
         changeBtn.Bind(wx.EVT_BUTTON, self.onSelectNewMask)
@@ -192,11 +254,11 @@ class SetupFrame(wx.Frame):
                                        label='Weighted Mask?')
         self.weightMaskCheckBox = wx.CheckBox(self.setupPanel, -1,
                                          style=wx.CHK_2STATE)
-        self.weightMaskCheckBox.SetValue(self.weightMaskChoice)
+        self.weightMaskCheckBox.SetValue(self.GUI_settings['maskIsWeighted'])
         self.weightMaskCheckBox.Bind(wx.EVT_CHECKBOX, self.onWeightMaskToggled)
-        contentSizer.Add(self.weightMaskCheckBox, pos=(2,0), span=(1,1), border=5,
+        contentSizer.Add(self.weightMaskCheckBox, pos=(2,1), span=(1,1), border=5,
                          flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.TOP)
-        contentSizer.Add(weightMaskText, pos=(2,1), span=(1,1), border=5,
+        contentSizer.Add(weightMaskText, pos=(2,2), span=(1,1), border=5,
                          flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.TOP)
 
 
@@ -228,7 +290,7 @@ class SetupFrame(wx.Frame):
                                 size=(entryW,-1),
                                 style=wx.SP_ARROW_KEYS,
                                 min=0, max=9999)
-        self.numTimeptsSpin.SetValue(self.numTimepts)
+        self.numTimeptsSpin.SetValue(self.GUI_settings['numTimepts'])
         self.numTimeptsSpin.Bind(wx.EVT_SPINCTRL, self.onNumTimeptsUpdate)
         contentSizer.Add(numTimeptsText, proportion=0, border=5,
                          flag=wx.EXPAND | wx.ALL)
@@ -256,7 +318,7 @@ class SetupFrame(wx.Frame):
                                              majorDimension=1,
                                              style=wx.RA_SPECIFY_ROWS)
         try:
-            currentChoiceIdx = analysisButtonLabels.index(self.analysisChoice)
+            currentChoiceIdx = analysisButtonLabels.index(self.GUI_settings['analysisChoice'])
         except:
             currentChoiceIdx = analysisButtonLabels.index('Custom')
         self.analysisButtonBox.SetSelection(currentChoiceIdx)
@@ -275,57 +337,122 @@ class SetupFrame(wx.Frame):
         return analysisSizer
 
     def createOutputBox(self):
-        """ draw the Output Box """
+        """ draw the output options box """
         outputSizer = wx.BoxSizer(wx.VERTICAL)
 
-        # add  header for this box
+        # add the header for this box
         headerImg = self.drawHeader(label='Output')
-        outputSizer.Add(headerImg, flag=wx.EXPAND | wx.TOP, proportion=0)
+        outputSizer.Add(headerImg, proportion=0, flag=wx.EXPAND | wx.TOP)
+
+        # main content sizer
+        contentSizer = wx.GridBagSizer(vgap=5, hgap=5)
+
+        ## Output Path and Dialog Btn row ---------------------------------------
+        self.outputPathEntry = wx.TextCtrl(self.setupPanel, -1,
+                                    size=(300, -1),
+                                    style=wx.TE_LEFT,
+                                    value=self.GUI_settings['outputPath'])
+        changeBtn = wx.Button(self.setupPanel, -1,
+                              label="change")
+        changeBtn.Bind(wx.EVT_BUTTON, self.onSelectNewOutputDir)
+        contentSizer.Add(self.outputPathEntry, pos=(0,0), span=(1,3), border=5,
+                         flag=wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.EXPAND)
+        contentSizer.Add(changeBtn, pos=(0,3), border=5,
+                         flag=wx.EXPAND | wx.ALL)
+        contentSizer.AddGrowableCol(0,1) # ensure text entry expands with resize
+
+        ## Launch Dashboard row -------------------------------------------------
+        launchDashboardText = wx.StaticText(self.setupPanel, -1,
+                                       style=wx.ALIGN_RIGHT,
+                                       label='Launch Dashboard?')
+        self.launchDashboardCheckBox = wx.CheckBox(self.setupPanel, -1,
+                                         style=wx.CHK_2STATE)
+        self.launchDashboardCheckBox.SetValue(self.GUI_settings['launchDashboard'])
+        self.launchDashboardCheckBox.Bind(wx.EVT_CHECKBOX, self.onLaunchDashboardToggled)
+        contentSizer.Add(self.launchDashboardCheckBox, pos=(1,1), span=(1,1), border=5,
+                         flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.TOP)
+        contentSizer.Add(launchDashboardText, pos=(1,2), span=(1,1), border=5,
+                         flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.TOP)
+
+        # add content sizer to main box
+        outputSizer.Add(contentSizer, flag=wx.EXPAND | wx.ALL,
+                      proportion=1, border=10)
 
         return outputSizer
 
+    def createSubmitBox(self):
+        """ create the submit button box """
+        submitSizer = wx.BoxSizer(wx.VERTICAL)
+
+        # divider
+        bmp = wx.Bitmap(join(self.setupGUI_dir, 'images/headerThin.bmp'))
+        headerImg = wx.StaticBitmap(self.setupPanel, -1, bmp)
+        submitSizer.Add(headerImg, proportion=0,
+                        flag=wx.ALIGN_CENTRE_HORIZONTAL | wx.TOP)
+
+        btnSize = (200, 20)
+        submitBtn = wx.Button(self.setupPanel, -1,
+                              label='Submit',
+                              size=btnSize)
+
+        submitSizer.Add(submitBtn, proportion=0, border=5,
+                           flag=wx.ALIGN_CENTRE_HORIZONTAL | wx.ALL)
+
+        return submitSizer
 
     ### (CONTROL) - Event Handling and User Interaction -----------------------
     def onSelectNewMask(self, e):
         """ open a file dialog for selecting the new mask, and repopulate
         GUI with choice """
         wildcard = '*.gz'
-        startDir = os.path.split(self.maskPath)[0]
+        startDir = os.path.split(self.GUI_settings['maskFile'])[0]
         maskPath = self.openFileDlg(msg="Choose mask (.nii.gz)",
                                     wildcard=wildcard,
                                     startDir=startDir)
         # update mask widgets
         if maskPath is not None:
-            if maskPath != self.maskPath:
+            if maskPath != self.GUI_settings['maskFile']:
                 # set the new mask path
-                self.maskPath = maskPath
+                self.GUI_settings['maskFile'] = maskPath
                 self.maskShapeText.SetLabel(self.getMaskShape())
-                self.maskNameText.SetLabel(os.path.split(self.maskPath)[-1])
-                self.maskPathEntry.SetValue(self.maskPath)
+                self.maskNameText.SetLabel(os.path.split(self.GUI_settings['maskFile'])[-1])
+                self.maskPathEntry.SetValue(self.GUI_settings['maskFile'])
+
+    def onSelectNewOutputDir(self, e):
+        dlg = wx.DirDialog(None, message="Choose output directory...",
+                           defaultPath="/Users",
+                           style=wx.DD_DEFAULT_STYLE)
+        if dlg.ShowModal() == wx.ID_OK:
+            path = dlg.GetPath()
+            self.GUI_settings['outputPath'] = path
+            self.outputPathEntry.SetValue(self.GUI_settings['outputPath'])
 
     def onWeightMaskToggled(self, e):
         """ update settings & analysis text based on weight mask checkbox """
-        self.weightMaskChoice = self.weightMaskCheckBox.GetValue()
+        self.GUI_settings['maskIsWeighted'] = self.weightMaskCheckBox.GetValue()
         self.analysisText.SetLabel(self.getAnalysisText())
-
 
     def onNumTimeptsUpdate(self, e):
         """ update settings based on number of timepts specified """
-        self.numTimepts = self.numTimeptsSpin.GetValue()
+        self.GUI_settings['numTimepts'] = self.numTimeptsSpin.GetValue()
 
     def onSelectAnalysis(self, e):
         """ update settings based on analysis selection """
         selectedAnalysis = self.analysisButtonBox.GetStringSelection()
         if selectedAnalysis in ['Average', 'Median']:
-            self.analysisChoice = selectedAnalysis
+            self.GUI_settings['analysisChoice'] = selectedAnalysis
         else:
             customScriptPath = self.openFileDlg(msg="Choose Custom Script (.py)",
                                                 wildcard="*.py",
                                                 startDir='/Users/jeff')
-            self.analysisChoice = customScriptPath
+            self.GUI_settings['analysisChoice'] = customScriptPath
 
+        # set the text for the analysis label
         self.analysisText.SetLabel(self.getAnalysisText())
 
+    def onLaunchDashboardToggled(self, e):
+        """ update settings based on launch dashboard checkbox """
+        self.GUI_settings['launchDashboard'] = self.launchDashboardCheckBox.GetValue()
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """
@@ -363,9 +490,9 @@ class SetupFrame(wx.Frame):
         return headerImg
 
     def getMaskShape(self):
-        """ return str with the shape of the mask found at self.maskPath """
+        """ return str with the shape of the mask found at self.GUI_settings['maskFile'] """
         try:
-            shape = nib.load(self.maskPath).shape
+            shape = nib.load(self.GUI_settings['maskFile']).shape
             if len(shape) != 3:
                 errMsg = "Mask needs to be 3D (yours has {} dims)".format(len(shape))
                 self.showMessageDlg(errMsg, "ERROR", wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
@@ -377,18 +504,19 @@ class SetupFrame(wx.Frame):
     def getAnalysisText(self):
         """ set the text label in the analysis box """
         # determine appropriate label
-        if self.analysisChoice == 'Average':
-            if self.weightMaskChoice:
+        if self.GUI_settings['analysisChoice'] == 'Average':
+            if self.GUI_settings['maskIsWeighted']:
                 label = 'Compute the Weighted Average of voxels within mask'
             else:
                 label = 'Compute the Average of voxels within mask'
-        elif self.analysisChoice == 'Median':
-            if self.weightMaskChoice:
+        elif self.GUI_settings['analysisChoice'] == 'Median':
+            if self.GUI_settings['maskIsWeighted']:
                 label = 'Compute the Weighted Median of voxels within mask'
             else:
                 label = 'Compute the Median of voxels within mask'
         else:
-            label = 'Custom Analysis Script: {}'.format(os.path.split(self.analysisChoice)[-1])
+            #label = 'Custom Analysis Script: {}'.format(os.path.split(self.analysisChoice)[-1])
+            label = self.GUI_settings['analysisChoice']
 
         # set the text label
         return label
@@ -396,21 +524,28 @@ class SetupFrame(wx.Frame):
 
 class SetupApp(wx.App):
     """ Application class for setup GUI """
+    def __init__(self, settingsFile):
+        self.settingsFile = settingsFile  # create local reference to settingsFile
+
+        super().__init__()  #initialize the parent wx.App class
 
     def OnInit(self):
-        self.frame = SetupFrame(None, title='Pyneal Setup')
+        self.frame = SetupFrame(None,
+                                title='Pyneal Setup',
+                                settingsFile=self.settingsFile)
         self.frame.Show()
         self.SetTopWindow(self.frame)
         return True
 
 
-def launchPynealSetupGUI():
-    app = SetupApp()
+def launchPynealSetupGUI(settingsFile):
+    app = SetupApp(settingsFile)
     app.MainLoop()
 
 
 if __name__ == '__main__':
+    # specify settings file to read
+    settingsFile = 'setupConfig.yaml'
 
-    # create settings dict to pass into
-
-    launchPynealSetupGUI()
+    # launch setup gui
+    launchPynealSetupGUI(settingsFile)
