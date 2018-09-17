@@ -14,19 +14,11 @@ class SetupFrame(wx.Frame):
         self.setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
 
         # initialize all gui panels and settings
-
-
-        self.maskPath = '/Users/jeff/gDrive/jeffCloud/real-time/pyneal/tests/testData/testSeries_mask.nii.gz'
-        self.weightMaskChoice = True
-        self.numTimepts = 60
-        self.analysisChoice = '/path/to/customScript.py'
-        self.outputPath = '/path/to/output'
-        self.launchDashboardChoice = True
-
-        self.InitSettings(settingsFile)
+        self.settingsFile = settingsFile
+        self.InitSettings()
         self.InitUI()
 
-    def InitSettings(self, settingsFile):
+    def InitSettings(self):
         """ Initialize values for all settings """
         defaultSettings = {
             'pynealHost': ['127.0.0.1', str],
@@ -45,7 +37,7 @@ class SetupFrame(wx.Frame):
         newSettings = {}
 
         # load the settingsFile, if it exists and is not empty
-        if os.path.isfile(settingsFile) and os.path.getsize(settingsFile) > 0:
+        if os.path.isfile(self.settingsFile) and os.path.getsize(self.settingsFile) > 0:
             # open the file, load all settings from the file into a dict
             with open(settingsFile, 'r') as ymlFile:
                 loadedSettings = yaml.load(ymlFile)
@@ -79,8 +71,6 @@ class SetupFrame(wx.Frame):
 
         # set the loaded settings dict
         self.GUI_settings = newSettings
-        print(self.GUI_settings)
-
 
     def InitUI(self):
         """ Initialize all GUI windows and widgets """
@@ -162,13 +152,13 @@ class SetupFrame(wx.Frame):
                                  size=(labelW, -1),
                                  style=wx.ALIGN_RIGHT,
                                  label='Pyneal Host IP:')
-        hostEntry = wx.TextCtrl(self.setupPanel, -1,
+        self.hostEntry = wx.TextCtrl(self.setupPanel, -1,
                                 size=(entryW,-1),
                                 style=wx.TE_LEFT,
                                 value=self.GUI_settings['pynealHost'])
         contentSizer.Add(hostText, proportion=0, border=5,
                          flag=wx.EXPAND | wx.ALL)
-        contentSizer.Add(hostEntry, proportion=1,
+        contentSizer.Add(self.hostEntry, proportion=1,
                          flag=wx.EXPAND | wx.ALL)
 
         ## Pyneal Scanner Port row --------------------------------------------
@@ -176,13 +166,13 @@ class SetupFrame(wx.Frame):
                                               size=(labelW, -1),
                                               style=wx.ALIGN_RIGHT,
                                               label='Pyneal-Scanner Port:')
-        pynealScannerPortEntry = wx.TextCtrl(self.setupPanel, -1,
+        self.pynealScannerPortEntry = wx.TextCtrl(self.setupPanel, -1,
                                              size=(entryW, -1),
                                              style=wx.TE_LEFT,
                                              value=str(self.GUI_settings['pynealScannerPort']))
         contentSizer.Add(pynealScannerPortText, proportion=0, border=5,
                          flag=wx.EXPAND | wx.ALL)
-        contentSizer.Add(pynealScannerPortEntry, proportion=1,
+        contentSizer.Add(self.pynealScannerPortEntry, proportion=1,
                          flag=wx.EXPAND | wx.ALL)
 
         ## Results Server Port row --------------------------------------------
@@ -190,13 +180,13 @@ class SetupFrame(wx.Frame):
                                               size=(labelW, -1),
                                               style=wx.ALIGN_RIGHT,
                                               label='Results Server Port:')
-        resultsServerPortEntry = wx.TextCtrl(self.setupPanel, -1,
+        self.resultsServerPortEntry = wx.TextCtrl(self.setupPanel, -1,
                                              size=(entryW, -1),
                                              style=wx.TE_LEFT,
                                              value=str(self.GUI_settings['resultsServerPort']))
         contentSizer.Add(resultsServerPortText, proportion=0,
                          flag=wx.EXPAND | wx.ALL, border=5)
-        contentSizer.Add(resultsServerPortEntry, proportion=1,
+        contentSizer.Add(self.resultsServerPortEntry, proportion=1,
                          flag=wx.EXPAND | wx.ALL)
 
 
@@ -394,6 +384,7 @@ class SetupFrame(wx.Frame):
         submitBtn = wx.Button(self.setupPanel, -1,
                               label='Submit',
                               size=btnSize)
+        submitBtn.Bind(wx.EVT_BUTTON, self.onSubmit)
 
         submitSizer.Add(submitBtn, proportion=0, border=5,
                            flag=wx.ALIGN_CENTRE_HORIZONTAL | wx.ALL)
@@ -454,6 +445,33 @@ class SetupFrame(wx.Frame):
         """ update settings based on launch dashboard checkbox """
         self.GUI_settings['launchDashboard'] = self.launchDashboardCheckBox.GetValue()
 
+    def onSubmit(self, e):
+        """ update and confirm all settings and submit """
+        # get all settings from GUI
+        self.getAllSettings()
+
+
+        errorCheckPassed = self.check_GUI_settings()
+        # write GUI settings to file
+        if errorCheckPassed:
+            # Convery the GUI_settings from kivy dictproperty to a regular ol'
+            # python dict (and do some reformatting along the way)
+            allSettings = {}
+            for k in self.GUI_settings.keys():
+                # convert text inputs to integers
+                if k in ['pynealScannerPort', 'resultsServerPort', 'numTimepts']:
+                        allSettings[k] = int(self.GUI_settings[k])
+                else:
+                    allSettings[k] = self.GUI_settings[k]
+
+            # write the settings as the new config yaml file
+            with open(self.settingsFile, 'w') as outputFile:
+                yaml.dump(allSettings, outputFile, default_flow_style=False)
+
+        # close
+        self.Close()
+
+
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """
         dlg = wx.FileDialog(self, message=msg,
@@ -475,6 +493,42 @@ class SetupFrame(wx.Frame):
                                caption=title, style=style)
         dlg.ShowModal()
         dlg.Destroy()
+
+    def check_GUI_settings(self):
+        """ Check the validity of all current GUI settings
+
+        Returns
+        -------
+        errorCheckPassed : Boolean
+            True/False flag indicating whether ALL of the current settings are
+            valid or not
+
+        """
+        errorMsg = []
+        # check if text inputs are valid integers
+        for k in ['pynealScannerPort', 'resultsServerPort', 'numTimepts']:
+            try:
+                tmp = int(self.GUI_settings[k])
+            except:
+                errorMsg.append('{}: not an integer'.format(k))
+                pass
+
+        # check if maskFile is a valid path
+        if not os.path.isfile(self.GUI_settings['maskFile']):
+            errorMsg.append('{} is not a valid mask file'.format(self.GUI_settings['maskFile']))
+
+        # check if output path is a valid path
+        if not os.path.isdir(self.GUI_settings['outputPath']):
+            errorMsg.append('{} is not a valid output path'.format(self.GUI_settings['outputPath']))
+
+        # show the error notification, if any
+        if len(errorMsg) > 0:
+            self.showMessageDlg('\n'.join(errorMsg), 'Settings Error', wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
+            errorCheckPassed = False
+        else:
+            errorCheckPassed = True
+        return errorCheckPassed
+
 
     ### (MISC) - HELPER FUNCTIONS ---------------------------------------------
     def drawHeader(self, label="None"):
@@ -520,6 +574,22 @@ class SetupFrame(wx.Frame):
 
         # set the text label
         return label
+
+    def getAllSettings(self):
+        """ get all values from the GUI and write into the GUI_settings dict"""
+        self.GUI_settings['pynealHost'] = self.hostEntry.GetValue()
+        self.GUI_settings['pynealScannerPort'] = self.pynealScannerPortEntry.GetValue()
+        self.GUI_settings['resultsServerPort'] = self.resultsServerPortEntry.GetValue()
+        self.GUI_settings['maskFile'] = self.maskPathEntry.GetValue()
+        self.GUI_settings['maskIsWeighted'] = self.weightMaskCheckBox.GetValue()
+        self.GUI_settings['numTimepts'] = self.numTimeptsSpin.GetValue()
+        # self.GUI_settings['analysisChoice'] =
+        self.GUI_settings['outputPath'] = self.outputPathEntry.GetValue()
+        self.GUI_settings['launchDashboard'] = self.launchDashboardCheckBox.GetValue()
+
+        # options that don't appear in GUI, but should be in settings file
+        self.GUI_settings['dashboardPort'] = 5557
+        self.GUI_settings['dashboardClientPort'] = 5558
 
 
 class SetupApp(wx.App):
