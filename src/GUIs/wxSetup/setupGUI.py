@@ -1,3 +1,25 @@
+""" Pyneal Setup GUI:
+
+Pyneal is configured using settings stored in a setupConfig.yaml file in
+pyneal/src/GUIs/pynealSetup. This setup GUI is basically just a way to view the
+current settings as specified by that file, as well as a convienient way for
+users to update those settings to fit the parameters of a particular
+experiment.
+
+When Pyneal is launched, it'll first open this GUI and give users a chance to
+verify/change the current settings. When the user hits 'Submit', the settings
+from the GUI will be re-written to the setupConfig.yaml file, and subsequent
+stages of Pyneal will read from that file.
+
+Users should not need to edit the setupConfig.yaml file directly. Instead, they
+can make a custom .yaml file with any of the Pyneal settings they wish to
+specify, and load that file from within the GUI. Any setting specified by this
+file will overwrite the current GUI value; all other settings will be taken
+from the setupConfig.yaml file. This is a way for users to keep unique settings
+files for different experiments.
+
+"""
+
 import os
 from os.path import join
 
