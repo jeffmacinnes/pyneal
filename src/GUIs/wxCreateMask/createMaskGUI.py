@@ -26,22 +26,67 @@ class CreateMaskFrame(wx.Frame):
 
         self.createMaskGUI_dir = os.path.dirname(os.path.abspath(__file__))
         self.pynealDir = Path(os.path.abspath(__file__)).resolve().parents[3]
+        self.MNI_standardsDir = join(self.pynealDir, 'utils/MNI_templates')
+        self.masksDir = join(self.pynealDir, 'utils/masks')
 
         # initialize all gui panels and settings
         self.InitSettings()
         self.InitUI()
 
     def InitSettings(self):
-        self.GUI_settings = {
-            'subjFunc': '/Users/jeff',
-            'createFuncBrainMask': True,
-            'transformMaskToFunc': True,
-            'subjAnat': '/Users/jeff/anat',
-            'skullStrip': True,
-            'MNI_standard': '/Users/jeff/MNI_standard',
-            'MNI_mask': '/Users/jeff/MNI_mask',
-            'outputPrefix': 'test'
+        """ Initialize values for all settings """
+        defaultSettings = {
+            'subjFunc': ['', str],
+            'createFuncBrainMask': [True, bool],
+            'transformMaskToFunc': [False, bool],
+            'subjAnat': ['', str],
+            'skullStrip': [True, bool],
+            'MNI_standard': [join(self.MNI_standardsDir, 'MNI152_T1_1mm_brain.nii.gz'), str],
+            'MNI_mask': ['', str],
+            'outputPrefix': ['test', str]
         }
+
+        # initialize dictionary that will eventually hold the new settings
+        newSettings = {}
+
+        # load the settingsFile, if it exists and is not empty
+        if os.path.isfile(settingsFile) and os.path.getsize(settingsFile) > 0:
+            # open the file, load all settings from the file into a dict
+            with open(settingsFile, 'r') as ymlFile:
+                loadedSettings = yaml.load(ymlFile)
+
+            # Go through all default settings, and see if there is
+            # a loaded setting that should overwrite the default
+            for k in defaultSettings.keys():
+                # does this key exist in the loaded settings
+                if k in loadedSettings.keys():
+                    loadedValue = loadedSettings[k]
+
+                    # does the dtype of the value match what is
+                    # specifed by the default?
+                    if type(loadedValue) == defaultSettings[k][1]:
+                        newSettings[k] = loadedValue
+                    else:
+                        # throw error and quit
+                        print('Problem loading the settings file!')
+                        print('{} setting expecting dtype {}, but got {}'.format(
+                              k,
+                              defaultSettings[k][1],
+                              type(loadedValue)
+                              ))
+                        sys.exit()
+                # if the loaded file doesn't have this setting, take the default
+                else:
+                    newSettings[k] = defaultSettings[k][0]
+
+        # if no settings file exists, use the defaults
+        else:
+            for k in defaultSettings.keys():
+                newSettings[k] = defaultSettings[k][0]
+
+        # set the loaded settings dict
+        self.GUI_settings = newSettings
+
 
     def InitUI(self):
         """ Initialize all GUI windows and widgets """
@@ -79,6 +124,9 @@ class CreateMaskFrame(wx.Frame):
         vbox.Add(mniMaskSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
         vbox.Add(wx.StaticLine(self.createMaskPanel, -1, size=(380, -1)), flag=wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, border=10, proportion=0)
         vbox.Add(submitSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
+
+        # update appearance of "transform MNI mask..." options
+        self.updateTransformMaskOptsVisibility()
 
         # set the top level sizer to control the master panel
         self.createMaskPanel.SetSizer(vbox)
@@ -155,16 +203,16 @@ class CreateMaskFrame(wx.Frame):
 
         # transform mni mask checkbox row
         self.transformMaskCheckBox = wx.CheckBox(self.createMaskPanel, -1,
-                                 style=wx.CHK_2STATE | wx.ALIGN_RIGHT,
+                                 style=wx.CHK_2STATE | wx.ALIGN_CENTER_HORIZONTAL,
                                  label='Transform MNI mask to FUNC')
         self.transformMaskCheckBox.SetValue(self.GUI_settings['transformMaskToFunc'])
         self.transformMaskCheckBox.Bind(wx.EVT_CHECKBOX, self.onTransformMaskToggled)
 
         mniMaskSizer.Add(self.transformMaskCheckBox, pos=(0,1), span=(1,1), border=5,
-                         flag=wx.ALIGN_RIGHT | wx.ALL)
+                         flag=wx.ALIGN_CENTER_HORIZONTAL | wx.ALL)
 
         # hi-res anat input row
-        anatLabel = wx.StaticText(self.createMaskPanel, -1,
+        self.anatLabel = wx.StaticText(self.createMaskPanel, -1,
                                   size=(100,-1),
                                   style=wx.ALIGN_RIGHT,
                                   label='hi-res ANAT:')
@@ -176,7 +224,7 @@ class CreateMaskFrame(wx.Frame):
                              size=(70,-1),
                              label='change')
         self.anatChangeBtn.Bind(wx.EVT_BUTTON, self.onChangeAnat)
-        mniMaskSizer.Add(anatLabel, pos=(1,0), span=(1,1), border=5,
+        mniMaskSizer.Add(self.anatLabel, pos=(1,0), span=(1,1), border=5,
                       flag=wx.ALL)
         mniMaskSizer.Add(self.anatEntry, pos=(1,1), span=(1,2), border=5,
                       flag=wx.EXPAND | wx.ALL)
@@ -189,16 +237,16 @@ class CreateMaskFrame(wx.Frame):
         self.skullStripCheckBox.SetValue(self.GUI_settings['skullStrip'])
         self.skullStripCheckBox.Bind(wx.EVT_CHECKBOX, self.onSkullStripToggled)
 
-        skullStripText = wx.StaticText(self.createMaskPanel, -1,
+        self.skullStripText = wx.StaticText(self.createMaskPanel, -1,
                                        style=wx.ALIGN_RIGHT,
                                        label='Skull strip?')
-        mniMaskSizer.Add(skullStripText, pos=(2,1), span=(1,1), border=5,
+        mniMaskSizer.Add(self.skullStripText, pos=(2,1), span=(1,1), border=5,
                          flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT | wx.TOP)
         mniMaskSizer.Add(self.skullStripCheckBox, pos=(2,2), span=(1,1), border=5,
                          flag=wx.ALIGN_CENTER_VERTICAL | wx.ALL)
 
         # MNI standard row
-        mniStdLabel = wx.StaticText(self.createMaskPanel, -1,
+        self.mniStdLabel = wx.StaticText(self.createMaskPanel, -1,
                                   size=(100,-1),
                                   style=wx.ALIGN_RIGHT,
                                   label='MNI standard:')
@@ -210,7 +258,7 @@ class CreateMaskFrame(wx.Frame):
                              size=(70,-1),
                              label='change')
         self.mniStdChangeBtn.Bind(wx.EVT_BUTTON, self.onChangeMniStd)
-        mniMaskSizer.Add(mniStdLabel, pos=(3,0), span=(1,1), border=5,
+        mniMaskSizer.Add(self.mniStdLabel, pos=(3,0), span=(1,1), border=5,
                       flag=wx.ALL)
         mniMaskSizer.Add(self.mniStdEntry, pos=(3,1), span=(1,2), border=5,
                       flag=wx.EXPAND | wx.ALL)
@@ -218,7 +266,7 @@ class CreateMaskFrame(wx.Frame):
                       flag=wx.ALL)
 
         # MNI mask row
-        mniMaskLabel = wx.StaticText(self.createMaskPanel, -1,
+        self.mniMaskLabel = wx.StaticText(self.createMaskPanel, -1,
                                   size=(100,-1),
                                   style=wx.ALIGN_RIGHT,
                                   label='MNI mask:')
@@ -230,7 +278,7 @@ class CreateMaskFrame(wx.Frame):
                              size=(70,-1),
                              label='change')
         self.mniMaskChangeBtn.Bind(wx.EVT_BUTTON, self.onChangeMniMask)
-        mniMaskSizer.Add(mniMaskLabel, pos=(4,0), span=(1,1), border=5,
+        mniMaskSizer.Add(self.mniMaskLabel, pos=(4,0), span=(1,1), border=5,
                       flag=wx.ALL)
         mniMaskSizer.Add(self.mniMaskEntry, pos=(4,1), span=(1,2), border=5,
                       flag=wx.EXPAND | wx.ALL)
@@ -238,7 +286,7 @@ class CreateMaskFrame(wx.Frame):
                       flag=wx.ALL)
 
         # Output prefix row
-        outputPrefixLabel = wx.StaticText(self.createMaskPanel, -1,
+        self.outputPrefixLabel = wx.StaticText(self.createMaskPanel, -1,
                           size=(100,-1),
                           style=wx.ALIGN_RIGHT,
                           label='Output Prefix:')
@@ -246,7 +294,7 @@ class CreateMaskFrame(wx.Frame):
                                 size=(180, -1),
                                 style=wx.TE_LEFT,
                                 value=self.GUI_settings['outputPrefix'])
-        mniMaskSizer.Add(outputPrefixLabel, pos=(5,0), span=(1,1), border=5,
+        mniMaskSizer.Add(self.outputPrefixLabel, pos=(5,0), span=(1,1), border=5,
                       flag=wx.ALL)
         mniMaskSizer.Add(self.outputPrefixEntry, pos=(5,1), span=(1,2), border=5,
                       flag=wx.ALL)
@@ -285,31 +333,66 @@ class CreateMaskFrame(wx.Frame):
         funcPath = self.openFileDlg(msg="Choose a 4D func nifti (.nii.gz) to use as reference",
                                     wildcard=wildcard,
                                     startDir=startDir)
-
         # update widgets
         if funcPath is not None:
             if funcPath != self.GUI_settings['subjFunc']:
-                # set the new mask path
+                # set the new path
                 self.GUI_settings['subjFunc'] = funcPath
-                self.maskPathEntry.SetValue(self.GUI_settings['subjFunc'])
+                self.funcEntry.SetValue(self.GUI_settings['subjFunc'])
 
     def onBrainMaskToggled(self, e):
-        print('clicking the brain mask checkbox')
+        self.GUI_settings['createFuncBrainMask'] = self.brainMaskCheckBox.GetValue()
 
     def onTransformMaskToggled(self, e):
-        print('clicking the transform mni mask to func checkbox')
+        self.GUI_settings['transformMaskToFunc'] = self.transformMaskCheckBox.GetValue()
+
+        # update appearance of transform mni mask options
+        self.updateTransformMaskOptsVisibility()
 
     def onChangeAnat(self, e):
-        print('changing the subj anat path')
+        """ open a file dialog for selecting the hi-res ANAT file """
+        wildcard = '*.gz'
+        startDir = os.path.split(self.GUI_settings['subjAnat'])[0]
+        anatPath = self.openFileDlg(msg="Choose hi-res ANAT (.nii.gz) for this subject",
+                                    wildcard=wildcard,
+                                    startDir=startDir)
+        # update widgets
+        if anatPath is not None:
+            if anatPath != self.GUI_settings['subjAnat']:
+                # set the new path
+                self.GUI_settings['subjAnat'] = anatPath
+                self.anatEntry.SetValue(self.GUI_settings['subjAnat'])
 
     def onSkullStripToggled(self, e):
-        print('clicking the skull strip checkbox')
+        self.GUI_settings['skullStrip'] = self.skullStripCheckBox.GetValue()
 
     def onChangeMniStd(self, e):
-        print('changing the MNI standard selection')
+        """ open a file dialog for selecting new MNI standard """
+        wildcard = '*.gz'
+        startDir = os.path.split(self.GUI_settings['MNI_standard'])[0]
+        mniStdPath = self.openFileDlg(msg="Choose the MNI standard (.nii.gz) with same dims/orientation as mask",
+                                    wildcard=wildcard,
+                                    startDir=startDir)
+        # update widgets
+        if mniStdPath is not None:
+            if mniStdPath != self.GUI_settings['MNI_standard']:
+                # set the new mask path
+                self.GUI_settings['MNI_standard'] = mniStdPath
+                self.mniStdEntry.SetValue(self.GUI_settings['MNI_standard'])
 
     def onChangeMniMask(self, e):
-        print('changing the MNI mask selection')
+        """ open a file dialog for selecting new MNI mask """
+        wildcard = '*.gz'
+        startDir = self.masksDir
+        maskPath = self.openFileDlg(msg="Choose the MNI-space mask (.nii.gz)",
+                                    wildcard=wildcard,
+                                    startDir=startDir)
+        # update widgets
+        if maskPath is not None:
+            if maskPath != self.GUI_settings['MNI_mask']:
+                # set the new mask path
+                self.GUI_settings['MNI_mask'] = maskPath
+                self.mniMaskEntry.SetValue(self.GUI_settings['MNI_mask'])
 
     def onSubmit(self, e):
         print('submit button pressed')
@@ -337,7 +420,19 @@ class CreateMaskFrame(wx.Frame):
         dlg.Destroy()
 
     ### (MISC) - HELPER FUNCTIONS ---------------------------------------------
-
+    def updateTransformMaskOptsVisibility(self):
+        """ set the visibility of options under the transform mask box based
+        on checkbox value
+        """
+        for widget in [self.anatLabel, self.anatEntry, self.anatChangeBtn,
+                    self.skullStripText, self.skullStripCheckBox,
+                    self.mniStdLabel, self.mniStdEntry, self.mniStdChangeBtn,
+                    self.mniMaskLabel, self.mniMaskEntry, self.mniMaskChangeBtn,
+                    self.outputPrefixLabel, self.outputPrefixEntry]:
+            if self.GUI_settings['transformMaskToFunc']:
+                widget.Enable()
+            else:
+                widget.Disable()
 
 
 class CreateMaskApp(wx.App):
