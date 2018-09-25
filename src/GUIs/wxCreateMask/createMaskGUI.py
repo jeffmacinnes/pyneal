@@ -30,6 +30,7 @@ class CreateMaskFrame(wx.Frame):
         self.masksDir = join(self.pynealDir, 'utils/masks')
 
         # initialize all gui panels and settings
+        self.settingsFile = settingsFile
         self.InitSettings()
         self.InitUI()
 
@@ -395,7 +396,19 @@ class CreateMaskFrame(wx.Frame):
                 self.mniMaskEntry.SetValue(self.GUI_settings['MNI_mask'])
 
     def onSubmit(self, e):
-        print('submit button pressed')
+        """ update and confirm all settings and submit """
+        # get all settings from GUI
+        self.getAllSettings()
+
+        errorCheckPassed = self.check_GUI_settings()
+        # write GUI settings to file
+        if errorCheckPassed:
+            # write the settings as the new config yaml file
+            with open(self.settingsFile, 'w') as outputFile:
+                yaml.dump(self.GUI_settings, outputFile, default_flow_style=False)
+
+        # close
+        self.Close()
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """
@@ -433,6 +446,46 @@ class CreateMaskFrame(wx.Frame):
                 widget.Enable()
             else:
                 widget.Disable()
+
+    def check_GUI_settings(self):
+        """ Check the validity of all current GUI settings
+
+        Returns
+        -------
+        errorCheckPassed : Boolean
+            True/False flag indicating whether ALL of the current settings are
+            valid or not
+
+        """
+        errorMsg = []
+
+        # check if paths are valid
+        for p in ['subjFunc', 'subjAnat', 'MNI_standard', 'MNI_mask']:
+            try:
+                os.path.isfile(self.GUI_settings[p])
+            except:
+                errorMsg.append('{}: not a valid path'.format(k))
+
+        # show the error notification, if any
+        if len(errorMsg) > 0:
+            self.showMessageDlg('\n'.join(errorMsg), 'Settings Error', wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
+            errorCheckPassed = False
+        else:
+            errorCheckPassed = True
+        return errorCheckPassed
+
+    def getAllSettings(self):
+        """ get all values from the GUI and write into the GUI_settings dict"""
+        self.GUI_settings['subjFunc'] = self.funcEntry.GetValue()
+        self.GUI_settings['createFuncBrainMask'] = self.brainMaskCheckBox.GetValue()
+        self.GUI_settings['transformMaskToFunc'] = self.transformMaskCheckBox.GetValue()
+        self.GUI_settings['subjAnat'] = self.anatEntry.GetValue()
+        self.GUI_settings['skullStrip'] = self.skullStripCheckBox.GetValue()
+        self.GUI_settings['MNI_standard'] = self.mniStdEntry.GetValue()
+        self.GUI_settings['MNI_mask'] = self.mniMaskEntry.GetValue()
+        self.GUI_settings['outputPrefix'] = self.outputPrefixEntry.GetValue()
+
+
 
 
 class CreateMaskApp(wx.App):

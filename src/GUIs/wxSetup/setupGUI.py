@@ -516,42 +516,6 @@ class SetupFrame(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def check_GUI_settings(self):
-        """ Check the validity of all current GUI settings
-
-        Returns
-        -------
-        errorCheckPassed : Boolean
-            True/False flag indicating whether ALL of the current settings are
-            valid or not
-
-        """
-        errorMsg = []
-        # check if text inputs are valid integers
-        for k in ['pynealScannerPort', 'resultsServerPort', 'numTimepts']:
-            try:
-                tmp = int(self.GUI_settings[k])
-            except:
-                errorMsg.append('{}: not an integer'.format(k))
-                pass
-
-        # check if maskFile is a valid path
-        if not os.path.isfile(self.GUI_settings['maskFile']):
-            errorMsg.append('{} is not a valid mask file'.format(self.GUI_settings['maskFile']))
-
-        # check if output path is a valid path
-        if not os.path.isdir(self.GUI_settings['outputPath']):
-            errorMsg.append('{} is not a valid output path'.format(self.GUI_settings['outputPath']))
-
-        # show the error notification, if any
-        if len(errorMsg) > 0:
-            self.showMessageDlg('\n'.join(errorMsg), 'Settings Error', wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
-            errorCheckPassed = False
-        else:
-            errorCheckPassed = True
-        return errorCheckPassed
-
-
     ### (MISC) - HELPER FUNCTIONS ---------------------------------------------
     def drawHeader(self, label="None"):
         """ Draw the header to be placed at the top of the section """
@@ -596,6 +560,41 @@ class SetupFrame(wx.Frame):
 
         # set the text label
         return label
+
+    def check_GUI_settings(self):
+        """ Check the validity of all current GUI settings
+
+        Returns
+        -------
+        errorCheckPassed : Boolean
+            True/False flag indicating whether ALL of the current settings are
+            valid or not
+
+        """
+        errorMsg = []
+        # check if text inputs are valid integers
+        for k in ['pynealScannerPort', 'resultsServerPort', 'numTimepts']:
+            try:
+                tmp = int(self.GUI_settings[k])
+            except:
+                errorMsg.append('{}: not an integer'.format(k))
+                pass
+
+        # check if maskFile is a valid path
+        if not os.path.isfile(self.GUI_settings['maskFile']):
+            errorMsg.append('{} is not a valid mask file'.format(self.GUI_settings['maskFile']))
+
+        # check if output path is a valid path
+        if not os.path.isdir(self.GUI_settings['outputPath']):
+            errorMsg.append('{} is not a valid output path'.format(self.GUI_settings['outputPath']))
+
+        # show the error notification, if any
+        if len(errorMsg) > 0:
+            self.showMessageDlg('\n'.join(errorMsg), 'Settings Error', wx.YES_DEFAULT | wx.ICON_EXCLAMATION)
+            errorCheckPassed = False
+        else:
+            errorCheckPassed = True
+        return errorCheckPassed
 
     def getAllSettings(self):
         """ get all values from the GUI and write into the GUI_settings dict"""
