@@ -33,7 +33,7 @@ from src.scanReceiver import ScanReceiver
 from src.pynealPreprocessing import Preprocessor
 from src.pynealAnalysis import Analyzer
 from src.resultsServer import ResultsServer
-import src.GUIs.pynealSetup.setup as setupGUI
+import src.GUIs.pynealSetup.setupGUI as setupGUI
 
 # Set the Pyneal Root dir based on where this file lives
 pynealDir = os.path.abspath(os.path.dirname(__file__))

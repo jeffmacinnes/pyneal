@@ -22,6 +22,7 @@ files for different experiments.
 
 import os
 from os.path import join
+from pathlib import Path
 
 import wx
 import yaml
@@ -29,11 +30,12 @@ import nibabel as nib
 
 pynealColor = '#B04555'
 
-
 class SetupFrame(wx.Frame):
     def __init__(self, parent, title="Pyneal Setup", settingsFile=None):
         super(SetupFrame, self).__init__(parent, title=title)  #initialize the parent class
         self.setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
+        self.pynealDir = str(Path(os.path.abspath(__file__)).resolve().parents[3])
+
 
         # initialize all gui panels and settings
         self.settingsFile = settingsFile
@@ -61,7 +63,7 @@ class SetupFrame(wx.Frame):
         # load the settingsFile, if it exists and is not empty
         if os.path.isfile(self.settingsFile) and os.path.getsize(self.settingsFile) > 0:
             # open the file, load all settings from the file into a dict
-            with open(settingsFile, 'r') as ymlFile:
+            with open(self.settingsFile, 'r') as ymlFile:
                 loadedSettings = yaml.load(ymlFile)
 
             # loop over all default settings and see if there is a loaded setting
@@ -417,8 +419,14 @@ class SetupFrame(wx.Frame):
     def onSelectNewMask(self, e):
         """ open a file dialog for selecting the new mask, and repopulate
         GUI with choice """
+        # get current value from GUI
+        currentMask = self.maskPathEntry.GetValue()
+        if os.path.exists(currentMask):
+            startDir = os.path.split(currentMask)[0]
+        else:
+            startDir = self.pynealDir
+        print(startDir)
         wildcard = '*.gz'
-        startDir = os.path.split(self.GUI_settings['maskFile'])[0]
         maskPath = self.openFileDlg(msg="Choose mask (.nii.gz)",
                                     wildcard=wildcard,
                                     startDir=startDir)
@@ -432,8 +440,15 @@ class SetupFrame(wx.Frame):
                 self.maskPathEntry.SetValue(self.GUI_settings['maskFile'])
 
     def onSelectNewOutputDir(self, e):
-        dlg = wx.DirDialog(None, message="Choose output directory...",
-                           defaultPath="/Users",
+        # get current value from GUI
+        currentOutputPath = self.outputPathEntry.GetValue()
+        if os.path.exists(currentOutputPath):
+            startDir = currentOutputPath
+        else:
+            startDir = self.pynealDir
+        dlg = wx.DirDialog(None,
+                           message="Choose output directory...",
+                           defaultPath=startDir,
                            style=wx.DD_DEFAULT_STYLE)
         if dlg.ShowModal() == wx.ID_OK:
             path = dlg.GetPath()
@@ -476,8 +491,7 @@ class SetupFrame(wx.Frame):
         errorCheckPassed = self.check_GUI_settings()
         # write GUI settings to file
         if errorCheckPassed:
-            # Convery the GUI_settings from kivy dictproperty to a regular ol'
-            # python dict (and do some reformatting along the way)
+            # Convery the GUI_settings to proper datatype
             allSettings = {}
             for k in self.GUI_settings.keys():
                 # convert text inputs to integers
@@ -492,7 +506,6 @@ class SetupFrame(wx.Frame):
 
         # close
         self.Close()
-
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """

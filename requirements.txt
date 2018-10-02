@@ -12,6 +12,7 @@ nipy>=0.4.1
 numpy>=1.13.1
 scipy>=1.1.0
 pyzmq>=16.0.2
+wxPython>=4.0.1
 flask>=0.12.2
 flask_socketio>=2.9.2
 eventlet>=0.21.0
