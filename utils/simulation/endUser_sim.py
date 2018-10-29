@@ -76,7 +76,7 @@ def requestResult(volIdx, host, port):
 
     # send request for volume number. Request must by 4-char string representing
     # the volume number requested
-    request = volIdx.zfill(4)
+    request = str(volIdx).zfill(4)
 
     print('Sending request to {}:{} for vol {}'.format(host, port, request))
     clientSocket.send(request.encode())
