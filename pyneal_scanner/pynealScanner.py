@@ -44,7 +44,7 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
-def pynealScanner_Phillips(scannerSettings, scannerDirs):
+def pynealScanner_Philips(scannerSettings, scannerDirs):
     """ Launch Pyneal Scanner for real-time scan in a Philips environment
 
     """
@@ -67,7 +67,7 @@ def pynealScanner_Siemens(scannerSettings, scannerDirs):
 def pynealScanner_sandbox(scannerSettings, scannerDirs):
     """ Simple sandbox method for launching a real-time scan using experimental
     methods. Use for debugging and testing
-    
+
     """
     from sandbox.test_GE_utils import test_GE_launch_rtfMRI
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     if scannerMake == 'GE':
         pynealScanner_GE(scannerSettings, scannerDirs)
     elif scannerMake == 'Philips':
-        pynealScanner_Phillips(scannerSettings, scannerDirs)
+        pynealScanner_Philips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':
         pynealScanner_Siemens(scannerSettings, scannerDirs)
     elif scannerMake == 'sandbox':

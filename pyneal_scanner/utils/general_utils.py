@@ -87,7 +87,7 @@ class ScannerSettings():
         # add scannerMake, if not already in allSettings
         if 'scannerMake' not in self.allSettings:
             self.set_config('scannerMake',
-                            instructions="type: GE, Phillips, or Siemens")
+                            instructions="type: GE, Philips, or Siemens")
 
         # return setting
         return self.allSettings['scannerMake']
