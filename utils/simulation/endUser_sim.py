@@ -33,7 +33,7 @@ the ROI had an average value of 1423 on this volume.
 
 Usage
 -----
-python endUser_sim.py volIdx [-sh] [-sp]
+python endUser_sim.py [-sh] [-sp] volIdx
 
 e.g. python endUser_sim.py 24
 

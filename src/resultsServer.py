@@ -69,7 +69,7 @@ class ResultsServer(Thread):
         # configuration parameters
         self.alive = True
         self.results = {}       # store results in dict like {'vol#':{results}}
-        self.host = settings['pynealHost']
+        self.host = '0.0.0.0'   # make accessible to other computers on same network
         self.resultsServerPort = settings['resultsServerPort']
         self.maxClients = 5
         self.seriesOutputDir = settings['seriesOutputDir']
