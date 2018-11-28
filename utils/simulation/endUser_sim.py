@@ -57,7 +57,7 @@ import json
 import sys
 
 
-def requestResult(volIdx, host, port):
+def requestResult(host, port, volIdx):
     """ send request to pyneal results server for specific result
 
     Parameters
@@ -106,7 +106,6 @@ def requestResult(volIdx, host, port):
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('volIdx')
     parser.add_argument('-sh', '--socketHost',
                         default='127.0.0.1',
                         type=str,
@@ -115,6 +114,7 @@ if __name__ == '__main__':
                         default=5556,
                         type=int,
                         help='Pyneal Result Server port')
+    parser.add_argument('volIdx')
     args = parser.parse_args()
 
-    requestResult(args.volIdx, args.socketHost, args.socketPort)
+    requestResult(args.socketHost, args.socketPort, args.volIdx)
