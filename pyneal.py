@@ -19,6 +19,7 @@ import sys
 from os.path import join
 import glob
 import time
+import argparse
 import subprocess
 import atexit
 import webbrowser as web
@@ -39,7 +40,7 @@ import src.GUIs.pynealSetup.setupGUI as setupGUI
 pynealDir = os.path.abspath(os.path.dirname(__file__))
 
 
-def launchPyneal():
+def launchPyneal(headless=False):
     """Main Pyneal Loop.
 
     This function will launch setup GUI, retrieve settings, initialize all
@@ -52,8 +53,13 @@ def launchPyneal():
     # will update the setupConfig file with the new settings
     settingsFile = join(pynealDir, 'src/GUIs/pynealSetup/setupConfig.yaml')
 
-    # Launch GUI to let user update the settings file
-    setupGUI.launchPynealSetupGUI(settingsFile)
+    if not headless:
+        # Launch GUI to let user update the settings file
+        setupGUI.launchPynealSetupGUI(settingsFile)
+    elif headless:
+        print('Running headless...')
+        print('Using settings in {}'.format(settingsFile))
+        assert os.path.exists(settingsFile), 'Running headless, but settings file does not exist: {}'.format(settingsFile)
 
     # Read the new settings file, store as dict
     with open(settingsFile, 'r') as ymlFile:
@@ -273,4 +279,13 @@ def cleanup(pid):
 ### ----------------------------------------------
 if __name__ == '__main__':
     # Start Pyneal by calling pyneal.py from the command line
-    launchPyneal()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--noGUI',
+            action='store_true',
+            help="run in headless mode, no setup GUI. Requires a valid settings file at {pyneal root dir}/src/GUIs/pynealSetup/setupConfig.yaml")
+
+    args = parser.parse_args()
+    if args.noGUI:
+        launchPyneal(headless=True)
+    else:
+        launchPyneal()
