@@ -40,7 +40,7 @@ import src.GUIs.pynealSetup.setupGUI as setupGUI
 pynealDir = os.path.abspath(os.path.dirname(__file__))
 
 
-def launchPyneal(headless=False):
+def launchPyneal(headless=False, customSettingsFile=None):
     """Main Pyneal Loop.
 
     This function will launch setup GUI, retrieve settings, initialize all
@@ -51,7 +51,11 @@ def launchPyneal(headless=False):
     # Read the settings file, and launch the setup GUI to give the user
     # a chance to update the settings. Hitting 'submit' within the GUI
     # will update the setupConfig file with the new settings
-    settingsFile = join(pynealDir, 'src/GUIs/pynealSetup/setupConfig.yaml')
+    if customSettingsFile:
+        print('Loading custom settings file: {}'.format(customSettingsFile))
+        settingsFile = customSettingsFile
+    else:
+        settingsFile = join(pynealDir, 'src/GUIs/pynealSetup/setupConfig.yaml')
 
     if not headless:
         # Launch GUI to let user update the settings file
@@ -282,10 +286,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--noGUI',
             action='store_true',
-            help="run in headless mode, no setup GUI. Requires a valid settings file at {pyneal root dir}/src/GUIs/pynealSetup/setupConfig.yaml")
+            help="run in headless mode, no setup GUI. (requires a valid settings file, either supplied here with -s option, or in {pyneal root}/src/GUIs/pynealSetup.yaml)")
+    parser.add_argument('-s', '--settingsFile',
+            default=None,
+            help="specify the path to a custom settings file")
 
     args = parser.parse_args()
-    if args.noGUI:
-        launchPyneal(headless=True)
-    else:
-        launchPyneal()
+    launchPyneal(headless=args.noGUI, customSettingsFile=args.settingsFile)

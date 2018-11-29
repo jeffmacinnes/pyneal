@@ -247,7 +247,6 @@ class SetupFrame(wx.Frame):
         contentSizer.Add(self.maskNameText, pos=(0,1), span=(1,2),
                          flag=wx.EXPAND | wx.LEFT, border=5)
 
-
         ## Mask Path and Dialog Btn row ---------------------------------------
         self.maskPathEntry = wx.TextCtrl(self.setupPanel, -1,
                                     size=(300, -1),
