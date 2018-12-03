@@ -399,7 +399,7 @@ class CreateMaskFrame(wx.Frame):
         """ open a file dialog for selecting new MNI mask """
         # get current value from GUI
         currentMniMask = self.mniMaskEntry.GetValue()
-        if os.path.exists(currentMniStd):
+        if os.path.exists(currentMniMask):
             startDir = os.path.split(currentMniMask)[0]
         else:
             startDir = self.masksDir
