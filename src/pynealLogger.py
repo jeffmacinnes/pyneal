@@ -45,8 +45,9 @@ def createLogger(log_fName):
     ### FILE HANDLER - set up how log messages should be formatted in the log file
     fileLogger = logging.FileHandler(log_fName, mode='w')
     fileLogger.setLevel(logging.DEBUG)
-    fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s: %(message)s',
+    fileLogFormat = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(threadName)s - %(module)s: %(message)s',
                                       '%m-%d %H:%M:%S')
+
     fileLogger.setFormatter(fileLogFormat)
 
     ### CONSOLE HANDLER - set up how log messages should appear in std.Out of the console
