@@ -17,7 +17,7 @@ from src.pynealPreprocessing import MotionProcessor
 
 # inputs to preprocessor
 seriesFile = join(paths['testDataDir'], 'testSeries.nii.gz')
-settings = {'launchDashboard': False}
+settings = {'launchDashboard': False, 'estimateMotion': True}
 
 class Test_pynealPreprocessing:
     """ Test pyneal.src.pynealPreprocessing module """
