@@ -135,7 +135,7 @@ class ScanReceiver(Thread):
             print('Received message: ', msg)
             self.scannerSocket.send_string(msg)
             break
-        self.logger.debug('Scanner socket connected to Pyneal-Scanner')
+        self.logger.debug('scanner socket connected to Pyneal-Scanner')
 
         # Start the main loop to listen for new data
         while self.alive:
@@ -148,7 +148,7 @@ class ScanReceiver(Thread):
             # TR - repetition time of scan
             volHeader = self.scannerSocket.recv_json(flags=0)
             volIdx = volHeader['volIdx']
-            self.logger.info('Received volHeader volIdx {}'.format(volIdx));
+            self.logger.debug('received volHeader volIdx {}'.format(volIdx));
 
             # if this is the first vol, initialize the matrix and store the affine
             if not self.scanStarted:
@@ -172,11 +172,12 @@ class ScanReceiver(Thread):
             self.completedVols[volIdx] = True
 
             # send response back to Pyneal-Scanner
-            response = 'Received imageData volIdx {}'.format(volIdx)
+            response = 'received volIdx {}'.format(volIdx)
             self.scannerSocket.send_string(response)
+            self.logger.info(response)
+
 
             # update log and dashboard
-            self.logger.info(response)
             self.sendToDashboard(response)
 
     def createImageMatrix(self, volHeader):

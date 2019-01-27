@@ -101,7 +101,7 @@ class ResultsServer(Thread):
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
             connection, address = self.resultsSocket.accept()
-            self.logger.debug('received connection from: {}'.format(address))
+            self.logger.debug('connection from: {}'.format(address))
 
             ### Get the requested volume (should be a 4-char string representing
             # volume number, e.g. '0001')
@@ -109,7 +109,7 @@ class ResultsServer(Thread):
 
             # reformat the requested volume to remove any leading 0s
             requestedVol = str(int(recvMsg))
-            self.logger.debug('Received Request for volIdx {}'.format(requestedVol))
+            self.logger.debug('received request for volIdx {}'.format(requestedVol))
             self.sendToDashboard(msgType='request', msg=recvMsg)
 
             ### Look up the results for the requested volume
@@ -117,7 +117,7 @@ class ResultsServer(Thread):
 
             ### Send the results to the client
             self.sendResults(connection, volResults)
-            self.logger.debug('Sent Response for volIdx {} : {}'.format(requestedVol, volResults))
+            self.logger.debug('sent response for volIdx {} : {}'.format(requestedVol, volResults))
             self.sendToDashboard(msgType='response', msg=volResults)
 
             # close client connection
@@ -209,7 +209,6 @@ class ResultsServer(Thread):
 
         # send results as formatted message
         connection.sendall(formattedMsg)
-        self.logger.debug('Sent result: {}'.format(formattedMsg))
 
     def sendToDashboard(self, msgType=None, msg=None):
         """ Send a msg to the Pyneal dashboard.

@@ -46,7 +46,7 @@ def createLogger(log_fName):
     fileLogger = logging.FileHandler(log_fName, mode='w')
     fileLogger.setLevel(logging.DEBUG)
     fileLogFormat = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(threadName)s - %(module)s: %(message)s',
-                                      '%m-%d %H:%M:%S')
+                                      '%Y-%m-%d %H:%M:%S')
 
     fileLogger.setFormatter(fileLogFormat)
 

@@ -104,7 +104,7 @@ class Preprocessor:
                                                 'rms_abs': motionParams['rms_abs'],
                                                 'rms_rel': motionParams['rms_rel']})
 
-        self.logger.debug('preprocessed volIdx {}'.format(volIdx))
+        self.logger.info('preprocessed volIdx {}'.format(volIdx))
         return vol
 
     def sendToDashboard(self, topic=None, content=None):

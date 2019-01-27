@@ -39,6 +39,7 @@ class SetupFrame(wx.Frame):
 
 
         # initialize all gui panels and settings
+        self.submitPressed = False
         self.settingsFile = settingsFile
         self.InitSettings()
         self.InitUI()
@@ -525,6 +526,7 @@ class SetupFrame(wx.Frame):
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
         # close
+        self.submitPressed = True
         self.Close()
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
@@ -664,7 +666,8 @@ class SetupApp(wx.App):
 
     def OnExit(self):
         """ User closed the App Window """
-        sys.exit()
+        if not self.submitPressed:
+            sys.exit()
 
 def launchPynealSetupGUI(settingsFile):
     app = SetupApp(settingsFile)

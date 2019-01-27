@@ -105,7 +105,7 @@ class Analyzer:
         
         # submit vol and volIdx to the specified analysis function
         output = self.analysisFunc(vol, volIdx)
-        self.logger.info('analyzed vol: {}'.format(volIdx))
+        self.logger.info('analyzed volIdx {}'.format(volIdx))
         
         return output
 
