@@ -101,8 +101,12 @@ class Analyzer:
             specific to the current volume
 
         """
+        self.logger.debug('started volIdx {}'.format(volIdx))
+        
+        # submit vol and volIdx to the specified analysis function
         output = self.analysisFunc(vol, volIdx)
         self.logger.info('analyzed vol: {}'.format(volIdx))
+        
         return output
 
     def averageFromMask(self, vol, volIdx):

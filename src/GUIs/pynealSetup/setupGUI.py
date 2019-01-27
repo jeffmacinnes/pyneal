@@ -21,6 +21,7 @@ files for different experiments.
 """
 
 import os
+import sys
 from os.path import join
 from pathlib import Path
 
@@ -50,6 +51,7 @@ class SetupFrame(wx.Frame):
             'resultsServerPort': [999, int],
             'maskFile': ['None', str],
             'maskIsWeighted': [True, bool],
+            'estimateMotion': [True, bool],
             'numTimepts': [999, int],
             'analysisChoice': ['Average', str],
             'outputPath': ['', str],
@@ -131,7 +133,6 @@ class SetupFrame(wx.Frame):
         vbox.Add(outputSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
         vbox.Add(submitSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
 
-
         # set the top level sizer to control the master panel
         self.setupPanel.SetSizer(vbox)
         vbox.Fit(self)
@@ -146,7 +147,7 @@ class SetupFrame(wx.Frame):
         logoSizer = wx.BoxSizer(wx.HORIZONTAL)  # toplevel sizer for this box
 
         # add the logo and text images
-        logoBMP = wx.Bitmap(join(self.setupGUI_dir, 'images/pynealLogo_200w.bmp'))
+        logoBMP = wx.Bitmap(join(self.setupGUI_dir, 'images/pynealLogo2_200w.bmp'))
         logoImg = wx.StaticBitmap(self.setupPanel, -1, logoBMP)
 
         textBMP = wx.Bitmap(join(self.setupGUI_dir, 'images/pynealText_200w.bmp'))
@@ -290,7 +291,8 @@ class SetupFrame(wx.Frame):
         preprocSizer.Add(headerImg, flag=wx.EXPAND | wx.TOP, proportion=0)
 
         # main content sizer
-        contentSizer = wx.FlexGridSizer(rows=1, cols=2, hgap=5, vgap=5)
+        # contentSizer = wx.FlexGridSizer(rows=2, cols=2, hgap=5, vgap=5)
+        contentSizer = wx.GridBagSizer(vgap=5, hgap=5)
         labelW = 180    # width of label col
         entryW = 120    # width of entry col
 
@@ -305,14 +307,29 @@ class SetupFrame(wx.Frame):
                                 min=0, max=9999)
         self.numTimeptsSpin.SetValue(self.GUI_settings['numTimepts'])
         self.numTimeptsSpin.Bind(wx.EVT_SPINCTRL, self.onNumTimeptsUpdate)
-        contentSizer.Add(numTimeptsText, proportion=0, border=5,
+        contentSizer.Add(numTimeptsText, pos=(0,1), span=(1,2), border=5,
                          flag=wx.EXPAND | wx.ALL)
-        contentSizer.Add(self.numTimeptsSpin, proportion=1,
+        contentSizer.Add(self.numTimeptsSpin,  pos=(0,3), span=(1,2),
                          flag=wx.EXPAND | wx.ALL)
+        contentSizer.AddGrowableCol(0,1) # ensure text entry expands with resize
+
+        ## Estimate Motion -------------------------------------------------
+        estimateMotionText = wx.StaticText(self.setupPanel, -1,
+                                       style=wx.ALIGN_RIGHT,
+                                       label='Estimate Motion?')
+        self.estimateMotionCheckBox = wx.CheckBox(self.setupPanel, -1,
+                                         style=wx.CHK_2STATE)
+        self.estimateMotionCheckBox.SetValue(self.GUI_settings['estimateMotion'])
+        self.estimateMotionCheckBox.Bind(wx.EVT_CHECKBOX, self.onEstimateMotionToggled)
+        contentSizer.Add(self.estimateMotionCheckBox, pos=(1,1), span=(1,1), border=5,
+                         flag=wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.TOP)
+        contentSizer.Add(estimateMotionText, pos=(1,2), span=(1,1), border=5,
+                         flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.TOP)
 
         # add content sizer to main box
         preprocSizer.Add(contentSizer, flag=wx.EXPAND | wx.ALL,
                       proportion=1, border=10)
+
         return preprocSizer
 
     def createAnalysisBox(self):
@@ -462,6 +479,10 @@ class SetupFrame(wx.Frame):
     def onNumTimeptsUpdate(self, e):
         """ update settings based on number of timepts specified """
         self.GUI_settings['numTimepts'] = self.numTimeptsSpin.GetValue()
+    
+    def onEstimateMotionToggled(self, e):
+        """ update settings & analysis text based on estimate motion checkbox """
+        self.GUI_settings['estimateMotion'] = self.estimateMotionCheckBox.GetValue()
 
     def onSelectAnalysis(self, e):
         """ update settings based on analysis selection """
@@ -616,6 +637,7 @@ class SetupFrame(wx.Frame):
         self.GUI_settings['maskFile'] = self.maskPathEntry.GetValue()
         self.GUI_settings['maskIsWeighted'] = self.weightMaskCheckBox.GetValue()
         self.GUI_settings['numTimepts'] = self.numTimeptsSpin.GetValue()
+        self.GUI_settings['estimateMotion'] = self.estimateMotionCheckBox.GetValue()
         # self.GUI_settings['analysisChoice'] =
         self.GUI_settings['outputPath'] = self.outputPathEntry.GetValue()
         self.GUI_settings['launchDashboard'] = self.launchDashboardCheckBox.GetValue()
@@ -640,6 +662,9 @@ class SetupApp(wx.App):
         self.SetTopWindow(self.frame)
         return True
 
+    def OnExit(self):
+        """ User closed the App Window """
+        sys.exit()
 
 def launchPynealSetupGUI(settingsFile):
     app = SetupApp(settingsFile)

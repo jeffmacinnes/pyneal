@@ -86,22 +86,25 @@ class Preprocessor:
         # returned as dictionary with keys for 'rms_abs', and 'rms_rel';
         # NOTE: estimateMotion needs the input vol to be a nibabel nifti obj
         # the nostdout bit suppresses verbose estimation output to stdOut
-        with nostdout():
-            motionParams = self.motionProcessor.estimateMotion(
-                nib.Nifti1Image(vol, self.affine),
-                volIdx)
+        self.logger.debug('started volIdx {}'.format(volIdx))
+        
+        if self.settings['estimateMotion']:
+            with nostdout():
+                motionParams = self.motionProcessor.estimateMotion(
+                    nib.Nifti1Image(vol, self.affine),
+                    volIdx)
 
-        ### send to dashboard (if specified)
-        if self.settings['launchDashboard']:
-            if motionParams is not None:
+            ### send to dashboard (if specified)
+            if self.settings['launchDashboard']:
+                if motionParams is not None:
 
-                # send to the dashboard
-                self.sendToDashboard(topic='motion',
-                                     content={'volIdx': volIdx,
-                                              'rms_abs': motionParams['rms_abs'],
-                                              'rms_rel': motionParams['rms_rel']})
+                    # send to the dashboard
+                    self.sendToDashboard(topic='motion',
+                                        content={'volIdx': volIdx,
+                                                'rms_abs': motionParams['rms_abs'],
+                                                'rms_rel': motionParams['rms_rel']})
 
-        self.logger.debug('preprocessed vol: {}'.format(volIdx))
+        self.logger.debug('preprocessed volIdx {}'.format(volIdx))
         return vol
 
     def sendToDashboard(self, topic=None, content=None):

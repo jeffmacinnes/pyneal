@@ -79,7 +79,7 @@ class ResultsServer(Thread):
         self.resultsSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.resultsSocket.bind((self.host, self.resultsServerPort))
         self.resultsSocket.listen(self.maxClients)
-        self.logger.debug('Results Server bound to {}:{}'.format(self.host, self.resultsServerPort))
+        self.logger.debug('bound to {}:{}'.format(self.host, self.resultsServerPort))
         self.logger.info('Results Server alive and listening....')
 
         # atexit function, shut down server
@@ -101,23 +101,23 @@ class ResultsServer(Thread):
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
             connection, address = self.resultsSocket.accept()
-            self.logger.debug('Results server received connection from: {}'.format(address))
+            self.logger.debug('received connection from: {}'.format(address))
 
             ### Get the requested volume (should be a 4-char string representing
             # volume number, e.g. '0001')
             recvMsg = connection.recv(4).decode()
-            self.logger.debug('Received request: {}'.format(recvMsg))
-            self.sendToDashboard(msgType='request', msg=recvMsg)
 
             # reformat the requested volume to remove any leading 0s
             requestedVol = str(int(recvMsg))
+            self.logger.debug('Received Request for volIdx {}'.format(requestedVol))
+            self.sendToDashboard(msgType='request', msg=recvMsg)
 
             ### Look up the results for the requested volume
             volResults = self.requestLookup(requestedVol)
 
             ### Send the results to the client
             self.sendResults(connection, volResults)
-            self.logger.debug('Response: {}'.format(volResults))
+            self.logger.debug('Sent Response for volIdx {} : {}'.format(requestedVol, volResults))
             self.sendToDashboard(msgType='response', msg=volResults)
 
             # close client connection
@@ -145,7 +145,7 @@ class ResultsServer(Thread):
 
         """
         self.results[str(volIdx)] = volResults
-        self.logger.debug('vol {} - {} added to resultsServer'.format(volIdx, volResults))
+        self.logger.debug('volIdx {} added to resultsServer : {}'.format(volIdx, volResults))
 
     def requestLookup(self, volIdx):
         """ Lookup results for the requested volume

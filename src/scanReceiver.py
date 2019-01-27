@@ -111,8 +111,8 @@ class ScanReceiver(Thread):
         self.context = zmq.Context.instance()
         self.scannerSocket = self.context.socket(zmq.PAIR)
         self.scannerSocket.bind('tcp://{}:{}'.format(self.host, self.scannerPort))
-        self.logger.debug('scanReceiver server bound to {}:{}'.format(self.host, self.scannerPort))
-        self.logger.info('ScanReceiver Server alive and listening....')
+        self.logger.debug('bound to {}:{}'.format(self.host, self.scannerPort))
+        self.logger.info('Scan Receiver Server alive and listening....')
 
         # atexit function, shut down server
         atexit.register(self.killServer)
@@ -147,6 +147,8 @@ class ScanReceiver(Thread):
             # affine - affine to transform vol to RAS+ mm space
             # TR - repetition time of scan
             volHeader = self.scannerSocket.recv_json(flags=0)
+            volIdx = volHeader['volIdx']
+            self.logger.info('Received volHeader volIdx {}'.format(volIdx));
 
             # if this is the first vol, initialize the matrix and store the affine
             if not self.scanStarted:
@@ -164,14 +166,13 @@ class ScanReceiver(Thread):
             voxelArray = voxelArray.reshape(volHeader['shape'])
 
             # add the volume to the appropriate location in the image matrix
-            volIdx = volHeader['volIdx']
             self.imageMatrix[:, :, :, volIdx] = voxelArray
 
             # update the completed volumes table
             self.completedVols[volIdx] = True
 
             # send response back to Pyneal-Scanner
-            response = 'Received vol {}'.format(volIdx)
+            response = 'Received imageData volIdx {}'.format(volIdx)
             self.scannerSocket.send_string(response)
 
             # update log and dashboard
