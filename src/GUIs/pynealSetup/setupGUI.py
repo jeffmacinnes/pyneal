@@ -524,9 +524,9 @@ class SetupFrame(wx.Frame):
             with open(self.settingsFile, 'w') as outputFile:
                 yaml.dump(allSettings, outputFile, default_flow_style=False)
 
-        # close
-        self.submitPressed = True
-        self.Close()
+            # close
+            self.submitPressed = True
+            self.Close()
 
     def openFileDlg(self, msg="Choose file", wildcard='', startDir=''):
         """ Open file dialog """
