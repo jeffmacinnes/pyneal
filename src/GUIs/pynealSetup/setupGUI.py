@@ -37,7 +37,6 @@ class SetupFrame(wx.Frame):
         self.setupGUI_dir = os.path.dirname(os.path.abspath(__file__))
         self.pynealDir = str(Path(os.path.abspath(__file__)).resolve().parents[3])
 
-
         # initialize all gui panels and settings
         self.submitPressed = False
         self.settingsFile = settingsFile
@@ -666,7 +665,7 @@ class SetupApp(wx.App):
 
     def OnExit(self):
         """ User closed the App Window """
-        if not self.submitPressed:
+        if not self.frame.submitPressed:
             sys.exit()
 
 def launchPynealSetupGUI(settingsFile):
