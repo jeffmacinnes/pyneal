@@ -998,7 +998,7 @@ class GE_processSlice(Thread):
         ### Create a header with metadata info
         volHeader = {
             'volIdx': volIdx,
-            'TR': self.tr,
+            'TR': str(self.tr),
             'dtype': str(thisVol_RAS_data.dtype),
             'shape': thisVol_RAS_data.shape,
             'affine': json.dumps(thisVol_RAS.affine.tolist())}
