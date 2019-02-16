@@ -8,4 +8,4 @@ python:
 install:
     - pip install -r tests/test_requirements.txt
 script:
-    - pytest
+    - pytest -o log_cli=true
