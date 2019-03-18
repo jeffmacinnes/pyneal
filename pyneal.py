@@ -111,7 +111,7 @@ def launchPyneal(headless=False, customSettingsFile=None):
 
     ### Launch Real-time Scan Monitor GUI
     if settings['launchDashboard']:
-        ### launch the dashboard app as it's own separate process. Once called,
+        ### launch the dashboard app as its own separate process. Once called,
         # it will set up a zmq socket to listen for inter-process messages on
         # the 'dashboardPort', and will host the dashboard website on the
         # 'dashboardClientPort'
@@ -123,13 +123,14 @@ def launchPyneal(headless=False, customSettingsFile=None):
                         str(settings['dashboardPort']),
                         str(settings['dashboardClientPort'])
                         ])
-        # make sure subprocess gets killed at close
-        atexit.register(cleanup, p)
 
         # Set up the socket to communicate with the dashboard server
-        context = zmq.Context.instance()
-        dashboardSocket = context.socket(zmq.REQ)
+        dashboardContext = zmq.Context.instance()
+        dashboardSocket = dashboardContext.socket(zmq.REQ)
         dashboardSocket.connect('tcp://127.0.0.1:{}'.format(settings['dashboardPort']))
+
+        # make sure subprocess and dashboard ports get killed at close
+        atexit.register(cleanup, p, dashboardContext)
 
         # Open dashboard in browser
         # s = '127.0.0.1:{}'.format(settings['dashboardClientPort'])
@@ -275,9 +276,15 @@ def createOutputDir(parentDir):
     return outputDir
 
 
-def cleanup(pid):
+def cleanup(pid, context):
+
+    # kill dashboard server subprocess
+    print('stopping dashboard subprocess')
     pid.terminate()
-    print('killing process')
+
+    # kill dashboard client server
+    context.destroy()
+
 
 
 ### ----------------------------------------------
@@ -286,7 +293,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--noGUI',
             action='store_true',
-            help="run in headless mode, no setup GUI. (requires a valid settings file, either supplied here with -s option, or in {pyneal root}/src/GUIs/pynealSetup.yaml)")
+            help="run in headless mode, no setup GUI. (requires a valid settings file, either supplied here with -s option, or in {pyneal root}/src/GUIs/pynealSetup/setupConfig.yaml)")
     parser.add_argument('-s', '--settingsFile',
             default=None,
             help="specify the path to a custom settings file")

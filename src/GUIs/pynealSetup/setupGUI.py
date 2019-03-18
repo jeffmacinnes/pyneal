@@ -639,13 +639,8 @@ class SetupFrame(wx.Frame):
         self.GUI_settings['maskIsWeighted'] = self.weightMaskCheckBox.GetValue()
         self.GUI_settings['numTimepts'] = self.numTimeptsSpin.GetValue()
         self.GUI_settings['estimateMotion'] = self.estimateMotionCheckBox.GetValue()
-        # self.GUI_settings['analysisChoice'] =
         self.GUI_settings['outputPath'] = self.outputPathEntry.GetValue()
         self.GUI_settings['launchDashboard'] = self.launchDashboardCheckBox.GetValue()
-
-        # options that don't appear in GUI, but should be in settings file
-        self.GUI_settings['dashboardPort'] = 5557
-        self.GUI_settings['dashboardClientPort'] = 5558
 
 
 class SetupApp(wx.App):

@@ -13,6 +13,7 @@ and update the dashboard accordingly
 import sys
 import time
 from threading import Thread
+import atexit
 
 import zmq
 
@@ -47,13 +48,13 @@ class DashboardIPCServer(Thread):
     connected clients via socketio library
 
     """
-    def __init__(self, socket):
+    def __init__(self, socketPort):
         """ Initialize class
 
         Parameters
         ----------
-        socket : object
-            instance of ZMQ style socket that will be listening for incoming
+        socketPort : int
+            port number to bind instance of ZMQ style socket that will be listening for incoming
             messages from Pyneal throughout a scan
 
         """
@@ -61,11 +62,18 @@ class DashboardIPCServer(Thread):
         Thread.__init__(self)
 
         # get local reference to socket
-        self.ipc_socket = socket
+        self.context = zmq.Context.instance()
+        self.ipc_socket = self.context.socket(zmq.REP)
+
+        print('dashboard IPC socket binding to port: {}'.format(socketPort))
+        self.ipc_socket.bind('tcp://127.0.0.1:{}'.format(socketPort))
 
         # dashboard data
         self.configSettings = None
         self.alive = True
+
+        # atexit function, shut down server
+        atexit.register(self.killServer)
 
     def run(self):
         """ While alive loop
@@ -158,6 +166,11 @@ class DashboardIPCServer(Thread):
             # send to client
             socketio.emit('resultsServerLog', msg['content'])
 
+    def killServer(self):
+        """ Close the thread by setting the alive flag to False """
+        print('shutting down dashboard socket')
+        self.context.destroy()
+        self.alive = False
 
 # Root dashboard page
 @app.route('/')
@@ -193,12 +206,9 @@ def launchDashboard(dashboardPort=9998, clientPort=9999):
     """
     ### set up the socket that the dashboard will use to listen for incoming IPC
     dashboardPort = int(sys.argv[1])
-    context = zmq.Context.instance()
-    dashboardSocket = context.socket(zmq.REP)
-    dashboardSocket.bind('tcp://127.0.0.1:{}'.format(dashboardPort))
 
     ### start listening for incoming ipc messages
-    dashboardServer = DashboardIPCServer(dashboardSocket)
+    dashboardServer = DashboardIPCServer(dashboardPort)
     dashboardServer.daemon = True
     dashboardServer.start()
 

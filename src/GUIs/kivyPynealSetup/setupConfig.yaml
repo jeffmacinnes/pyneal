@@ -1,6 +1,6 @@
 analysisChoice: Average
 dashboardClientPort: 5558
-dashboardPort: 5557
+dashboardPort: 5559
 launchDashboard: true
 maskFile: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot2_offline/fingerTapping_10mm_sphereMask_FUNC.nii.gz
 maskIsWeighted: false

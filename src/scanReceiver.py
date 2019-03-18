@@ -176,7 +176,6 @@ class ScanReceiver(Thread):
             self.scannerSocket.send_string(response)
             self.logger.info(response)
 
-
             # update log and dashboard
             self.sendToDashboard(response)
 
