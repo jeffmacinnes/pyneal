@@ -102,6 +102,9 @@ def Siemens_sim(inputDir, seriesNum, newSeriesNum, TR):
     # wait for input to begin
     input('Press ENTER to begin the "scan" ')
 
+    # sleep for one TR to simulation collection of first volume
+    time.sleep(TRs)
+
     # loop over all slice files
     print('copied dicom mosaic #:', end=' ')
     newSeriesNum = str(newSeriesNum).zfill(6)

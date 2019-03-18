@@ -135,6 +135,9 @@ def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
     # Press Enter to start sending data
     input('Press ENTER to begin the "scan" ')
 
+    # sleep for 1TR to account for first volume being collected
+    time.sleep(TR)
+
     # Start sending data!
     for volIdx in range(ds_array.shape[3]):
         startTime = time.time()

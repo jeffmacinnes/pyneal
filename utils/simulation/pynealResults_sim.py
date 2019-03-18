@@ -226,7 +226,7 @@ def launchPynealSim(TR, host, resultsServerPort, keepAlive=False):
     for volIdx in range(500):
         # generate a random value
         avgActivation = np.around(np.random.normal(loc=2400, scale=15), decimals=2)
-        result = {'Average': avgActivation}
+        result = {'average': avgActivation}
 
         # send result to the resultsServer
         resultsServer.updateResults(volIdx, result)

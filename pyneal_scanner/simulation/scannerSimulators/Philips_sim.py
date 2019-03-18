@@ -104,6 +104,9 @@ def Philips_sim(inputDir, outputDir, TR):
     # create the outputDir
     os.makedirs(outputDir)
 
+    # sleep for 1 TR to simulate collection of first volume
+    time.sleep(TR/1000)
+
     # Loop over all volume files (vols assumed to be named sequentially)
     print('copied volume #: ', end=' ')
     for i, v in enumerate(sorted(parFiles)):
