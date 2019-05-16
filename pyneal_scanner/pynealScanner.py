@@ -25,6 +25,7 @@ import os
 import sys
 
 import logging
+from logging import handlers as logHandler
 
 from utils.general_utils import initializeSession
 
@@ -78,11 +79,22 @@ def pynealScanner_sandbox(scannerSettings, scannerDirs):
 if __name__ == "__main__":
 
     ### set up logging
+    logDir = os.path.join(pynealScannerDir, 'logs')
+
+    # create the log dir if necessary
+    if not os.path.isdir(logDir):
+        os.makedirs(logDir)
+
     # logging to file
-    fileLogger = logging.FileHandler('./pynealScanner.log', mode='w')
+    fileLogger = logHandler.RotatingFileHandler(
+        os.path.join(logDir, 'pynealScanner.log'), 
+        mode='a',
+        maxBytes=5000000,   # 5MB
+        backupCount=3)
     fileLogger.setLevel(logging.DEBUG)
-    fileLogFormat = logging.Formatter('%(asctime)s - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
-                                      '%m-%d %H:%M:%S')
+    fileLogFormat = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
+                                      '%Y-%m-%d %H:%M:%S')
+
     fileLogger.setFormatter(fileLogFormat)
 
     # logging to console
@@ -99,6 +111,7 @@ if __name__ == "__main__":
     logger.addHandler(consoleLogger)
 
     # initialize the session classes:
+    logger.debug('Starting Pyneal Scanner')
     scannerSettings, scannerDirs = initializeSession()
 
     # print all of the current settings and series dirs to the terminal
