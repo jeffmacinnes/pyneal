@@ -22,7 +22,9 @@ window
 
 """
 import os
+from os.path import join
 import sys
+import datetime
 
 import logging
 from logging import handlers as logHandler
@@ -75,22 +77,40 @@ def pynealScanner_sandbox(scannerSettings, scannerDirs):
     # launch a real-time session
     test_GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
-
-if __name__ == "__main__":
-
-    ### set up logging
-    logDir = os.path.join(pynealScannerDir, 'logs')
-
+   
+def  prepLogDir(logDir, nLogsToKeep=25):
+    """ Prep the log dir by making sure it exists and cleaning out any
+    old logs
+    """
     # create the log dir if necessary
     if not os.path.isdir(logDir):
         os.makedirs(logDir)
 
+    # get a list of exisiting logs and modification times
+    logFiles = [join(logDir, d) for d in os.listdir(logDir) if os.path.isfile(join(logDir, d))]
+    if not logFiles:
+        logFiles = []
+    else:
+        # add the modify time for each directory
+        logFiles = [[f, os.stat(f).st_mtime] for f in logFiles]
+    
+    if len(logFiles) > nLogsToKeep:
+        # sort the log files by modification time (oldest to newest)
+        logFiles = sorted(logFiles, key=lambda x: x[1])
+        
+        # only keep the most recent
+        for f in logFiles[:-nLogsToKeep]:
+            os.remove(f[0])
+
+
+if __name__ == "__main__":
+    ### set up logging
+    logDir = os.path.join(pynealScannerDir, 'logs')
+    prepLogDir(logDir)
+
     # logging to file
-    fileLogger = logHandler.RotatingFileHandler(
-        os.path.join(logDir, 'pynealScanner.log'), 
-        mode='a',
-        maxBytes=5000000,   # 5MB
-        backupCount=3)
+    logFileName = 'pynealScanner_{}.log'.format(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    fileLogger = logging.FileHandler(os.path.join(logDir, logFileName), mode='w')
     fileLogger.setLevel(logging.DEBUG)
     fileLogFormat = logging.Formatter('%(asctime)s.%(msecs)03d - %(levelname)s - %(threadName)s - %(module)s, line: %(lineno)d - %(message)s',
                                       '%Y-%m-%d %H:%M:%S')
