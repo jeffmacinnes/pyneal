@@ -7,6 +7,7 @@ pyneal_scanner/data/*
 
 # OS
 #*
+.vscode
 *~
 .DS_Store
 

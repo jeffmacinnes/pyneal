@@ -21,7 +21,7 @@ import zmq
 GE_default_baseDir = '/export/home1/sdc_image_pool/images'
 
 # regEx for GE style file naming
-GE_filePattern = re.compile('i\d*.MRDC.\d*')
+GE_filePattern = re.compile(r'i\d*.MRDC.\d*')
 
 
 class GE_DirStructure():
@@ -86,7 +86,68 @@ class GE_DirStructure():
         # (hopefully) find and initialize the sessionDir (and subdirs)
         self.findSessionDir()
 
+    def _isSeriesDir(self, dirPath):
+        """ Check path to see if it is a series dir
+        To qualify as a serial dir:
+            - must start with 's'
+            - parent dir must start with 'e'
+            - grandparent dir must start with 'p'
+        """
+        # check the outermost dir
+        ancestors, lastDir = os.path.split(dirPath)
+        if lastDir[0] != 's': return False
+        
+        # check the parent dir
+        ancestors, parentDir = os.path.split(ancestors)
+        if parentDir[0] != 'e': return False 
+        
+        # check the grandparent dir
+        ancestors, gParentDir = os.path.split(ancestors)
+        if gParentDir[0] != 'p': return False 
+
+        return True
+    
     def findSessionDir(self):
+        """ Find the most recently modified s### directory. This directory is expected
+        to exists 2 levels down (p###/e####) from the self.baseDir 
+        (i.e. /export/home1/sdc_image_pool/images/p123/e456/s1001)
+
+        Sets the class attributes for the current session for:
+            pDir
+            eDir
+            sessionDir
+        """
+        try:
+            # get a list of ALL series dirs
+            seriesDirs = []
+            for root, dirs, files in os.walk(self.baseDir):
+                if self._isSeriesDir(root):
+                    seriesDirs.append(root)
+
+            # get the modification time for each dir
+            seriesDirs = [[path, os.stat(path).st_mtime] for path in seriesDirs]
+
+            # sort to get the most recently created first
+            seriesDirs = sorted(seriesDirs, key=lambda x: x[1], reverse=True)
+            newest_sDir = seriesDirs[0][0]
+
+            # set the sessionDir based on path to parent dir of newest sDir
+            sessionDir = os.path.split(newest_sDir)[0]
+            pTmp, eDir = os.path.split(sessionDir)
+            pTmp, pDir = os.path.split(pTmp)
+
+        except:
+            print('Error: Failed to find a sessionDir \n\n')
+            sessionDir = None
+            pDir = None
+            eDir = None
+        
+        # set values to these attributes
+        self.pDir = pDir
+        self.eDir = eDir
+        self.sessionDir = sessionDir
+
+    def findSessionDir_OLD(self):
         """ Find the most recently modified p###/e### directory in the baseDir
 
         Sets class attributes for the current sessions for:
@@ -347,7 +408,7 @@ class GE_BuildNifti():
         ----------
         dicomFiles : list
             list containing the file names (file names ONLY, no path) of all
-            dicom slice images to be used in constructing the final nifti image
+            dicom slice images to be used in  constructing the final nifti image
 
         Returns
         -------

@@ -100,28 +100,31 @@ class ResultsServer(Thread):
         """
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
-            connection, address = self.resultsSocket.accept()
-            self.logger.debug('connection from: {}'.format(address))
+            try:
+                connection, address = self.resultsSocket.accept()
+                self.logger.debug('connection from: {}'.format(address))
 
-            ### Get the requested volume (should be a 4-char string representing
-            # volume number, e.g. '0001')
-            recvMsg = connection.recv(4).decode()
+                ### Get the requested volume (should be a 4-char string representing
+                # volume number, e.g. '0001')
+                recvMsg = connection.recv(4).decode()
 
-            # reformat the requested volume to remove any leading 0s
-            requestedVol = str(int(recvMsg))
-            self.logger.debug('received request for volIdx {}'.format(requestedVol))
-            self.sendToDashboard(msgType='request', msg=recvMsg)
+                # reformat the requested volume to remove any leading 0s
+                requestedVol = str(int(recvMsg))
+                self.logger.debug('received request for volIdx {}'.format(requestedVol))
+                self.sendToDashboard(msgType='request', msg=recvMsg)
 
-            ### Look up the results for the requested volume
-            volResults = self.requestLookup(requestedVol)
+                ### Look up the results for the requested volume
+                volResults = self.requestLookup(requestedVol)
 
-            ### Send the results to the client
-            self.sendResults(connection, volResults)
-            self.logger.debug('sent response for volIdx {} : {}'.format(requestedVol, volResults))
-            self.sendToDashboard(msgType='response', msg=volResults)
+                ### Send the results to the client
+                self.sendResults(connection, volResults)
+                self.logger.debug('sent response for volIdx {} : {}'.format(requestedVol, volResults))
+                self.sendToDashboard(msgType='response', msg=volResults)
 
-            # close client connection
-            connection.close()
+                # close client connection
+                connection.close()
+            except ConnectionAbortedError:
+                print('Attempting to connect to a closed socket!')
 
     def updateResults(self, volIdx, volResults):
         """ Add the supplied result to the results dictionary.

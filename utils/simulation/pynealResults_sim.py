@@ -71,26 +71,31 @@ class ResultsServer(Thread):
         """
         while self.alive:
             ### Listen for new connections, redirect clients to new socket
-            connection, address = self.resultsSocket.accept()
-            print('Results server received connection from: {}'.format(address))
+            try:
+                connection, address = self.resultsSocket.accept()
+                print('Results server received connection from: {}'.format(address))
 
-            ### Get the requested volume (should be a 4-char string representing
-            # volume number, e.g. '0001')
-            recvMsg = connection.recv(4).decode()
-            print('Received request: {}'.format(recvMsg))
+                ### Get the requested volume (should be a 4-char string representing
+                # volume number, e.g. '0001')
+                recvMsg = connection.recv(4).decode()
+                print('Received request: {}'.format(recvMsg))
 
-            # reformat the requested volume to remove any leading 0s
-            requestedVol = str(int(recvMsg))
+                # reformat the requested volume to remove any leading 0s
+                requestedVol = str(int(recvMsg))
 
-            ### Look up the results for the requested volume
-            volResults = self.requestLookup(requestedVol)
+                ### Look up the results for the requested volume
+                volResults = self.requestLookup(requestedVol)
 
-            ### Send the results to the client
-            self.sendResults(connection, volResults)
-            print('Response: {}'.format(volResults))
+                ### Send the results to the client
+                self.sendResults(connection, volResults)
+                print('Response: {}'.format(volResults))
 
-            # close client connection
-            connection.close()
+                # close client connection
+                connection.close()
+                
+            except ConnectionAbortedError:
+                print('Attemping to connect to a closed socket!')
+                return
 
     def updateResults(self, volIdx, volResults):
         """ Add the supplied result to the results dictionary.
