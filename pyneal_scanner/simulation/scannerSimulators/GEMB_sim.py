@@ -1,4 +1,4 @@
-""" Simulate a GE scan
+""" Simulate a GE Multiband scan
 
 GE scanners store reconstructed slice images as individual DICOM files within
 a certain directory on the scanner console. This script will simulate that
@@ -6,7 +6,7 @@ directory and copy in individual slice DICOM images.
 
 Usage:
 ------
-    python GE_sim.py inputDir [--outputDir] [--TR]
+    python GEMB_sim.py inputDir [--outputDir] [--TR]
 
 You must specify a local path to the inputDir. That is, the directory that
 already contains a set of reconstructed GE slice DICOMS. Let's call this
@@ -24,7 +24,7 @@ To use this tool, you must specify an inputDir as the full path
 slices will be copied to. If you don't specify an output directory, this tool
 will default to creating a new seriesDir, named 's9999' in the sessionDir.
 
-e.g. python GE_sim.py /Path/To/My/Existing/Slice/Data --outputDir /Where/I/Want/New/Slice/Data/To/appear
+e.g. python GEMB_sim.py /Path/To/My/Existing/Slice/Data --outputDir /Where/I/Want/New/Slice/Data/To/appear
 
 if you did not specify an outputDir, new slices would be copied to:
 
@@ -55,9 +55,11 @@ import pydicom
 # regEx for GE style file naming
 GE_filePattern = re.compile('i\d*.MRDC.\d*')
 
+# 'Locations in acquisition' private tag
+locInAcqTag = [0x0021, 0x104f]
 
-def GE_sim(dicomDir, outputDir, TR):
-    """ Simulate a GE scanning environment
+def GEMB_sim(dicomDir, outputDir, TR):
+    """ Simulate a GE multiband scanning environment
 
     To simulate a scan, this function will read all of the dicom slice files
     from a specified `dicomDir`, and will then copy each file, in order of
@@ -103,7 +105,7 @@ def GE_sim(dicomDir, outputDir, TR):
     # read slice (first entry in sliceFiles dict) to get TR and # of slices/vol
     ds = pydicom.dcmread(join(dicomDir,
                          sliceFiles[list(sliceFiles.keys())[0]]))
-    slicesPerVol = ds.ImagesInAcquisition
+    slicesPerVol = ds[locInAcqTag].value
     totalVols = ds.NumberOfTemporalPositions
 
     # calculate delay between slices
@@ -141,7 +143,7 @@ def GE_sim(dicomDir, outputDir, TR):
 
     simElapsed = time.time() - simStart
     print('Mean time per vol: {}'.format(simElapsed/totalVols))
-    time.sleep(.25)
+    input('Scan completed. Press ENTER to delete temp output directory...')
 
 
 def rmOutputDir(outputDir):
@@ -161,7 +163,7 @@ if __name__ == "__main__":
                         help='full path to directory that contains slice DICOMS')
     parser.add_argument('-o', '--outputDir',
                         default=None,
-                        help='full path to output directory where new slices images will appear (i.e. series directory) [default = [inputDir]/s9999]')
+                        help='full path to output directory where new slices images will appear (i.e. series directory)')
     parser.add_argument('-t', '--TR',
                         type=int,
                         default=1000,
@@ -190,4 +192,4 @@ if __name__ == "__main__":
     atexit.register(rmOutputDir, outputDir)
 
     # run main function
-    GE_sim(args.inputDir, outputDir, args.TR)
+    GEMB_sim(args.inputDir, outputDir, args.TR)

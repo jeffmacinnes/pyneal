@@ -81,7 +81,7 @@ class ScannerSettings():
         Returns
         -------
         string
-            scanner make {'GE', 'Philips', 'Siemens'}
+            scanner make {'GE', 'GEMB', 'Philips', 'Siemens'}
 
         """
         # add scannerMake, if not already in allSettings
@@ -265,10 +265,16 @@ def initializeSession(pynealScannerDir=None):
     # Initialize the ScannerDirs class. Which flavor of this to load will
     # depend on the particular scanning environment, so check the scannerSettings
     scannerMake = scannerSettings.allSettings['scannerMake']
+    print(scannerMake)
     if scannerMake == 'GE':
         from utils.GE_utils import GE_DirStructure
         scannerDirs = GE_DirStructure(scannerSettings)
-
+    
+    elif scannerMake == 'GEMB':
+        print('here')
+        from utils.GEMB_utils import GE_DirStructure
+        scannerDirs = GE_DirStructure(scannerSettings)
+    
     elif scannerMake == 'Philips':
         from utils.Philips_utils import Philips_DirStructure
         scannerDirs = Philips_DirStructure(scannerSettings)

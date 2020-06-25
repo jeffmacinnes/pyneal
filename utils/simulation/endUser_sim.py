@@ -14,11 +14,14 @@ would be '0000'; to request the 25th volume in the series the string would be
 '0024', and so on...
 
 Pyneal will send back a response comprised of two parts: first a header, and
-then followed by the results. The results message contains all of the analysis
-results that were calculated for that volume; since different analyses can
-yield differing numbers of results, the length of the results message can vary
-considerably. That is why we include the header, which is a short message
-simply telling the end-user how many bytes to expect for the full message.
+then followed by the results. The header contains the number of characters in
+the full results message.
+
+The results message contains all of the analysis results that were calculated 
+for that volume; since different analyses can yield differing numbers of results, 
+the length of the results message can vary considerably. That is why we include 
+the header, which is a short message simply telling the end-user how many bytes 
+to expect for the full message.
 
 The results message starts off as a python dictionary, and then converted to
 JSON and encoded as a byte array before sending over the socket. The end-user
@@ -35,7 +38,9 @@ Usage
 -----
 python endUser_sim.py [-sh] [-sp] volIdx
 
-e.g. python endUser_sim.py 24
+e.g. 
+    python endUser_sim.py 0024
+    python endUser_sim.py -sh 10.0.0.1 -sp 9999 0024
 
 Parameters
 ----------
@@ -43,7 +48,7 @@ volIdx : int
     the index (0-based) of the volume you'd like to request results from
 sh : string, optional
     i.p. address of the result server. defaults to 127.0.0.1
-sp : port, optional
+sp : int, optional
     port number to use for communication with result server. defaults to 5556
 
 Returns

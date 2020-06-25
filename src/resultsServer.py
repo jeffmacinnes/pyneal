@@ -110,7 +110,7 @@ class ResultsServer(Thread):
 
                 # reformat the requested volume to remove any leading 0s
                 requestedVol = str(int(recvMsg))
-                self.logger.debug('received request for volIdx {}'.format(requestedVol))
+                self.logger.info('received request for volIdx {}'.format(requestedVol))
                 self.sendToDashboard(msgType='request', msg=recvMsg)
 
                 ### Look up the results for the requested volume
@@ -118,7 +118,7 @@ class ResultsServer(Thread):
 
                 ### Send the results to the client
                 self.sendResults(connection, volResults)
-                self.logger.debug('sent response for volIdx {} : {}'.format(requestedVol, volResults))
+                self.logger.info('sent response for volIdx {} : {}'.format(requestedVol, volResults))
                 self.sendToDashboard(msgType='response', msg=volResults)
 
                 # close client connection

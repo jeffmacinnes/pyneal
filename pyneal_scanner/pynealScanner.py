@@ -47,6 +47,15 @@ def pynealScanner_GE(scannerSettings, scannerDirs):
     GE_launch_rtfMRI(scannerSettings, scannerDirs)
 
 
+def pynealScanner_GEMB(scannerSettings, scannerDirs):
+    """ Launch Pyneal Scanner for real-time scan in a GE environment
+
+    """
+    from utils.GEMB_utils import GE_launch_rtfMRI
+
+    # launch a real-time session
+    GE_launch_rtfMRI(scannerSettings, scannerDirs)
+
 def pynealScanner_Philips(scannerSettings, scannerDirs):
     """ Launch Pyneal Scanner for real-time scan in a Philips environment
 
@@ -142,6 +151,8 @@ if __name__ == "__main__":
     scannerMake = scannerSettings.allSettings['scannerMake']
     if scannerMake == 'GE':
         pynealScanner_GE(scannerSettings, scannerDirs)
+    elif scannerMake == 'GEMB':
+        pynealScanner_GEMB(scannerSettings, scannerDirs)
     elif scannerMake == 'Philips':
         pynealScanner_Philips(scannerSettings, scannerDirs)
     elif scannerMake == 'Siemens':

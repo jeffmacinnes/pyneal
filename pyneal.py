@@ -232,14 +232,14 @@ def sendToDashboard(dashboardSocket, topic=None, content=None):
 
     # send
     dashboardSocket.send_json(msg)
-    # logger.debug('sent to dashboard: {}'.format(msg))
+    #logger.debug('sent to dashboard: {}'.format(msg))
 
     # recv the response (should just be 'success')
     response = dashboardSocket.recv_string()
     if response != 'success':
         print(response)
         raise Exception('Could not send this dashboard: {}'.format(msg))
-    # logger.debug('response from dashboard: {}'.format(response))
+    #logger.debug('response from dashboard: {}'.format(response))
 
 
 def createOutputDir(parentDir):

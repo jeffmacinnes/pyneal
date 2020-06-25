@@ -9,11 +9,11 @@
 pyyaml>=3.12
 nibabel>=2.1.0
 nipy>=0.4.1
-numpy>=1.13.1
-scipy>=1.1.0
+numpy==1.17
+scipy==1.1.0
 pyzmq>=16.0.2
 pyyaml>=3.12
-wxPython>=4.0.1
+wxPython>=4.0.7
 flask>=0.12.2
 flask_socketio>=2.9.2
 eventlet>=0.21.0
