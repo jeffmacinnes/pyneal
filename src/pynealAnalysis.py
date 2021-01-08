@@ -46,11 +46,11 @@ class Analyzer:
         mask_img = nib.load(settings['maskFile'])
         if settings['maskIsWeighted'] is True:
             self.weightMask = True
-            self.weights = mask_img.get_data().copy()
-            self.mask = mask_img.get_data() > 0
+            self.weights = mask_img.get_fdata().copy()
+            self.mask = mask_img.get_fdata() > 0
         else:
             self.weightMask = False
-            self.mask = mask_img.get_data() > 0
+            self.mask = mask_img.get_fdata() > 0
 
         ### Set the appropriate analysis function based on the settings
         if settings['analysisChoice'] == 'Average':

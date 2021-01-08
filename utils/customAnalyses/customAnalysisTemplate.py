@@ -70,8 +70,8 @@ class CustomAnalysis:
         # each for use in later methods.
         mask_img = nib.load(maskFile)
         if weightMask is True:
-            self.weights = mask_img.get_data().copy()
-        self.mask = mask_img.get_data() > 0  # 3D boolean array of mask voxels
+            self.weights = mask_img.get_fdata().copy()
+        self.mask = mask_img.get_fdata() > 0  # 3D boolean array of mask voxels
 
         # within-class reference to numTimepts for use in later methods
         self.numTimepts = numTimepts

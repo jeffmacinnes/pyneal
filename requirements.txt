@@ -17,3 +17,5 @@ wxPython>=4.0.7
 flask>=0.12.2
 flask_socketio>=2.9.2
 eventlet>=0.21.0
+pytest>=6.2.1
+mock>=4.0.3

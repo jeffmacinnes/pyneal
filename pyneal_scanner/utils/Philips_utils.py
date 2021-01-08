@@ -353,7 +353,7 @@ class Philips_BuildNifti():
                 affine = thisVol_RAS.affine
 
             # Add this data to the image matrix
-            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()[:, :, :, 0].astype('uint16')
+            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_fdata()[:, :, :, 0].astype('uint16')
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
@@ -611,7 +611,7 @@ class Philips_processVolume(Thread):
 
         # grab the data for the first volume along the 4th dimension
         # and store as contiguous array (required for ZMQ)
-        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data()[:, :, :, 0].astype('uint16'))
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_fdata()[:, :, :, 0].astype('uint16'))
 
         ### Create a header with metadata info
         volHeader = {

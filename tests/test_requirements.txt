@@ -4,10 +4,15 @@
 ## 		> pip install -r requirements.txt
 ###############################
 
-numpy>=1.13.1
+pyyaml>=3.12
 pydicom>=1.0.2
 nibabel>=2.1.0
 nipy>=0.4.1
-scipy==1.2.0
+numpy==1.16.4
+scipy==1.1.0
 pyzmq>=16.0.2
 pyyaml>=3.12
+pytest>=6.2.1
+
+
+

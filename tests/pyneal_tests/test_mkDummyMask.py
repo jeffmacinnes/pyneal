@@ -40,7 +40,7 @@ def test_mkDummyMask():
     # confirm mask size within volume
     # (mask should by 16x16 -- .25*x x .25*y -- so 256 voxels
     # in the middle slice only)
-    mask_array = mask.get_data()
+    mask_array = mask.get_fdata()
     assert np.sum(mask_array) == 256           # confirm total
     assert np.sum(mask_array[:,:,int(z/2)]) == 256  # confirm it comes from middle slice
 

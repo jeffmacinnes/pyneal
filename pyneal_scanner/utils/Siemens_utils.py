@@ -349,7 +349,7 @@ class Siemens_BuildNifti():
                 affine = thisVol_RAS.affine
 
             # Add this data to the image matrix
-            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_data()
+            imageMatrix[:, :, :, volIdx] = thisVol_RAS.get_fdata()
 
         ### Build a Nifti object
         funcImage = nib.Nifti1Image(imageMatrix, affine=affine)
@@ -655,7 +655,7 @@ class Siemens_processMosaic(Thread):
         thisVol_RAS = nib.as_closest_canonical(thisVol)
 
         # get the data as a contiguous array (required for ZMQ)
-        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_fdata())
 
         ### Create a header with metadata info
         volHeader = {

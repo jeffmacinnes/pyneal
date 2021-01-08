@@ -106,11 +106,11 @@ class ResultsServer(Thread):
 
                 ### Get the requested volume (should be a 4-char string representing
                 # volume number, e.g. '0001')
-                recvMsg = connection.recv(4).decode()
+                recvMsg = connection.recv(16).decode()
 
                 # reformat the requested volume to remove any leading 0s
                 requestedVol = str(int(recvMsg))
-                self.logger.info('received request for volIdx {}'.format(requestedVol))
+                self.logger.info('received request for volIdx {}'.format(requestedVol.rstrip()))
                 self.sendToDashboard(msgType='request', msg=recvMsg)
 
                 ### Look up the results for the requested volume
@@ -186,14 +186,7 @@ class ResultsServer(Thread):
         """ Send the results back to the End User
 
         Format the results dict to a json string, and send results to the End
-        User. Message will be sent in 2 waves: first a header indicating the
-        msg length, and then the message itself.
-
-        The size of results messages can vary substantially based on the
-        specific analyses performed, and whether or not the the results were
-        computed for the requested volume or not yet. Sending the message in
-        this way allows the End User to know precisely how big the results
-        message will be, and read from the socket accordingly.
+        User.
 
         Parameters
         ----------
@@ -204,11 +197,7 @@ class ResultsServer(Thread):
 
         """
         # format as json string and then convert to bytes
-        formattedMsg = json.dumps(results).encode()
-
-        # build then send header with info about msg length
-        hdr = '{:d}\n'.format(len(formattedMsg))
-        connection.send(hdr.encode())
+        formattedMsg = '{}\n'.format(json.dumps(results)).encode()
 
         # send results as formatted message
         connection.sendall(formattedMsg)

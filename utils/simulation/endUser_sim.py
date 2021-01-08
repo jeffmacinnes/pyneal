@@ -13,15 +13,8 @@ index). For example, to request the first volume in the series, the string
 would be '0000'; to request the 25th volume in the series the string would be
 '0024', and so on...
 
-Pyneal will send back a response comprised of two parts: first a header, and
-then followed by the results. The header contains the number of characters in
-the full results message.
-
-The results message contains all of the analysis results that were calculated 
-for that volume; since different analyses can yield differing numbers of results, 
-the length of the results message can vary considerably. That is why we include 
-the header, which is a short message simply telling the end-user how many bytes 
-to expect for the full message.
+Pyneal will send back a response message that contains all of the analysis 
+results that were calculated for that volume.
 
 The results message starts off as a python dictionary, and then converted to
 JSON and encoded as a byte array before sending over the socket. The end-user
@@ -86,25 +79,19 @@ def requestResult(host, port, volIdx):
     print('Sending request to {}:{} for vol {}'.format(host, port, request))
     clientSocket.send(request.encode())
 
-    # When the results server recieved the request, it will send back a variable
-    # length response. But first, it will send a header indicating how long the response
-    # is. This is so the socket knows how many bytes to read
-    hdr = ''
-    while True:
-        nextChar = clientSocket.recv(1).decode()
-        if nextChar == '\n':
-            break
-        else:
-            hdr += nextChar
-    msgLen = int(hdr)
-
     # now read the full response from the server
-    serverResp = clientSocket.recv(msgLen)
+    resp = b''
+    while True:
+        serverData = clientSocket.recv(1024)
+        if serverData:
+            resp += serverData
+        else: 
+            break
 
     # format at JSON
-    serverResp = json.loads(serverResp.decode())
+    resp = json.loads(resp.decode())
     print('client received:')
-    print(serverResp)
+    print(resp)
 
     clientSocket.close()
 
