@@ -118,7 +118,7 @@ def pynealScannerSimulator(dataset, TR=1000, host='127.0.0.1', port=5555):
     socket = context.socket(zmq.PAIR)
     socket.connect('tcp://{}:{}'.format(host, port))
 
-    ds_array = dataset.get_data()
+    ds_array = dataset.get_fdata()
     ds_affine = dataset.affine
 
     # Wait for pyneal to connect to the socket
