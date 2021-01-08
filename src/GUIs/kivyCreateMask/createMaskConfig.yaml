@@ -1,8 +1,0 @@
-MNI_mask: /Users/jeff/gDrive/jeffCloud/real-time/b2b/data/motor_imagery_association-test_z_FDR_0.01.nii.gz
-MNI_standard: /Users/jeff/gDrive/jeffCloud/real-time/pyneal/utils/MNI_templates/MNI152_T1_2mm_brain.nii.gz
-createFuncBrainMask: false
-outputPrefix: motorImagery_neuroSynth
-skullStrip: true
-subjAnat: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot3_real/pilot3_anat_MPRAGE.nii.gz
-subjFunc: /Users/jeff/gDrive/jeffCloud/real-time/b2b/pilotScans/pilot3_real/localizer_0000.nii.gz
-transformMaskToFunc: true

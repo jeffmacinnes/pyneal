@@ -31,7 +31,7 @@ class Test_pynealPreprocessing:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             preprocVol = preprocessor.runPreprocessing(thisVol, volIdx)
 
 
@@ -45,7 +45,7 @@ class Test_pynealPreprocessing:
         rms_rel_results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol and convert to niftiobject
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             thisVol_nii = nib.Nifti1Image(thisVol, np.eye(4))
 
             motionParams = motionProcessor.estimateMotion(thisVol_nii, volIdx)

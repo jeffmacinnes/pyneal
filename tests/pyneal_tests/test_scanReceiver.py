@@ -49,7 +49,7 @@ def test_resultsServer():
 
     # Send data to scan receiver
     ds = nib.load(join(paths['testDataDir'], 'testSeries.nii.gz'))
-    ds_array = ds.get_data()
+    ds_array = ds.get_fdata()
     ds_affine = ds.affine
 
     for volIdx in range(ds_array.shape[3]):

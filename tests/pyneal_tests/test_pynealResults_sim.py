@@ -95,20 +95,8 @@ def fakeEndUserRequest(requestedVolIdx, port):
     request = str(requestedVolIdx).zfill(4)
     clientSocket.send(request.encode())
 
-    # When the results server recieved the request, it will send back a variable
-    # length response. But first, it will send a header indicating how long the response
-    # is. This is so the socket knows how many bytes to read
-    hdr = ''
-    while True:
-        nextChar = clientSocket.recv(1).decode()
-        if nextChar == '\n':
-            break
-        else:
-            hdr += nextChar
-    msgLen = int(hdr)
-
     # now read the full response from the server
-    serverResp = clientSocket.recv(msgLen)
+    serverResp = clientSocket.recv(1024)
     clientSocket.close()
 
     # format at JSON

@@ -35,7 +35,7 @@ class Test_pynealAnalysis:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
             results.append(result['average'])
@@ -62,7 +62,7 @@ class Test_pynealAnalysis:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
             results.append(result['weightedAverage'])
@@ -89,7 +89,7 @@ class Test_pynealAnalysis:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
             results.append(result['median'])
@@ -116,7 +116,7 @@ class Test_pynealAnalysis:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
             results.append(result['weightedMedian'])
@@ -144,7 +144,7 @@ class Test_pynealAnalysis:
         results = []
         for volIdx in range(seriesData.shape[3]):
             # extract the 3d array for this vol
-            thisVol = seriesData.get_data()[:, :, :, volIdx]
+            thisVol = seriesData.get_fdata()[:, :, :, volIdx]
             result = analyzer.runAnalysis(thisVol, volIdx)
 
             results.append(result['customResult'])

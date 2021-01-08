@@ -1064,7 +1064,7 @@ class GE_processSlice(Thread):
         thisVol = self.imageMatrix[:, :, :, volIdx]
         thisVol_nii = nib.Nifti1Image(thisVol, self.affine)
         thisVol_RAS = nib.as_closest_canonical(thisVol_nii)     # make RAS+
-        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_data())
+        thisVol_RAS_data = np.ascontiguousarray(thisVol_RAS.get_fdata())
 
         ### Create a header with metadata info
         volHeader = {
