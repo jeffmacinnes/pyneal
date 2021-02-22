@@ -1,5 +1,15 @@
 # Change Log
 
+## [v1.0.2] - 2021-02-22
+
+### Added
+
+### Changed
+
+### Fixed
+
+- removed obsolete `receivedImg.nii.gz` from `pyneal_scanner/simulations/`
+
 ## [v1.0.1] - 2021-02-19
 
 ### Added
