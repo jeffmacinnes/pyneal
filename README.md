@@ -78,6 +78,10 @@ Results (8.60s):
 
 ```
 
+### Versioning
+
+Commits to `master` should be accompanied by updating the `CHANGELOG.md` file and issueing a new release tag.
+
 ### Code conventions
 
 To ensure readability and consistency in code stylinh, please use a tool like [flake8](http://flake8.pycqa.org/en/latest/) to ensure your changes conform to PEP8 style guidelines
