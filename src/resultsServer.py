@@ -9,7 +9,7 @@ This tool is designed to run in a separate thread, where it will:
     available yet)
 
 Elsewhere, Pyneal uses the powerful Zmq socket library for network
-communication, however in this case the results server needs to be able to talk
+communication. However in this case the results server needs to be able to talk
 to clients that are connecting using 'normal' socket libraries that are
 incompatible with ZMQ. Thus, the results server is a traditional TCP socket
 server.

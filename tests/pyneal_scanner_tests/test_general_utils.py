@@ -42,13 +42,13 @@ class Test_general_utils:
 
             # update config file to match local paths
             configFile = join(envDir, 'scannerConfig.yaml')
-            helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
+            helper_tools.replace_scannerConfig_sessionDir(configFile, funcDir)
 
             # run through all functions in ScannerSettings class
             scanSettings = general_utils.ScannerSettings(envDir)
             scanSettings.print_allSettings()
             scanSettings.get_scannerMake()
-            scanSettings.get_scannerBaseDir()
+            scanSettings.get_scannerSessionDir()
             scanSettings.get_pynealSocketHost()
             scanSettings.get_pynealSocketPort()
             scanSettings.get_allSettings()
@@ -77,7 +77,7 @@ class Test_general_utils:
 
             # update config file to match local paths
             configFile = join(envDir, 'scannerConfig.yaml')
-            helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
+            helper_tools.replace_scannerConfig_sessionDir(configFile, funcDir)
 
             general_utils.initializeSession(pynealScannerDir=envDir)
 

@@ -16,7 +16,6 @@ socketPort = 5556
 
 from src.resultsServer import ResultsServer
 
-
 # Tests for functions within the resultsServer module
 def test_resultsServer():
     """ tests pyneal.src.resultsServer """

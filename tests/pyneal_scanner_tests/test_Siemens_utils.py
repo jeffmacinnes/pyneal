@@ -26,7 +26,7 @@ class Test_Siemens_utils():
     def test_Siemens_DirStructure(self):
         # update config file to match local paths
         configFile = join(paths['Siemens_dir'], 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, paths['Siemens_funcDir'])
+        helper_tools.replace_scannerConfig_sessionDir(configFile, paths['Siemens_funcDir'])
 
         # create instace of ScannerSettings class from general_utils
         scannerSettings = general_utils.ScannerSettings(paths['Siemens_dir'])

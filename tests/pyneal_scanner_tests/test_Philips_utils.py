@@ -25,7 +25,7 @@ class Test_Philips_utils():
         """ test Philips_utils.Philips_DirStucture """
         # update config file to match local paths
         configFile = join(paths['Philips_dir'], 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, paths['Philips_funcDir'])
+        helper_tools.replace_scannerConfig_sessionDir(configFile, paths['Philips_funcDir'])
 
         # create instance of ScannerSettings class from general_utils
         scannerSettings = general_utils.ScannerSettings(paths['Philips_dir'])

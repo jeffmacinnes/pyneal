@@ -80,7 +80,11 @@ Results (8.60s):
 
 ### Versioning
 
-Commits to `master` should be accompanied by updating the `CHANGELOG.md` file and issueing a new release tag.
+Commits to `master` should be accompanied by updating the `CHANGELOG.md` file and creating a new version release tag.
+
+Version naming should follow [semantic versionsing](https://semver.org/) conventions as closely as possible.
+
+After commiting changes, add a tag by `git tag -a v<version-number>`. Push the tag to the remote along with the rest of the code with `git push origin <tag-name>`
 
 ### Code conventions
 

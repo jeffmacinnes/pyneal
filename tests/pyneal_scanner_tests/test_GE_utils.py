@@ -27,7 +27,7 @@ class Test_GE_utils():
 
         # update config file to match local paths
         configFile = join(paths['GE_dir'], 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, paths['GE_funcDir'])
+        helper_tools.replace_scannerConfig_sessionDir(configFile, paths['GE_funcDir'])
 
         # create instance of ScannerSettings class from general_utils
         scannerSettings = general_utils.ScannerSettings(paths['GE_dir'])
@@ -40,13 +40,10 @@ class Test_GE_utils():
 
         # confirm paths match test directories
         assert scannerDirs.get_seriesDirs() == ['s1925']
-        assert scannerDirs.get_pDir() == 'p1'
-        assert scannerDirs.get_eDir() == 'e123'
-        assert scannerDirs.get_sessionDir() == join(paths['GE_dir'], 'p1/e123')
 
         ### Test the waitForSeriesDir function by creating a fake dir
         # threading.timer object to create a new directory after a few sec
-        fakeNewSeries = join(paths['GE_funcDir'], 'p1/e123/sTEST')
+        fakeNewSeries = join(paths['GE_funcDir'], 'sTEST')
         t = threading.Timer(1.0, helper_tools.createFakeSeriesDir, [fakeNewSeries])
         t.start()
 
@@ -74,7 +71,7 @@ class Test_GE_utils():
         """
         # create queue to store incoming file names
         dicomQ = Queue()
-        newSeriesDir = join(paths['GE_funcDir'], 'p1/e123/sTEST')
+        newSeriesDir = join(paths['GE_funcDir'], 'sTEST')
         helper_tools.createFakeSeriesDir(newSeriesDir)
 
         ## Set up sockets to send data between
@@ -104,7 +101,7 @@ class Test_GE_utils():
         sliceProcessor.start()
 
         # copy contents of existing GE test data dir to new dir, simulating scan
-        GE_seriesDir = join(paths['GE_funcDir'], 'p1/e123/s1925')
+        GE_seriesDir = join(paths['GE_funcDir'], 's1925')
         helper_tools.copyScanData(GE_seriesDir, newSeriesDir)
 
         # assuming it didn't crash, cancel the bg thread and delete new dir

@@ -36,7 +36,6 @@ from utils.general_utils import initializeSession
 # the only option)
 pynealScannerDir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-
 def pynealScanner_GE(scannerSettings, scannerDirs):
     """ Launch Pyneal Scanner for real-time scan in a GE environment
 
@@ -140,7 +139,7 @@ if __name__ == "__main__":
     logger.addHandler(consoleLogger)
 
     # initialize the session classes:
-    logger.debug('Starting Pyneal Scanner')
+    logger.info('Starting Pyneal Scanner')
     scannerSettings, scannerDirs = initializeSession()
 
     # print all of the current settings and series dirs to the terminal

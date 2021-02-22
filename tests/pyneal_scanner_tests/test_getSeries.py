@@ -23,7 +23,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_sessionDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)
@@ -61,7 +61,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_sessionDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)
@@ -99,7 +99,7 @@ class Test_getSeries():
 
         # update config file to match local paths
         configFile = join(envDir, 'scannerConfig.yaml')
-        helper_tools.replace_scannerConfig_baseDir(configFile, funcDir)
+        helper_tools.replace_scannerConfig_sessionDir(configFile, funcDir)
 
         # run initializeSettings to get the scannerDirs object
         scannerSettings, scannerDirs = general_utils.initializeSession(pynealScannerDir=envDir)

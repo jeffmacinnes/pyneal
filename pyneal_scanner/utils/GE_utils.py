@@ -8,6 +8,7 @@ import time
 import re
 import logging
 import json
+import textwrap
 from threading import Thread
 from queue import Queue
 
@@ -15,10 +16,6 @@ import numpy as np
 import pydicom
 import nibabel as nib
 import zmq
-
-# default path to where new series directories
-# will appear (e.g. [baseDir]/p###/e###/s###)
-GE_default_baseDir = '/export/home1/sdc_image_pool/images'
 
 # regEx for GE style file naming
 GE_filePattern = re.compile(r'i\d*.MRDC.\d*')
@@ -44,17 +41,14 @@ class GE_DirStructure():
     with an absolute path structured like:
     [baseDir]/p###/e###/s###
 
-    We'll sometimes refer to the directory that contains the s### directories
+    We'll refer to the directory that contains the s### directories
     as the 'sessionDir'. So,
 
     sessionDir = [baseDir]/p###/e###
 
-    This class contains methods to retrieve THE MOST RECENTLY modified
-    sessionDir directories, as well as a list of all s### directories along
-    with timestamps and directory sizes. This will hopefully allow users to
-    match a particular task scan (e.g. anatomicals, or experimentRun1) with
-    the full path to its raw data on the scanner console
-
+    Users must specify the full path to the sessionDir in the `scannerConfig.yaml`
+    in the pyneal_scanner directory:
+    `scannerSessionDir: /path/to/session/dir`
     """
     def __init__(self, scannerSettings):
         """ Initialize the class
@@ -72,148 +66,28 @@ class GE_DirStructure():
         """
 
         # initialize the class attributes
-        if 'scannerBaseDir' in scannerSettings.allSettings:
-            self.baseDir = scannerSettings.allSettings['scannerBaseDir']
+        if 'scannerSessionDir' in scannerSettings.allSettings:
+            self.sessionDir = scannerSettings.allSettings['scannerSessionDir']
         else:
-            print('No scannerBaseDir found in scannerConfig file. Using default: {}'.format(GE_default_baseDir))
-            self.baseDir = GE_default_baseDir
+            raise Exception("""
+                No scannerSessionDir found in scannerConfig.yaml file. Please update that file and try again
+                """)
 
-        self.pDir = None
-        self.eDir = None
-        self.sessionDir = None
+        # make sure sessionDir exists
+        if not os.path.isdir(self.sessionDir):
+            raise Exception(f"""
+                The specified session dir does not exist:
+                {self.sessionDir}
+                Please update the scannerConfig.yaml file with a valid directory and try again
+                """)
+
         self.seriesDirs = None
-
-        # (hopefully) find and initialize the sessionDir (and subdirs)
-        self.findSessionDir()
-
-    def _isSeriesDir(self, dirPath):
-        """ Check path to see if it is a series dir
-        To qualify as a serial dir:
-            - must start with 's'
-            - parent dir must start with 'e'
-            - grandparent dir must start with 'p'
-        """
-        # check the outermost dir
-        ancestors, lastDir = os.path.split(dirPath)
-        if lastDir[0] != 's': return False
         
-        # check the parent dir
-        ancestors, parentDir = os.path.split(ancestors)
-        if parentDir[0] != 'e': return False 
-        
-        # check the grandparent dir
-        ancestors, gParentDir = os.path.split(ancestors)
-        if gParentDir[0] != 'p': return False 
-
-        return True
-    
-    def findSessionDir(self):
-        """ Find the most recently modified s### directory. This directory is expected
-        to exists 2 levels down (p###/e####) from the self.baseDir 
-        (i.e. /export/home1/sdc_image_pool/images/p123/e456/s1001)
-
-        Sets the class attributes for the current session for:
-            pDir
-            eDir
-            sessionDir
-        """
-        try:
-            # get a list of ALL series dirs
-            seriesDirs = []
-            for root, dirs, files in os.walk(self.baseDir):
-                if self._isSeriesDir(root):
-                    seriesDirs.append(root)
-
-            # get the modification time for each dir
-            seriesDirs = [[path, os.stat(path).st_mtime] for path in seriesDirs]
-
-            # sort to get the most recently created first
-            seriesDirs = sorted(seriesDirs, key=lambda x: x[1], reverse=True)
-            newest_sDir = seriesDirs[0][0]
-
-            # set the sessionDir based on path to parent dir of newest sDir
-            sessionDir = os.path.split(newest_sDir)[0]
-            pTmp, eDir = os.path.split(sessionDir)
-            pTmp, pDir = os.path.split(pTmp)
-
-        except:
-            print('Error: Failed to find a sessionDir \n\n')
-            sessionDir = None
-            pDir = None
-            eDir = None
-        
-        # set values to these attributes
-        self.pDir = pDir
-        self.eDir = eDir
-        self.sessionDir = sessionDir
-
-    def findSessionDir_OLD(self):
-        """ Find the most recently modified p###/e### directory in the baseDir
-
-        Sets class attributes for the current sessions for:
-            pDir
-            eDir
-            sessionDir
-        """
-        try:
-            # Find the most recent p### dir
-            try:
-                # Find all subdirectores in the baseDir
-                pDirs = self._findAllSubdirs(self.baseDir)
-
-                # remove any dirs that don't start with p
-                pDirs = [x for x in pDirs if os.path.split(x[0])[-1][0] == 'p']
-
-                # sort based on modification time, take the most recent
-                pDirs = sorted(pDirs, key=lambda x: x[1], reverse=True)
-                newest_pDir = pDirs[0][0]
-
-                # just the p### portion
-                pDir = os.path.split(newest_pDir)[-1]
-
-            except:
-                print('Error: Could not find any p### dirs in {} \n\n'.format(self.baseDir))
-
-            # Find the most recent e### dir
-            try:
-                # find all subdirectories in the most recent p### dir
-                eDirs = self._findAllSubdirs(newest_pDir)
-
-                # remove any dirs that don't start with e
-                eDirs = [x for x in eDirs if os.path.split(x[0])[-1][0] == 'e']
-
-                # sort based on modification time, take the most recent
-                eDirs = sorted(eDirs, key=lambda x: x[1], reverse=True)
-                newest_eDir = eDirs[0][0]
-
-                # just the e### portion
-                eDir = os.path.split(newest_eDir)[-1]
-
-            except:
-                print('Error: Could not find an e### dirs in {} \n\n'.format(newest_pDir))
-
-            # set the session dir as the full path including the eDir
-            sessionDir = newest_eDir
-        except:
-            print('Error: Failed to find a sessionDir \n\n')
-            sessionDir = None
-            pDir = None
-            eDir = None
-
-        # set values to these attributes
-        self.pDir = pDir
-        self.eDir = eDir
-        self.sessionDir = sessionDir
-
     def print_currentSeries(self):
         """ Find all of the series dirs in current sessionDir, and print them
         all, along with time since last modification, and directory size
 
         """
-        # find the sessionDir, if not already found
-        if self.sessionDir is None:
-            self.findSessionDir()
-
         # get a list of all series dirs in the sessionDir
         seriesDirs = self._findAllSubdirs(self.sessionDir)
 
@@ -222,9 +96,7 @@ class GE_DirStructure():
             seriesDirs = sorted(seriesDirs, key=lambda x: x[1])
 
             # print directory info to the screen
-            print('Session Dir: ')
-            print('{}'.format(self.sessionDir))
-            print('Series Dirs: ')
+            print('Existing Series Dirs: ')
 
             currentTime = int(time.time())
             for s in seriesDirs:
@@ -247,6 +119,7 @@ class GE_DirStructure():
                 time_string = '{} min, {} s ago'.format(int(m), int(s))
 
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
+            print('\n')
 
     def _findAllSubdirs(self, parentDir):
         """ Return a list of all subdirectories within the specified
@@ -339,14 +212,6 @@ class GE_DirStructure():
             self.seriesDirs = None
 
         return self.seriesDirs
-
-    def get_pDir(self):
-        """ Return the current `pDir` for the current session """
-        return self.pDir
-
-    def get_eDir(self):
-        """ Return the current `eDir` for the current session """
-        return self.eDir
 
     def get_sessionDir(self):
         """ Return the current `sessionDir` for the current session """

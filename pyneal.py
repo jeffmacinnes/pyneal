@@ -67,7 +67,7 @@ def launchPyneal(headless=False, customSettingsFile=None):
 
     # Read the new settings file, store as dict
     with open(settingsFile, 'r') as ymlFile:
-        settings = yaml.load(ymlFile)
+        settings = yaml.load(ymlFile, loader=yaml.FullLoader)
 
     ### Create the output directory, put in settings dict
     outputDir = createOutputDir(settings['outputPath'])

@@ -71,7 +71,7 @@ class MaskCreator():
 
         # Read the new settings file, store as dict
         with open(settingsFile, 'r') as ymlFile:
-            self.settings = yaml.load(ymlFile)
+            self.settings = yaml.load(ymlFile, Loader=yaml.FullLoader)
 
         ### Setup output dirs and logging
         self.outputDir = join(os.path.dirname(self.settings['subjFunc']), 'mask_transforms')

@@ -40,14 +40,14 @@ class ScannerSettings():
         # initialize var to store dict of all of the config parameters
         self.allSettings = None
         self.config_file = join(settingsDir, config_fname)
-        self.expectedFields = ['scannerBaseDir', 'scannerMake', 'pynealSocketHost', 'pynealSocketPort']
+        self.expectedFields = ['scannerSessionDir', 'scannerMake', 'pynealSocketHost', 'pynealSocketPort']
 
         # when class is initiated, attempts to find a scanner config file
         # in the specified settingsDir
         if os.path.isfile(self.config_file):
             # open the file, create dict of all scanner settings
             with open(self.config_file, 'r') as ymlFile:
-                self.allSettings = yaml.load(ymlFile)
+                self.allSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
         else:
             # or create the configuration file, write empty fields
             with open(self.config_file, 'w') as ymlFile:
@@ -61,7 +61,7 @@ class ScannerSettings():
 
         # Ensure all settings are present before continuing
         self.get_scannerMake()
-        self.get_scannerBaseDir()
+        self.get_scannerSessionDir()
         self.get_pynealSocketHost()
         self.get_pynealSocketPort()
 
@@ -92,23 +92,26 @@ class ScannerSettings():
         # return setting
         return self.allSettings['scannerMake']
 
-    def get_scannerBaseDir(self):
-        """ Return the base directory where new data is written for each scan
+    def get_scannerSessionDir(self):
+        """ Return the session directory where new data is written for each scan
 
-        The base directory means slightly different things depending on the
+        The session directory means slightly different things depending on the
         scanning environment. In all cases, it is the fixed portion of the
         path that remains constant across series
 
-        In a GE environment, the base dir refers to the parent directory on
-        the scanner where new session (p###/e###) and series directories (s###)
-        will be written into.
+        In a GE environment, the session dir refers to the parent directory where
+        new subdirectories for each series are created throughout the session. 
+        On GE systems, the session directory path may end with the pattern
+        `p####/e####`. Throughout the session, each new series will generate a new
+        series subdirectory (s###) in this session directory. 
 
-        In a Philips environment, the base dir refers to the parent directory
-        where new series directories ('####') will appear
+        In a Philips environment, the session dir refers to the parent directory where
+        new subdirectories for each series are created throughout the session. New series
+        directories follow a naming convention like `####`
 
-        In a Siemens environment, the base dir refers to the parent directory
+        In a Siemens environment, the session dir refers to the parent directory
         where new series files are written to. All of the series files from a
-        given session will appear in the same parent directory (or base dir)
+        given session will appear in the same session directory
 
         Returns
         -------
@@ -116,22 +119,22 @@ class ScannerSettings():
             path to base directory used for the current session
 
         """
-        # check if scannerBaseDir already exists allSettings dict
-        if 'scannerBaseDir' not in self.allSettings:
-            self.set_config('scannerBaseDir',
-                            instructions="type: Path to the base directory for new scans")
+        # check if scannerSessionDir already exists allSettings dict
+        if 'scannerSessionDir' not in self.allSettings:
+            self.set_config('scannerSessionDir',
+                            instructions="type: Path to the session directory for new scans")
 
-        # make sure the base dir exists
+        # make sure the session dir exists
         while True:
-            if not os.path.isdir(self.allSettings['scannerBaseDir']):
-                print('Problem: {} is not an existing directory'.format(self.allSettings['scannerBaseDir']))
-                self.set_config('scannerBaseDir',
-                                instructions="type: Path to the base directory for new scans")
+            if not os.path.isdir(self.allSettings['scannerSessionDir']):
+                print('Problem: {} is not an existing directory'.format(self.allSettings['scannerSessionDir']))
+                self.set_config('scannerSessionDir',
+                                instructions="type: Path to the session directory for new scans")
             else:
                 break
 
         # return setting
-        return self.allSettings['scannerBaseDir']
+        return self.allSettings['scannerSessionDir']
 
     def get_pynealSocketHost(self):
         """ Return the IP address for the socket connection to Pyneal. This
@@ -265,13 +268,11 @@ def initializeSession(pynealScannerDir=None):
     # Initialize the ScannerDirs class. Which flavor of this to load will
     # depend on the particular scanning environment, so check the scannerSettings
     scannerMake = scannerSettings.allSettings['scannerMake']
-    print(scannerMake)
     if scannerMake == 'GE':
         from utils.GE_utils import GE_DirStructure
         scannerDirs = GE_DirStructure(scannerSettings)
     
     elif scannerMake == 'GEMB':
-        print('here')
         from utils.GEMB_utils import GE_DirStructure
         scannerDirs = GE_DirStructure(scannerSettings)
     

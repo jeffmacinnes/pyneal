@@ -20,7 +20,7 @@ def get_pyneal_scanner_test_paths():
     pynealScannerDir = join(pynealDir, 'pyneal_scanner')
     testDataDir = join(testingDir, 'testData')
     GE_dir = join(testDataDir, 'GE_env')
-    GE_funcDir = GE_dir
+    GE_funcDir = join(GE_dir, 'funcData')
     Philips_dir = join(testDataDir, 'Philips_env')
     Philips_funcDir = join(Philips_dir, 'funcData')
     Siemens_dir = join(testDataDir, 'Siemens_env')
@@ -58,21 +58,21 @@ def copyScanData(srcDir, dstDir):
             shutil.copy(join(srcDir, f), dstDir)
 
 ### Functions for updating and cleaning the test scannerConfig.yaml files
-def replace_scannerConfig_baseDir(configFile, newBaseDir):
-    """ Write newBaseDir to the ScannerBaseDir field of given scannerConfig file
+def replace_scannerConfig_sessionDir(configFile, newSessionDir):
+    """ Write newSessionDir to the scannerSessionDir field of given scannerConfig file
 
     In order to run these tests, the `scannerConfig.yaml` file for every
     scanner enviorment in the testData directory needs to be updated to reflect
-    the local path to the scannerBaseDir. Since that varies depending on where
+    the local path to the scannerSessionDir. Since that varies depending on where
     this test is being run from, this function will swap out that field with
     the current path base on the local path to the pynealDir
     """
     # read in contents of existing yaml file
     with open(configFile, 'r') as ymlFile:
-        configSettings = yaml.load(ymlFile)
+        configSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
 
     # update with new setting
-    configSettings['scannerBaseDir'] = newBaseDir
+    configSettings['scannerSessionDir'] = newSessionDir
 
     # overwrite yaml file
     with open(configFile, 'w') as ymlFile:
@@ -82,14 +82,14 @@ def replace_scannerConfig_baseDir(configFile, newBaseDir):
 def cleanConfigFile(configFile):
     """ Remove local paths from scannerConfig file.
 
-    After testing, remove the local path to the scannerBaseDir to it does
+    After testing, remove the local path to the scannerSessionDir to it does
     not get pushed to gitHub
     """
     with open(configFile, 'r') as ymlFile:
-        configSettings = yaml.load(ymlFile)
+        configSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
 
-    # clear existing scannerBaseDir
-    configSettings['scannerBaseDir'] = ' '
+    # clear existing scannerSessionDir
+    configSettings['scannerSessionDir'] = ' '
 
     # overwrite yaml file
     with open(configFile, 'w') as ymlFile:

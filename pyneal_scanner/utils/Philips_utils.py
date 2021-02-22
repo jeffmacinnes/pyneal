@@ -60,13 +60,11 @@ class Philips_DirStructure():
         general_utils.ScannerSettings
         """
         # initialize class attributes
-        if 'scannerBaseDir' in scannerSettings.allSettings:
-            self.baseDir = scannerSettings.allSettings['scannerBaseDir']
+        if 'scannerSessionDir' in scannerSettings.allSettings:
+            self.sessionDir = scannerSettings.allSettings['scannerSessionDir']
         else:
-            print('No scannerBaseDir found in scannerConfig file')
+            print('No scannerSessionDir found in scannerConfig file')
             sys.exit()
-
-        self.sessionDir = self.baseDir
 
     def print_currentSeries(self):
         """ Find all of the series dirs in given sessionDir, and print them
@@ -85,9 +83,7 @@ class Philips_DirStructure():
             seriesDirs = sorted(seriesDirs, key=lambda x: x[1])
 
             # print directory info to the screen
-            print('Session Dir: ')
-            print('{}'.format(self.sessionDir))
-            print('Series Dirs: ')
+            print('Existing Series Dirs: ')
 
             currentTime = int(time.time())
             for s in seriesDirs:
@@ -112,6 +108,7 @@ class Philips_DirStructure():
                 time_string = '{} min, {} s ago'.format(int(m), int(s))
 
                 print('    {}\t{}\t{}'.format(dirName, size_string, time_string))
+            print('\n')
 
     def _findAllSubdirs(self, parentDir):
         """ Return a list of all subdirectories within the specified

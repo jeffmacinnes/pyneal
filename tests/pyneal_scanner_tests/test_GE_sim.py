@@ -18,8 +18,8 @@ def test_GE_sim():
     """ Test pyneal_scanner.simulation.GE_sim """
 
     # set input args for GE_sim
-    dicomDir = join(paths['GE_funcDir'], 'p1/e123/s1925')
-    outputDir = join(paths['GE_funcDir'], 'p1/e123/sTEST')
+    dicomDir = join(paths['GE_funcDir'], 's1925')
+    outputDir = join(paths['GE_funcDir'], 'sTEST')
     TR = 0
 
     # launch GE_sim, but have to mock input to start the sim

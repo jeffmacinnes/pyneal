@@ -74,13 +74,11 @@ class Siemens_DirStructure():
         general_utils.ScannerSettings
         """
         # initialize class attributes
-        if 'scannerBaseDir' in scannerSettings.allSettings:
-            self.baseDir = scannerSettings.allSettings['scannerBaseDir']
+        if 'scannerSessionDir' in scannerSettings.allSettings:
+            self.sessionDir = scannerSettings.allSettings['scannerSessionDir']
         else:
-            print('No scannerBaseDir found in scannerConfig file')
+            print('No scannerSessionDir found in scannerConfig file')
             sys.exit()
-
-        self.sessionDir = self.baseDir
 
     def print_currentSeries(self):
         """ Find all of the series present in given sessionDir, and print them
