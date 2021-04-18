@@ -66,7 +66,7 @@ class SetupFrame(wx.Frame):
         if os.path.isfile(self.settingsFile) and os.path.getsize(self.settingsFile) > 0:
             # open the file, load all settings from the file into a dict
             with open(self.settingsFile, 'r') as ymlFile:
-                loadedSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
+                loadedSettings = yaml.safe_load(ymlFile)
 
             # loop over all default settings and see if there is a loaded setting
             # that should overwrite the default

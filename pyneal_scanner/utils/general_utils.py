@@ -47,7 +47,7 @@ class ScannerSettings():
         if os.path.isfile(self.config_file):
             # open the file, create dict of all scanner settings
             with open(self.config_file, 'r') as ymlFile:
-                self.allSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
+                self.allSettings = yaml.safe_load(ymlFile)
         else:
             # or create the configuration file, write empty fields
             with open(self.config_file, 'w') as ymlFile:

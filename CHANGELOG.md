@@ -21,3 +21,13 @@
 ### Fixed
 
 - updated deprecated `yaml.load(input)` to `yaml.load(input, Loader=yaml.FullLoader)` throughout
+
+## [v1.0.2] - 2021-04-18
+
+### Added
+
+### Changed
+
+- changed `yaml.load(input, Loader=yaml.FullLoader)` to `yaml.safe_load(input)` throughout. This was done to keep up with Yaml's ever changing recommendations for avoiding security issues with `load` (https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation)
+
+### Fixed

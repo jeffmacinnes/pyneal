@@ -69,7 +69,7 @@ def replace_scannerConfig_sessionDir(configFile, newSessionDir):
     """
     # read in contents of existing yaml file
     with open(configFile, 'r') as ymlFile:
-        configSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
+        configSettings = yaml.safe_load(ymlFile)
 
     # update with new setting
     configSettings['scannerSessionDir'] = newSessionDir
@@ -86,7 +86,7 @@ def cleanConfigFile(configFile):
     not get pushed to gitHub
     """
     with open(configFile, 'r') as ymlFile:
-        configSettings = yaml.load(ymlFile, Loader=yaml.FullLoader)
+        configSettings = yaml.safe_load(ymlFile)
 
     # clear existing scannerSessionDir
     configSettings['scannerSessionDir'] = ' '
