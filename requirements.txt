@@ -6,16 +6,15 @@
 ## instructions at: https://jeffmacinnes.github.io/pyneal-docs/installation/
 ###############################
 
-pyyaml>=3.12
-nibabel>=2.1.0
+pyyaml>=5.3
+nibabel>=3.2.1
 nipy>=0.4.1
 numpy==1.17
-scipy==1.1.0
-pyzmq>=16.0.2
-pyyaml>=3.12
-wxPython>=4.0.7
-flask>=0.12.2
-flask_socketio>=2.9.2
-eventlet>=0.21.0
+scipy==1.5
+pyzmq>=20.0.0
+wxPython>=4.1.1
+flask>=1.0.3
+flask_socketio>=4.3.2
+eventlet>=0.29.0
 pytest>=6.2.1
 mock>=4.0.3

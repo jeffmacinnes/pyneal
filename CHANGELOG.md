@@ -1,4 +1,14 @@
 # Change Log
+## [v1.0.4] - 2021-04-26
+
+### Added
+
+### Changed
+
+- updated `requirements.txt` and `pyneal_scanner/requirements.txt` to match the latest development environment
+
+### Fixed
+
 
 ## [v1.0.3] - 2021-04-18
 
