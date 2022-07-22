@@ -101,7 +101,7 @@ class GE_DirStructure():
             currentTime = int(time.time())
             for s in seriesDirs:
                 # get the info from this series dir
-                dirName = s[0].split('/')[-1]
+                dirName = s[0].split(os.sep)[-1]
 
                 # calculate & format directory size
                 dirSize = sum([os.path.getsize(join(s[0], f)) for f in os.listdir(s[0])])
@@ -207,7 +207,7 @@ class GE_DirStructure():
             # extract just the dirname from subDirs and append to a list
             self.seriesDirs = []
             for d in subDirs:
-                self.seriesDirs.append(d[0].split('/')[-1])
+                self.seriesDirs.append(d[0].split(os.sep)[-1])
         else:
             self.seriesDirs = None
 
