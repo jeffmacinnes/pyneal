@@ -35,7 +35,7 @@ class Test_Philips_utils():
 
         ### Run through Philips_DirStructure class methods
         scannerDirs.print_currentSeries()
-        assert scannerDirs.get_seriesDirs() == ['0001']
+        assert scannerDirs.get_seriesDirs() == ['0001','0TEST']
 
         ### Test the waitForSeriesDir function by creating a fake dir
         # threading.timer object to create a new dir after a few sec

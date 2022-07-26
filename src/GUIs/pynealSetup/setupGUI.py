@@ -104,9 +104,9 @@ class SetupFrame(wx.Frame):
         # set defaults fonts
         font = self.GetFont()
         font.SetFaceName('Helvetica')
-        font.SetPointSize(15)
+        font.SetPointSize(11)
         self.SetFont(font)
-        self.headerFont = wx.Font(wx.FontInfo(20).FaceName('Helvetica').Bold().AntiAliased(True))
+        self.headerFont = wx.Font(wx.FontInfo(14).FaceName('Helvetica').Bold().AntiAliased(True))
 
         # create master panel
         self.setupPanel = wx.Panel(self, -1)
@@ -125,13 +125,13 @@ class SetupFrame(wx.Frame):
         submitSizer = self.createSubmitBox()
 
         # add the sizers holding each box to the top level sizer for the panel
-        vbox.Add(logoSizer, flag=wx.ALL, border=10, proportion=0)
-        vbox.Add(commSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
-        vbox.Add(maskSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
-        vbox.Add(preprocSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
-        vbox.Add(analysisSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
-        vbox.Add(outputSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
-        vbox.Add(submitSizer, flag=wx.EXPAND | wx.ALL, border=10, proportion=0)
+        vbox.Add(logoSizer, flag=wx.ALL, border=5, proportion=0)
+        vbox.Add(commSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
+        vbox.Add(maskSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
+        vbox.Add(preprocSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
+        vbox.Add(analysisSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
+        vbox.Add(outputSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
+        vbox.Add(submitSizer, flag=wx.EXPAND | wx.ALL, border=5, proportion=0)
 
         # set the top level sizer to control the master panel
         self.setupPanel.SetSizer(vbox)

@@ -10,7 +10,6 @@ import logging
 import json
 import textwrap
 from threading import Thread
-from queue import Queue
 
 import numpy as np
 import pydicom

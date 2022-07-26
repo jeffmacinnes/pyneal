@@ -39,7 +39,7 @@ class Test_GE_utils():
         scannerDirs.print_currentSeries()
 
         # confirm paths match test directories
-        assert scannerDirs.get_seriesDirs() == ['s1925']
+        assert scannerDirs.get_seriesDirs() == ['s1925','sTEST']
 
         ### Test the waitForSeriesDir function by creating a fake dir
         # threading.timer object to create a new directory after a few sec
