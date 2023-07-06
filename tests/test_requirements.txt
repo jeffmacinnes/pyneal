@@ -9,7 +9,7 @@ pydicom>=1.0.2
 nibabel>=2.1.0
 nipy>=0.4.1
 numpy==1.16.4
-scipy==1.1.0
+scipy==1.10.0
 pyzmq>=16.0.2
 pyyaml>=3.12
 pytest>=6.2.1
